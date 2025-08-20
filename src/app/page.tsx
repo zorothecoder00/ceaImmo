@@ -205,7 +205,7 @@ export default function HomePage()
                 <p className="font-semibold text-gray-900">Fatou Sow</p>
               </div>
             </div>
-          </div>
+          </div>  
         </section>
       </main>
 

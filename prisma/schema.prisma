@@ -1,0 +1,138 @@
+// prisma/schema.prisma
+
+datasource db {
+  provider = "postgresql" // ou "mysql", selon ta base
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  ACHETEUR
+  VENDEUR
+  AGENT
+  ENTREPRISE
+}
+
+enum Categorie {
+  VILLA
+  MAISON
+  BIEN
+  CHANTIER
+}
+
+enum Mode {
+  MIXXBYYAS
+  MOOV
+  CARTEBANCAIRE
+  WESTERNUNION
+  PAYPAL
+  STRIPE
+}
+
+enum Systeme {
+  SMS
+  MAIL
+  PUSH
+}
+
+enum Status {
+  VENDU 
+  DISPONIBLE
+  RESERVE
+}
+
+model User {
+  id                Int             @id @default(autoincrement())
+  role              Role
+  nom               String
+  prenom            String
+  photo             String
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  proprietes        Propriete[]     @relation("UserPropriete")
+  reservations      Reservation[]   @relation("UserReservation")
+  reservationsAgent Reservation[]   @relation("AgentReservation")
+  messagesEnvoyes   Message[]       @relation("MessagesEnvoyes")
+  messagesRecus     Message[]       @relation("MessagesRecus")
+  transactions      Transaction[]   @relation("UserTransaction")
+}
+
+model Propriete {
+  id                Int             @id @default(autoincrement())
+  nom               String    
+  categorie         Categorie
+  prix              Int
+  surface           Int
+  status            Status   
+  media             String
+  geolocalisation   String  
+
+  proprietaireId    Int?
+  proprietaire      User?           @relation("UserPropriete", fields: [proprietaireId], references: [id], onDelete: Cascade)
+
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  reservations      Reservation[]   @relation("ProprieteReservation") 
+}
+
+model Reservation {
+  id             Int                @id @default(autoincrement())
+  date           DateTime
+  duree          DateTime
+
+  proprieteId    Int?
+  propriete      Propriete?         @relation("ProprieteReservation", fields: [proprieteId], references: [id], onDelete: Cascade)
+
+  userId         Int?
+  user           User?              @relation("UserReservation", fields: [userId], references: [id], onDelete: Cascade)
+
+  agentId        Int?
+  agent          User?              @relation("AgentReservation", fields: [agentId], references: [id], onDelete: Cascade)
+
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+}
+
+model Message {
+  id             Int                @id @default(autoincrement())
+  texte          String  
+  date           DateTime 
+  fichier        String?
+
+  senderId       Int?
+  sender         User?              @relation("MessagesEnvoyes", fields: [senderId], references: [id], onDelete: Cascade)
+
+  receiverId     Int?
+  receiver       User?              @relation("MessagesRecus", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+}
+
+model Transaction {
+  id             Int                @id @default(autoincrement())
+  mode           Mode
+
+  userId         Int?
+  user           User?              @relation("UserTransaction", fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+}
+
+model Log {
+  id             Int                @id @default(autoincrement())
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+}
+
+model Notifiaction {
+  id             Int                @id @default(autoincrement())
+  systeme        Systeme
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+}
