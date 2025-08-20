@@ -5,7 +5,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-generator client {
+generator client {  
   provider = "prisma-client-js"
 }
 
@@ -42,14 +42,16 @@ enum Status {
   VENDU 
   DISPONIBLE
   RESERVE
-}
+}  
 
-model User {
+model User {  
   id                Int             @id @default(autoincrement())
-  role              Role
-  nom               String
+  role              Role?
+  nom               String  
   prenom            String
-  photo             String
+  email             String          @unique
+  password          String?
+  photo             String?
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
   proprietes        Propriete[]     @relation("UserPropriete")
