@@ -1,6 +1,6 @@
 // /lib/auth.ts
 import { NextApiRequest, NextApiResponse } from "next";
-import { getServerSession } from "next-auth";
+import { getServerSession } from "next-auth"; 
 import { authOptions } from "@/lib/authOptions"; // Ton fichier où tu exportes les options NextAuth
 
 export const getAuthSession = async (  

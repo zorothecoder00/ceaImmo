@@ -29,7 +29,7 @@ export const authOptions: NextAuthOptions = {
 
 					if (!validPassword) return null;
 
-					return {
+					return {  
 						id: String(user.id),
 						nom: user.nom,
 						prenom: user.prenom,
