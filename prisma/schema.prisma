@@ -44,6 +44,12 @@ enum Status {
   RESERVE
 }  
 
+enum Type {
+  VISITE
+  LOCATION
+  ACHAT
+}
+
 model User {    
   id                Int             @id @default(autoincrement())
   role              Role?
@@ -84,7 +90,7 @@ model Reservation {
   id             Int                @id @default(autoincrement())
   date           DateTime
   duree          DateTime
-
+  type           Type
   proprieteId    Int?
   propriete      Propriete?         @relation("ProprieteReservation", fields: [proprieteId], references: [id], onDelete: Cascade)
 
