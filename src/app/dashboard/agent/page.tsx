@@ -1,5 +1,5 @@
 // src/app/dashboard/agent/page.tsx
-import { 
+import {  
   Home, 
   Building, 
   Calendar, 
@@ -16,13 +16,12 @@ import {
   Bath,
   Square
 } from 'lucide-react'
-import Image from 'next/image'
 
 // Types
 interface Property {
   id: string
   title: string
-  location: string
+  location: string  
   price: number
   bedrooms: number  
   bathrooms: number
@@ -163,7 +162,8 @@ function PropertyCard({ property }: { property: Property }) {
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
       <div className="relative">
-        <Image 
+        <img 
+          
           src={property.images[0]} 
           alt={property.title}
           className="w-full h-48 object-cover"
@@ -249,7 +249,7 @@ export default function AgentDashboard() {
         <div className="px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <h1 className="text-xl font-bold text-gray-900">ImmoGest</h1>
+              <h1 className="text-xl font-bold text-gray-900">CEA IMMO</h1>
               <div className="hidden md:flex items-center space-x-6">
                 <a href="#" className="text-gray-600 hover:text-gray-900">Accueil</a>
                 <a href="#" className="text-gray-600 hover:text-gray-900">Biens</a>

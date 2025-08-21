@@ -153,6 +153,8 @@ export default function HomePage()
               <div key={property.id} className="bg-white rounded-lg shadow-lg overflow-hidden">
                 <div className="relative">
                   <Image
+                    width={40}  
+                    height={40}
                     src={property.image} 
                     alt={property.title}
                     className="w-full h-48 object-cover"
