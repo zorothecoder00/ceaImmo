@@ -3,8 +3,7 @@ import {
   Home, 
   Building, 
   Calendar, 
-  Users, 
-  FileText, 
+
   Settings, 
   Bell,
   User,
@@ -17,7 +16,7 @@ import {
   TrendingUp,
   Euro,
   Camera,
-  Star,
+
   Phone,
   MessageSquare,
   Clock,

@@ -1,9 +1,9 @@
 // src/app/dashboard/acheteur/page.tsx
-import {  
+import {    
   Home, 
-  Building, 
+ 
   Calendar, 
-  Users, 
+
   FileText, 
   Settings, 
   Bell,
@@ -16,11 +16,11 @@ import {
   Bath,
   Square,
   Search,
-  Filter,
+
   Star,
   Phone,
   Mail,
-  Clock
+
 } from 'lucide-react'
 
 // Types

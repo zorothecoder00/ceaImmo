@@ -194,7 +194,7 @@ export default function HomePage()
                 </div>
                 <p className="text-gray-600 italic mb-2">
                   &ldquo;Processus rapide et transparent. Je recommande vivement.&rdquo;
-                </p>
+                </p>     
                 <p className="font-semibold text-gray-900">Amadou Ba</p>
               </div>
               <div className="text-center">
