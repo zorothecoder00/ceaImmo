@@ -1,0 +1,146 @@
+# Architecture d'Application Immobilière - Structure Recommandée
+
+## 🏠 Structure des Routes Principales
+
+### **Partie Publique (Non authentifiée)**
+```
+/                           # Page d'accueil
+/proprietes                 # Catalogue des propriétés
+/proprietes/[id]           # Détail d'une propriété
+/proprietes/[id]/visite    # Visite virtuelle d'une propriété
+/about                     # À propos
+/contact                   # Contact
+/auth/login               # Connexion
+/auth/register            # Inscription
+/auth/forgot-password     # Mot de passe oublié
+```
+
+### **Partie Privée (Authentifiée)**
+```
+/dashboard                # Dashboard principal (redirection selon rôle)
+
+# Pour les ACHETEURS
+/dashboard/acheteur
+  ├── /favoris           # Propriétés favorites
+  ├── /recherches        # Recherches sauvegardées
+  ├── /visites           # Visites programmées
+  ├── /offres            # Mes offres d'achat
+  └── /profil            # Gestion du profil
+
+# Pour les VENDEURS
+/dashboard/vendeur
+  ├── /proprietes        # Mes propriétés
+  ├── /proprietes/ajouter # Ajouter une propriété
+  ├── /proprietes/[id]   # Gérer une propriété
+  ├── /visites           # Demandes de visite
+  ├── /offres            # Offres reçues
+  └── /profil            # Gestion du profil
+
+# Pour les AGENTS
+/dashboard/agent
+  ├── /proprietes        # Propriétés gérées
+  ├── /clients           # Gestion des clients
+  ├── /visites           # Planning des visites
+  ├── /transactions      # Suivi des ventes
+  └── /profil            # Gestion du profil
+
+# Pour les ADMINISTRATEURS
+/dashboard/admin
+  ├── /utilisateurs      # Gestion des utilisateurs
+  ├── /proprietes        # Modération des propriétés
+  ├── /statistiques      # Analytics
+  └── /parametres        # Configuration système
+```
+
+## 🎯 Logique de Navigation UX
+
+### **1. Flow Utilisateur Simplifié**
+```
+Accueil → Parcourir → Détail → Connexion → Dashboard spécialisé
+```
+
+### **2. Règles de Redirection**
+- **Utilisateur non connecté** accédant à `/dashboard/*` → Redirection vers `/auth/login`
+- **Utilisateur connecté** accédant à `/dashboard` → Redirection vers son dashboard spécifique
+- **Accès non autorisé** → Page 403 ou redirection appropriée
+
+### **3. Structure des URLs Cohérente**
+- **Ressources** : `/proprietes`, `/utilisateurs`
+- **Actions** : `/proprietes/ajouter`, `/proprietes/[id]/modifier`
+- **Relations** : `/proprietes/[id]/visites`, `/proprietes/[id]/offres`
+
+## 📱 Composants de Navigation Recommandés
+
+### **Header Public**
+```
+[Logo] [Propriétés] [À propos] [Contact] [Se connecter] [S'inscrire]
+```
+
+### **Header Privé (Acheteur)**
+```
+[Logo] [Rechercher] [Favoris] [Visites] [Profil] [Déconnexion]
+```
+
+### **Sidebar Dashboard**
+```
+📊 Dashboard
+❤️ Favoris
+🔍 Recherches sauvées  
+📅 Visites
+💰 Mes offres
+👤 Profil
+```
+
+## 🔄 States et Gestion d'État
+
+### **Types d'Utilisateurs**
+```typescript
+enum UserRole {
+  ACHETEUR = 'acheteur',
+  VENDEUR = 'vendeur', 
+  AGENT = 'agent',
+  ADMIN = 'admin'
+}
+```
+
+### **Gestion des Permissions**
+```typescript
+const permissions = {
+  acheteur: ['view_properties', 'save_favorites', 'make_offers'],
+  vendeur: ['manage_properties', 'view_offers', 'schedule_visits'],
+  agent: ['manage_clients', 'moderate_properties', 'view_all_offers'],
+  admin: ['manage_users', 'system_config', 'view_analytics']
+}
+```
+
+## 🎨 Recommandations UX Supplémentaires
+
+### **1. Breadcrumbs**
+```
+Accueil > Propriétés > Appartement 3 pièces > Visite virtuelle
+Dashboard > Mes propriétés > Villa Casablanca > Modifier
+```
+
+### **2. Menu Contextuel**
+- Actions rapides selon le contexte (Favori, Partager, Contacter)
+- Boutons d'action claire (CTA) sur chaque page
+
+### **3. Feedback Utilisateur**
+- États de chargement
+- Messages de succès/erreur
+- Confirmations pour actions importantes
+
+### **4. Responsive Design**
+- Navigation mobile avec drawer/burger menu
+- Cards responsives pour les propriétés
+- Bottom navigation sur mobile pour les dashboards
+
+## 🚀 Points d'Amélioration Technique
+
+1. **Lazy Loading** des composants de dashboard selon le rôle
+2. **Route Guards** pour la protection des routes privées
+3. **SEO-friendly URLs** pour les propriétés publiques
+4. **Cache Strategy** pour les données fréquemment consultées
+5. **Progressive Web App** pour l'expérience mobile
+
+Cette architecture sépare clairement les responsabilités, améliore l'UX et facilite la maintenance du code.
