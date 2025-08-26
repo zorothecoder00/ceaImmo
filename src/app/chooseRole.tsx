@@ -2,23 +2,24 @@
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Role } from "@prisma/client"    
 
 export default function ChooseRolePage() {
   const { data: session } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
-  async function handleChoose(role: string) {
+  async function handleChoose(role: Role) {
     setLoading(true);
-    await fetch("/api/chooseRole", {
+    await fetch("/api/auth/chooseRole", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ role }),
     });  
     setLoading(false);
-    router.push("/"); // rediriger vers home
+    router.push("/dashboard"); // rediriger vers home
   }
-
+  
   if (!session) return <p>Chargement...</p>;
 
   return (

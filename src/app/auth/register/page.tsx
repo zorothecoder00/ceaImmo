@@ -336,7 +336,7 @@ const RegisterPage = () => {
           </div>
         </div>
 
-        {/* Terms */}
+        {/* Terms */}  
         <p className="text-center text-sm text-gray-500 mt-6">
           En créant un compte, vous acceptez nos{' '}
           <Link href="#" className="text-blue-600 hover:text-blue-700">Conditions d&apos;utilisation</Link>
