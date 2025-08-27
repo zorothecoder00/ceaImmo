@@ -3,9 +3,12 @@
 import React, { useState } from 'react';
 import { User, Mail, Lock, Eye, EyeOff, ArrowRight, Building2 } from 'lucide-react';
 import Link from "next/link"
+import { useRouter } from 'next/navigation'
+import { signIn } from 'next-auth/react'
+import { Role } from "@prisma/client"
 
 // Définition du type pour nos erreurs
-type Errors = {
+type Errors = {  
   nom?: string
   prenom?: string
   email?: string
@@ -16,31 +19,42 @@ type Errors = {
 
 
 const RegisterPage = () => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    nom: string,
+    prenom: string,
+    email: string,
+    password: string,
+    confirmPassword: string,
+    role?: Role,
+    photo?: string,
+  }>({
     nom: '',
     prenom: '',
     email: '',
     password: '',
     confirmPassword: '',
-    role: 'ACHETEUR'
+    role: Role.ACHETEUR,
+    photo:'',
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Errors>({}) // ✅ Typage;
 
-  const roles = [
-    { value: 'ACHETEUR', label: 'Acheteur', description: 'Je cherche une propriété' },
-    { value: 'VENDEUR', label: 'Vendeur', description: 'Je vends ma propriété' },
-    { value: 'AGENT', label: 'Agent immobilier', description: 'Je suis un professionnel' },
-    { value: 'ENTREPRISE', label: 'Entreprise', description: 'Gestion de patrimoine' }
+  const router = useRouter()
+
+  const roles: { value: Role, label: string, description: string } [] = [
+    { value: Role.ACHETEUR, label: 'Acheteur', description: 'Je cherche une propriété' },
+    { value: Role.VENDEUR, label: 'Vendeur', description: 'Je vends ma propriété' },
+    { value: Role.AGENT, label: 'Agent immobilier', description: 'Je suis un professionnel' },
+    { value: Role.ENTREPRISE, label: 'Entreprise', description: 'Gestion de patrimoine' }
   ];
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
+    const { name, value, type } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: type === 'radio' ? value as Role : value
     }));
     // Clear error when user starts typing
     if (errors[name as keyof Errors]) {
@@ -82,16 +96,31 @@ const RegisterPage = () => {
     
     // Simulate API call
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      console.log('User registration:', {
-        nom: formData.nom,
-        prenom: formData.prenom,
-        email: formData.email,
-        role: formData.role
-      });
-      alert('Inscription réussie ! Redirection vers le dashboard...');
+      //await new Promise(resolve => setTimeout(resolve, 2000));
+      //console.log('User registration:', {
+      //  nom: formData.nom,
+      //  prenom: formData.prenom,
+      //  email: formData.email,
+      //  role: formData.role
+      //});
+      //alert('Inscription réussie ! Redirection vers le dashboard...');
+      const { confirmPassword,...payload } = formData
+      const res = await fetch('/api/auth/register',{
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json'},
+        body: JSON.stringify(payload)
+      })
+
+      const data = await res.json()
+
+      if(!res.ok){
+        return setErrors({ general: data.message ||"Erreur lors de l'inscription" })
+      }
+
+      router.push('/dashboard')
     } catch (error) {
       console.error('Registration error:', error);
+      setErrors({ general: "Une erreur inattendue est survenue" });
     } finally {
       setIsLoading(false);
     }
@@ -99,8 +128,9 @@ const RegisterPage = () => {
 
   const handleGoogleSignUp = () => {
     // Simulate Google OAuth
-    console.log('Google Sign Up initiated');
-    alert('Redirection vers Google OAuth...');
+    //console.log('Google Sign Up initiated');
+    //alert('Redirection vers Google OAuth...');
+    signIn("google", { callbackUrl: "/chooseRole" });
   };
 
   return (
@@ -305,6 +335,7 @@ const RegisterPage = () => {
             {/* Submit Button */}
             <button
               type="submit"
+              onClick={handleSubmit}
               disabled={isLoading}
               className="w-full bg-blue-600 text-white py-3 px-4 rounded-xl hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium flex items-center justify-center gap-2"
             >

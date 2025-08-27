@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import prisma from '@/lib/prisma'
 import { Role } from '@prisma/client'
-import bcrypt from 'bcryptjs'  
+import bcrypt from 'bcryptjs'     
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) 
 {
@@ -13,6 +13,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 		const { prenom, nom, role, email, password, photo } = req.body
 		if(!prenom || !nom || !email || !password){
 			return res.status(400).json({ message: "Tous les champs requis" })
+		}
+
+		const rolesValides = Object.values(Role)
+		if(!rolesValides.includes(role)){
+			return res.status(400).json({ message: "Le rôle n'est pas valide" })
 		}
 
 		// Vérif email valide

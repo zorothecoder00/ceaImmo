@@ -52,7 +52,7 @@ export default function HomePage()
             <div className="flex items-center space-x-2">
               <Home className="h-8 w-8 text-blue-600" />
               <span className="text-xl font-bold text-gray-900">CEA IMMO</span>
-            </div>
+            </div>   
 
             {/* Navigation */}
             <nav className="hidden md:flex space-x-8">
@@ -60,7 +60,7 @@ export default function HomePage()
               <a href="proprietes" className="text-gray-700 hover:text-blue-600">Biens</a>
               <a href="/reservations" className="text-gray-700 hover:text-blue-600">Réservation hôtel</a>
               <a href="/auth/login" className="text-gray-700 hover:text-blue-600">Connexion</a>
-            </nav>
+            </nav>  
           </div>
         </div>
       </header>
