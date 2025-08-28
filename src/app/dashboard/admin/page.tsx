@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/router'; // ou 'next/navigation' pour app directory
+import { useRouter } from 'next/navigation'; // ou 'next/navigation' pour app directory
 import Head from 'next/head';
 
 const AdminDashboard = () => {

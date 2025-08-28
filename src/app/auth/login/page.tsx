@@ -90,6 +90,8 @@ const LoginPage = () => {
           router.push('/dashboard/agent')
         }else if(role === 'ENTREPRISE'){
           router.push('/dashboard/entreprise')
+        }else if(role === 'ADMIN'){
+          router.push('/dashboard/admin')
         }else{
           setErrors({ general: 'Rôle non autorisé' })
         }
