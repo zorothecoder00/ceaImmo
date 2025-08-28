@@ -4,7 +4,6 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation'; // ou 'next/navigation' pour app directory
-import Head from 'next/head';
 
 const AdminDashboard = () => {
   const router = useRouter();
@@ -134,11 +133,6 @@ const AdminDashboard = () => {
 
   return (
     <>
-      <Head>
-        <title>Dashboard Admin - CEA IMMO</title>
-        <meta name="description" content="Panneau d'administration CEA IMMO" />
-      </Head>
-
       <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-4 lg:p-8">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
