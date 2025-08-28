@@ -9,7 +9,8 @@ generator client {
   provider = "prisma-client-js"
 }
 
-enum Role {     
+enum Role { 
+  ADMIN    
   ACHETEUR
   VENDEUR
   AGENT

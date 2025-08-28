@@ -36,13 +36,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 	      return res.status(400).json({ message: 'Utilisateur déjà inscrit' })
 	    }
 
+	    // Vérifier si c'est le premier utilisateur
+	    const userCount = await prisma.user.count()
+
+	    const finalRole = userCount === 0 
+	      ? Role.ADMIN  // le tout premier inscrit est admin
+	      : (Object.values(Role).includes(role) ? role as Role : null)
+
 		const hashedPassword = await bcrypt.hash(password, 10)
 
 		const newUser = await prisma.user.create({
 			data: {
 			  prenom,
 			  nom,
-			  role: role as Role || null,
+			  role: finalRole,
 			  email: email.trim().toLowerCase(),
 			  password: hashedPassword,
 			  photo: photo || '/profile.png',

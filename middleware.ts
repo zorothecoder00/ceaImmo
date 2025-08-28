@@ -1,6 +1,6 @@
 import { NextRequest , NextResponse } from 'next/server'
 import { getToken } from "next-auth/jwt"
-import { Role } from '@prisma/client'
+import { Role } from '@prisma/client'    
 
 export async function middleware(request: NextRequest) {
 
@@ -11,7 +11,7 @@ export async function middleware(request: NextRequest) {
 
 	// Si l'utilisateur n'est pas connecté → rediriger vers /login
 	if(!token){
-		if(!pathname.startsWith("/auth/login") && !pathname.startsWith("/auth/register")){
+		if(!pathname.startsWith("/auth")){
 			return NextResponse.redirect(new URL("/auth/login", request.url))
 		}
 		return NextResponse.next()
@@ -26,7 +26,8 @@ export async function middleware(request: NextRequest) {
 	    }
 
 	    // Map typée Role → chemin dashboard
-	    const dashboardPaths: Record<Role, string> = {
+	    const dashboardPaths: Partial<Record<Role, string>> = {
+	      ADMIN: '/dashboard/admin',
 	      ACHETEUR: '/dashboard/acheteur',
 	      VENDEUR: '/dashboard/vendeur',
 	      AGENT: '/dashboard/agent',
