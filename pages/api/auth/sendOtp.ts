@@ -15,6 +15,6 @@ export async function POST(req: Request) {
     from: process.env.TWILIO_PHONE,
     to: phone
   });
-
+   
   return NextResponse.json({ message: "OTP envoyé" });
 }

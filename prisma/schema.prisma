@@ -17,7 +17,7 @@ enum Role {
   ENTREPRISE
 }
 
-enum Categorie {
+enum Categorie {   
   VILLA
   MAISON
   BIEN
@@ -139,7 +139,7 @@ model Log {
   updatedAt      DateTime           @updatedAt
 }
 
-model Notifiaction {
+model Notification {
   id             Int                @id @default(autoincrement())
   systeme        Systeme
   createdAt      DateTime           @default(now())

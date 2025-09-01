@@ -9,7 +9,7 @@ type Errors = {
   email?: string
   password?: string
   general?: string
-}
+}   
 
 const ForgotPasswordPage = () => {
   const [email, setEmail] = useState('');
