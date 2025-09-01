@@ -26,14 +26,14 @@ export default function HomePage()
       id: 1,
       title: 'Villa avec piscine',
       price: '100 000 000 FCFA',
-      image: '/api/placeholder/300/200',
+      image: '/villapiscine0.jfif',
       type: 'villa'
     },
     {
       id: 2,
       title: 'Maison de famille',
       price: '35 000 000 FCFA',
-      image: '/api/placeholder/300/200',
+      image: '/maisonfamille.jpeg',
       type: 'maison'
     }
   ];
@@ -151,13 +151,12 @@ export default function HomePage()
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {properties.map((property) => (
               <div key={property.id} className="bg-white rounded-lg shadow-lg overflow-hidden">
-                <div className="relative">
-                  <Image
-                    width={40}  
-                    height={40}
+                <div className="relative h-48 w-full">
+                  <Image                    
                     src={property.image} 
                     alt={property.title}
-                    className="w-full h-48 object-cover"
+                    fill
+                    className="object-cover"
                   />
                   <div className="absolute bottom-4 right-4">
                     <button className="bg-blue-600 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-700">

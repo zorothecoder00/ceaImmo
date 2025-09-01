@@ -144,4 +144,4 @@ model Notification {
   systeme        Systeme
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
-}
+}       
