@@ -20,7 +20,9 @@ enum Role {
 enum Categorie {   
   VILLA
   MAISON
-  BIEN
+  APPARTEMENT
+  HOTEL
+  TERRAIN
   CHANTIER
 }
 
@@ -40,7 +42,7 @@ enum Systeme {
 }
 
 enum Status {
-  VENDU 
+  VENDU   
   DISPONIBLE
   RESERVE
 }  
@@ -144,4 +146,4 @@ model Notification {
   systeme        Systeme
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
-}       
+}         

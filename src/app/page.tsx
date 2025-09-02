@@ -108,6 +108,8 @@ export default function HomePage()
                 <option value="maison">Maison</option>
                 <option value="appartement">Appartement</option>
                 <option value="terrain">Terrain</option>
+                <option value="hotel">Hôtel</option>
+                <option value="chantier">Chantier</option>
               </select>
             </div>
 
