@@ -117,7 +117,7 @@ const RegisterPage = () => {
         return setErrors({ general: data.message ||"Erreur lors de l'inscription" })
       }
 
-      router.push('/dashboard')
+      router.push('/auth/login')
     } catch (error) {
       console.error('Registration error:', error);
       setErrors({ general: "Une erreur inattendue est survenue" });
