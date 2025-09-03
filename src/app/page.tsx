@@ -94,9 +94,9 @@ export default function HomePage()
                 <option value="saint-louis">Saint-Louis</option>
                 <option value="kaolack">Kaolack</option>
               </select>
-            </div>
+            </div>    
 
-            {/* Type de bien */}
+            {/* Type de bien */}  
             <div>
               <select
                 value={propertyType}

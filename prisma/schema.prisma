@@ -41,7 +41,7 @@ enum Systeme {
   PUSH  
 }
 
-enum Status {
+enum Statut {
   VENDU   
   DISPONIBLE
   RESERVE
@@ -71,13 +71,14 @@ model User {
   transactions      Transaction[]   @relation("UserTransaction")
 }
 
-model Propriete {
+model Propriete {   
   id                Int             @id @default(autoincrement())
   nom               String    
+  description       String?
   categorie         Categorie
   prix              Int
   surface           Int
-  status            Status   
+  statut            Statut   
   media             String
   geolocalisation   String  
 
