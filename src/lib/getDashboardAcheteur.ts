@@ -24,31 +24,76 @@ export async function filtrageProprietes(
 			...(minPrix !== undefined && maxPrix !== undefined ? { prix: { gte: minPrix, lte: maxPrix } } : {}),
 		},
 		orderBy: { createdAt: 'desc'},
+		take: 3
 	})
 }
 
 // Récupérer les prochaines visites d'un utilisateur
 export async function getMesProchainesVisites(userId: string){
 	const parsedUserId = parseInt(userId)
-	return await prisma.propriete.findMany({
-    where: {
-      reservations: {
-        some: {
-          userId: parsedUserId,
-          type: Type.VISITE,
-          date: { gte: new Date() }, // uniquement les visites à venir
+
+	const [visites, total] = await Promise.all([
+    prisma.propriete.findMany({
+      where: {
+        reservations: {
+          some: {
+            userId: parsedUserId,
+            type: Type.VISITE,
+            date: { gte: new Date() }, // uniquement les visites à venir
+          },
         },
       },
-    },
-    include: {
-      reservations: {
-        where: {
-          userId: parsedUserId,
-          type: Type.VISITE,
-          date: { gte: new Date() },
+      include: {
+        reservations: {
+          where: {
+            userId: parsedUserId,
+            type: Type.VISITE,
+            date: { gte: new Date() },
+          },
         },
       },
-    },
-    orderBy: { createdAt: 'desc' },
-  })
+      orderBy: { createdAt: 'desc' },
+      take: 2,
+    }),
+
+    prisma.propriete.count({
+      where: {
+        reservations: {
+          some: {
+            userId: parsedUserId,
+            type: Type.VISITE,
+            date: { gte: new Date() },
+          },
+        },
+      },
+    }),
+  ])
+
+  return { visites, total }
+}
+
+// Récupérer les favoris d'un utilisateur
+export async function getMesFavoris(userId: string) {
+  const parsedUserId = parseInt(userId)
+
+  const [favoris, total] = await Promise.all([
+    prisma.favori.findMany({
+      where: {
+        userId: parsedUserId,
+      },
+      include: {
+        propriete: true,
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 2,
+    }),
+
+    prisma.favori.count({
+      where: {
+        userId: parsedUserId,
+      },
+    }),
+  ])
+
+  return { favoris, total }
 }
