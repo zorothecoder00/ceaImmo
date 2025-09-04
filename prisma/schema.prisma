@@ -53,6 +53,13 @@ enum Type {
   ACHAT
 }
 
+enum OffreStatut {
+  EN_ATTENTE
+  ACCEPTEE
+  REFUSEE
+  EXPIREE
+}
+
 model User {    
   id                Int             @id @default(autoincrement())
   role              Role?
@@ -69,6 +76,7 @@ model User {
   messagesEnvoyes   Message[]       @relation("MessagesEnvoyes")
   messagesRecus     Message[]       @relation("MessagesRecus")
   transactions      Transaction[]   @relation("UserTransaction")
+  offres            Offre[]
   favoris           Favori[]
 }
 
@@ -89,10 +97,11 @@ model Propriete {
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
   reservations      Reservation[]   @relation("ProprieteReservation") 
+  offres            Offre[]         @relation("OffrePropriete")
   favoris           Favori[]
 }
 
-model Favori {
+model Favori {  
   id             Int                @id @default(autoincrement())
   propriete      Propriete          @relation(fields: [proprieteId], references: [id], onDelete: Cascade)
   proprieteId    Int 
@@ -119,9 +128,46 @@ model Reservation {
   agentId        Int?
   agent          User?              @relation("AgentReservation", fields: [agentId], references: [id], onDelete: Cascade)
 
+  offres         Offre[]            @relation("OffreReservation")
+
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
 
+}
+
+model Offre {
+  id             Int            @id @default(autoincrement())
+  montant        Int
+  statut         OffreStatut    @default(EN_ATTENTE)
+  message        String?
+
+  userId         Int
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  proprieteId    Int
+  propriete      Propriete      @relation("OffrePropriete", fields: [proprieteId], references: [id], onDelete: Cascade)
+
+  reservationId  Int?
+  reservation    Reservation?   @relation("OffreReservation", fields: [reservationId], references: [id], onDelete: Cascade)
+
+  transaction    Transaction?   @relation("OffreTransaction")
+
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+}
+
+model Transaction {
+  id             Int                @id @default(autoincrement())
+  mode           Mode
+
+  userId         Int?
+  user           User?              @relation("UserTransaction", fields: [userId], references: [id], onDelete: Cascade)
+
+  offreId        Int?               @unique // 👈 clé étrangère unique
+  offre          Offre?             @relation("OffreTransaction", fields: [offreId], references: [id], onDelete: Cascade) 
+
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
 }
 
 model Message {
@@ -135,17 +181,6 @@ model Message {
 
   receiverId     Int?
   receiver       User?              @relation("MessagesRecus", fields: [receiverId], references: [id], onDelete: Cascade)
-
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
-}
-
-model Transaction {
-  id             Int                @id @default(autoincrement())
-  mode           Mode
-
-  userId         Int?
-  user           User?              @relation("UserTransaction", fields: [userId], references: [id], onDelete: Cascade)
 
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
