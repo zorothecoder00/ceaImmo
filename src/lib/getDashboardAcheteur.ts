@@ -33,38 +33,28 @@ export async function getMesProchainesVisites(userId: string){
 	const parsedUserId = parseInt(userId)
 
 	const [visites, total] = await Promise.all([
-    prisma.propriete.findMany({
+    // 1️⃣ Récupérer les prochaines visites de l'utilisateur
+    prisma.reservation.findMany({
       where: {
-        reservations: {
-          some: {
-            userId: parsedUserId,
-            type: Type.VISITE,
-            date: { gte: new Date() }, // uniquement les visites à venir
-          },
-        },
+        userId: parsedUserId,       // filtrer sur l'utilisateur
+        type: Type.VISITE,          // uniquement les visites
+        date: { gte: new Date() },  // visites à venir
       },
       include: {
-        reservations: {
-          where: {
-            userId: parsedUserId,
-            type: Type.VISITE,
-            date: { gte: new Date() },
-          },
-        },
+        propriete: true, // infos de la propriété visitée
       },
-      orderBy: { createdAt: 'desc' },
-      take: 2,
+      orderBy: {
+        date: 'asc',     // les visites les plus proches en premier
+      },
+      take: 2,           // limiter à 2 visites, par exemple
     }),
 
-    prisma.propriete.count({
+    // 2️⃣ Compter le nombre total de prochaines visites
+    prisma.reservation.count({
       where: {
-        reservations: {
-          some: {
-            userId: parsedUserId,
-            type: Type.VISITE,
-            date: { gte: new Date() },
-          },
-        },
+        userId: parsedUserId,
+        type: Type.VISITE,
+        date: { gte: new Date() },
       },
     }),
   ])
