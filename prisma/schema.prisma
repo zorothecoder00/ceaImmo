@@ -45,6 +45,8 @@ enum Statut {
   VENDU   
   DISPONIBLE
   RESERVE
+  EN_LOCATION
+  EN_NEGOCIATION
 }  
 
 enum Type {
@@ -80,7 +82,7 @@ model User {
   offres            Offre[]         @relation("AcheteurOffre")
   offresAgent       Offre[]         @relation("AgentOffre")
   favoris           Favori[]
-}
+}  
 
 model Propriete {   
   id                Int             @id @default(autoincrement())
@@ -138,28 +140,28 @@ model Reservation {
 }
 
 model Offre {
-  id             Int            @id @default(autoincrement())
+  id             Int                @id @default(autoincrement())
   montant        Int
-  statut         OffreStatut    @default(EN_ATTENTE)
+  statut         OffreStatut        @default(EN_ATTENTE)
   message        String?
 
   userId         Int
-  user           User           @relation("AcheteurOffre",fields: [userId], references: [id], onDelete: Cascade)
+  user           User               @relation("AcheteurOffre",fields: [userId], references: [id], onDelete: Cascade)
 
   agentId        Int?
-  agent          User?          @relation("AgentOffre", fields: [agentId], references: [id], onDelete: Cascade)
+  agent          User?              @relation("AgentOffre", fields: [agentId], references: [id], onDelete: Cascade)
 
 
   proprieteId    Int
-  propriete      Propriete      @relation("OffrePropriete", fields: [proprieteId], references: [id], onDelete: Cascade)
+  propriete      Propriete          @relation("OffrePropriete", fields: [proprieteId], references: [id], onDelete: Cascade)
 
   reservationId  Int?
-  reservation    Reservation?   @relation("OffreReservation", fields: [reservationId], references: [id], onDelete: Cascade)
+  reservation    Reservation?       @relation("OffreReservation", fields: [reservationId], references: [id], onDelete: Cascade)
 
-  transaction    Transaction?   @relation("OffreTransaction")
+  transaction    Transaction?       @relation("OffreTransaction")
 
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
 }  
 
 model Transaction {
