@@ -6,7 +6,7 @@ export async function getAvailableProprietes(){
 		where: { statut: Statut.DISPONIBLE },
 		orderBy: { createdAt:'desc' },
 		take: 3
-	})
+	})  
 }
 
 // Filtrer par catégorie + budget
@@ -38,13 +38,13 @@ export async function getMesProchainesVisites(userId: string){
       where: {
         userId: parsedUserId,       // filtrer sur l'utilisateur
         type: Type.VISITE,          // uniquement les visites
-        date: { gte: new Date() },  // visites à venir
+        dateArrivee: { gte: new Date() },  // visites à venir
       },
       include: {
         propriete: true, // infos de la propriété visitée
       },
       orderBy: {
-        date: 'asc',     // les visites les plus proches en premier
+        dateArrivee: 'asc',     // les visites les plus proches en premier
       },
       take: 2,           // limiter à 2 visites, par exemple
     }),
@@ -54,7 +54,7 @@ export async function getMesProchainesVisites(userId: string){
       where: {
         userId: parsedUserId,
         type: Type.VISITE,
-        date: { gte: new Date() },
+        dateArrivee: { gte: new Date() },
       },
     }),
   ])

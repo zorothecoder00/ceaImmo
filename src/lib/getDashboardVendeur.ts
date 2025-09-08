@@ -52,7 +52,7 @@ export async function getMesProchainesVisites(userId: string){
 	const prochainesVisites = await prisma.reservation.findMany({
     where: {
       type: Type.VISITE,
-      date: { gte: new Date() },
+      dateArrivee: { gte: new Date() },
       propriete: {
         proprietaireId: parsedUserId, // on filtre par propriétaire de la propriété
       },
@@ -62,7 +62,7 @@ export async function getMesProchainesVisites(userId: string){
       user: true,      // on inclut les infos de l'utilisateur qui a réservé
     },
     orderBy: {
-      date: 'asc', // les visites les plus proches en premier
+      dateArrivee: 'asc', // les visites les plus proches en premier
     },
     take: 10, // exemple : limiter à 10 prochaines visites
   })
