@@ -9,7 +9,7 @@ export async function getProprietes(
   statut?: Statut,
   categorie?: Categorie
 ) {
-  return prisma.propriete.findMany({
+  return prisma.propriete.findMany({  
     where: {
       ...(statut ? { statut } : {}),
       ...(categorie ? { categorie } : {}),

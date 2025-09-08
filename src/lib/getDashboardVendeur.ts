@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma"
 import { OffreStatut, Type } from "@prisma/client"
 
-
+ 
 export async function getMesProprietes(userId: string){
 
 	const parsedUserId = parseInt(userId)

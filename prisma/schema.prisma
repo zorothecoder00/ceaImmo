@@ -34,8 +34,8 @@ enum Mode {
   PAYPAL
   STRIPE
 }
-
-enum Systeme {
+  
+enum Systeme {         
   SMS
   MAIL
   PUSH  
@@ -94,7 +94,8 @@ model Propriete {
   statut            Statut   
   media             String
   geolocalisation   String  
-
+  /// Nombre total de chambres disponibles (ex: 50 chambres dans un hôtel)
+  nombreChambres    Int             @default(1)
   proprietaireId    Int?
   proprietaire      User?           @relation("UserPropriete", fields: [proprietaireId], references: [id], onDelete: Cascade)
 
@@ -103,6 +104,24 @@ model Propriete {
   reservations      Reservation[]   @relation("ProprieteReservation") 
   offres            Offre[]         @relation("OffrePropriete")
   favoris           Favori[]
+  chambres          Chambre[]       @relation("ProprieteChambre")
+
+}
+
+model Chambre {
+  id             Int          @id @default(autoincrement())
+  nom            String
+  description    String?
+  prixParNuit    Int
+  capacite       Int          // nombre max de voyageurs dans cette chambre
+  disponible     Boolean      @default(true)
+
+  proprieteId    Int
+  propriete      Propriete    @relation("ProprieteChambre", fields: [proprieteId], references: [id], onDelete: Cascade)
+
+  reservations   Reservation[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 }
 
 model Favori {  
@@ -120,17 +139,24 @@ model Favori {
 
 model Reservation {
   id             Int                @id @default(autoincrement())
-  date           DateTime
-  duree          DateTime
+  dateArrivee    DateTime
+  dateDepart     DateTime
+  nombreVoyageurs Int
   type           Type
+  
   proprieteId    Int?
   propriete      Propriete?         @relation("ProprieteReservation", fields: [proprieteId], references: [id], onDelete: Cascade)
+
+  chambreId      Int?
+  chambre        Chambre?     @relation(fields: [chambreId], references: [id], onDelete: Cascade)
 
   userId         Int?
   user           User?              @relation("UserReservation", fields: [userId], references: [id], onDelete: Cascade)
 
   agentId        Int?
   agent          User?              @relation("AgentReservation", fields: [agentId], references: [id], onDelete: Cascade)
+
+  
 
   offres         Offre[]            @relation("OffreReservation")
 

@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma'
 import { Statut, Categorie, Type } from '@prisma/client'
-
+ 
 export async function getAvailableProprietes(){
 	return await prisma.propriete.findMany({
 		where: { statut: Statut.DISPONIBLE },
