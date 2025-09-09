@@ -98,7 +98,7 @@ model Propriete {
   images            ProprieteImage[]
 
   // 🎥 Lien unique ou optionnel vers la visite virtuelle (YouTube, Matterport, etc.)
-  visiteVirtuelle   String?
+  visiteVirtuelle   String?     
   geolocalisation   String  
   /// Nombre total de chambres disponibles (ex: 50 chambres dans un hôtel)
   nombreChambres    Int             @default(1)
@@ -124,7 +124,6 @@ model ProprieteImage {
 
   createdAt         DateTime         @default(now())
 }
-
 
 model Chambre {
   id                Int              @id @default(autoincrement())

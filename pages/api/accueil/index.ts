@@ -60,7 +60,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           nom: true,
           categorie: true,
           prix: true,
-          media: true,
+          visiteVirtuelle: true, // ✅ récupérer le lien de visite virtuelle
+          images: {               // ✅ récupérer les images Cloudinary
+            select: { id: true, url: true, ordre: true },
+            orderBy: { ordre: "asc" },
+          },
           geolocalisation: true,
         },
       });

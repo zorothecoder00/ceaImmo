@@ -20,6 +20,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         proprietaire: {
           select: { id: true, nom: true, prenom: true, email: true, photo: true },
         },
+        images: {
+          select: { id: true, url: true, ordre: true },
+          orderBy: { ordre: "asc" }, // 🔥 affiche les images dans le bon ordre
+        },
         chambres: {
           select: { id: true, nom: true, prixParNuit: true, capacite: true, disponible: true },
         },
@@ -54,15 +58,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(404).json({ error: "Propriété non trouvée" });
     }
 
-    // Préparer un champ pour la visite virtuelle (ex: si media contient un lien vidéo/VR)
-    const proprieteAvecVisite = {
-      ...propriete,
-      visiteVirtuelle: propriete.media?.includes("http")
-        ? propriete.media
-        : null, // ex: lien vers une vidéo YouTube ou Matterport
-    };
-
-    return res.status(200).json(proprieteAvecVisite);
+    return res.status(200).json({ data: propriete });
   } catch (error) {
     console.error("Erreur API propriete/:id:", error);
     return res.status(500).json({ error: "Erreur interne du serveur" });
