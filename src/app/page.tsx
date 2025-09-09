@@ -26,7 +26,7 @@ export default function HomePage()
       id: 1,
       title: 'Villa avec piscine',
       price: '100 000 000 FCFA',
-      image: '/villapiscine0.jfif',
+      image: '/villapiscine.webp',
       type: 'villa'
     },
     {
