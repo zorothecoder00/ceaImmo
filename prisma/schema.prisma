@@ -82,6 +82,8 @@ model User {
   offres            Offre[]         @relation("AcheteurOffre")
   offresAgent       Offre[]         @relation("AgentOffre")
   favoris           Favori[]
+  logs              Log[]
+  notifications     Notification[]
 }  
 
 model Propriete {   
@@ -92,7 +94,11 @@ model Propriete {
   prix              Int
   surface           Int  
   statut            Statut   
-  media             String
+  // 🖼️ Images multiples (Cloudinary URLs)
+  images            ProprieteImage[]
+
+  // 🎥 Lien unique ou optionnel vers la visite virtuelle (YouTube, Matterport, etc.)
+  visiteVirtuelle   String?
   geolocalisation   String  
   /// Nombre total de chambres disponibles (ex: 50 chambres dans un hôtel)
   nombreChambres    Int             @default(1)
@@ -108,20 +114,32 @@ model Propriete {
 
 }
 
+model ProprieteImage {
+  id                Int             @id @default(autoincrement())
+  url               String          // lien Cloudinary
+
+  ordre             Int             @default(0) // pour trier les images
+  proprieteId       Int
+  propriete         Propriete       @relation(fields: [proprieteId], references: [id], onDelete: Cascade)
+
+  createdAt         DateTime         @default(now())
+}
+
+
 model Chambre {
-  id             Int          @id @default(autoincrement())
-  nom            String
-  description    String?
-  prixParNuit    Int
-  capacite       Int          // nombre max de voyageurs dans cette chambre
-  disponible     Boolean      @default(true)
+  id                Int              @id @default(autoincrement())
+  nom               String
+  description       String?
+  prixParNuit       Int
+  capacite          Int              // nombre max de voyageurs dans cette chambre
 
-  proprieteId    Int
-  propriete      Propriete    @relation("ProprieteChambre", fields: [proprieteId], references: [id], onDelete: Cascade)
+  disponible        Boolean          @default(true)
+  proprieteId       Int
+  propriete         Propriete        @relation("ProprieteChambre", fields: [proprieteId], references: [id], onDelete: Cascade)
 
-  reservations   Reservation[]
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  reservations      Reservation[]
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
 }
 
 model Favori {  
@@ -143,7 +161,7 @@ model Reservation {
   dateDepart     DateTime
   nombreVoyageurs Int
   type           Type
-  
+
   proprieteId    Int?
   propriete      Propriete?         @relation("ProprieteReservation", fields: [proprieteId], references: [id], onDelete: Cascade)
 
@@ -156,7 +174,7 @@ model Reservation {
   agentId        Int?
   agent          User?              @relation("AgentReservation", fields: [agentId], references: [id], onDelete: Cascade)
 
-  
+     
 
   offres         Offre[]            @relation("OffreReservation")
 
@@ -225,6 +243,11 @@ model Message {
 
 model Log {
   id             Int                @id @default(autoincrement())
+  action         String             // ex: "CREATION_PROPRIETE", "RESERVATION"
+
+  userId         Int?
+  user           User?              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
 }
@@ -232,6 +255,10 @@ model Log {
 model Notification {
   id             Int                @id @default(autoincrement())
   systeme        Systeme
+  contenu        String             // message à afficher/envoyer
+
+  userId         Int?
+  user           User?              @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
 }         
