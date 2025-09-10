@@ -64,7 +64,7 @@ export default function HomePage()
             <nav className="hidden md:flex space-x-8">
               <a href="#" className="text-blue-600 font-medium">Accueil</a>
               <a href="proprietes" className="text-gray-700 hover:text-blue-600">Biens</a>
-              <a href="/reservations" className="text-gray-700 hover:text-blue-600">Réservation hôtel</a>
+              <a href="/reservationsHotel" className="text-gray-700 hover:text-blue-600">Réservation hôtel</a>
               <a href="/auth/login" className="text-gray-700 hover:text-blue-600">Connexion</a>
             </nav>  
           </div>

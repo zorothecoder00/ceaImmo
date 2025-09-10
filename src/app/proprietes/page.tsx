@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Search, Filter, MapPin, Home, Bed, Bath, Square, Eye, Grid, List, ArrowUpDown } from 'lucide-react';
+import Link from "next/link"; // 👈 ajoute cet import
 
 // 1. On définit le type d'une propriété
 interface Propriete {
@@ -190,7 +191,12 @@ const ProprietesPage = () => {
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-3xl font-bold text-gray-900">Nos Propriétés</h1>
+            <div className="flex items-center gap-6">
+              <Link href="/" className="text-blue-600 hover:text-blue-800 font-medium">
+                Accueil
+              </Link>
+              <h1 className="text-3xl font-bold text-gray-900">Nos Propriétés</h1>
+            </div>
             <button 
               onClick={() => setShowFilters(!showFilters)}
               className="lg:hidden bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2"

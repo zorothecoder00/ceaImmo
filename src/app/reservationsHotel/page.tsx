@@ -1,9 +1,9 @@
 'use client'
 
 import React, { useState } from 'react';
-import { 
+import {   
   MapPin, 
-  Calendar, 
+  Calendar,   
   Users, 
   Search, 
   Star, 
@@ -23,7 +23,8 @@ import {
   CreditCard,
   Lock,
   Eye
-} from 'lucide-react';
+} from 'lucide-react';  
+import Link from "next/link";
 
 // 1. On définit le type des avis et galerie
 interface Avis {
@@ -206,6 +207,12 @@ const ReservationHotel = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-blue-800 flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-4xl">
         <div className="text-center mb-8">
+          <Link 
+            href="/" 
+            className="inline-block mb-4 text-blue-600 hover:text-blue-800 font-medium"
+          >
+            Accueil
+          </Link>
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Réservez votre hôtel</h1>
           <p className="text-xl text-gray-600">Trouvez l&apos;hébergement parfait pour votre séjour</p>
         </div>

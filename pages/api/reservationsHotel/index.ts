@@ -1,18 +1,18 @@
 // pages/api/reservationsHotel.ts
 import type { NextApiRequest, NextApiResponse } from "next";
-import prisma from "@/lib/prisma";
+import prisma from "@/lib/prisma";   
 import { Categorie, Statut, Type, Prisma } from "@prisma/client";
 import { getAuthSession } from "@/lib/auth"; // ton fichier config next-auth
 
 // Type Prisma pour une chambre avec ses réservations incluses
-type ChambreDisponible = Prisma.ChambreGetPayload<{
+type ChambreDisponible = Prisma.ChambreGetPayload<{    
   include: { reservations: true }
 }>;
 
 // Type Prisma pour un hôtel avec ses chambres incluses
 type HotelAvecChambres = Prisma.ProprieteGetPayload<{
   include: { chambres: { include: { reservations: true } } }
-}>;
+}>;     
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
