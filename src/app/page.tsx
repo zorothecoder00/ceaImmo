@@ -3,6 +3,12 @@
 import React, { useState } from 'react';
 import { Home, MapPin, Building, User } from 'lucide-react';
 import Image from 'next/image'
+// 👉 Swiper
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Pagination, Autoplay } from "swiper/modules";
+import 'swiper/css';
+import 'swiper/css/pagination';  
+import 'swiper/css/autoplay';
 
 interface Property {  
   id: number;
@@ -145,7 +151,7 @@ export default function HomePage()
             </div>
             
           </div>
-        </div>
+        </div>  
 
         {/* Visite virtuelle */}
         <section className="mb-8">
@@ -158,6 +164,7 @@ export default function HomePage()
                     src={property.image} 
                     alt={property.title}
                     fill
+                    sizes="(max-width: 768px) 100vw, 50vw" // 👈 obligatoire avec fill
                     className="object-cover"
                   />
                   <div className="absolute bottom-4 right-4">
@@ -176,38 +183,95 @@ export default function HomePage()
         </section>
 
         {/* Témoignages */}
-        <section className="mb-8">
+        <section className="mb-8">  
           <h2 className="text-2xl font-bold text-gray-900 mb-6">Témoignages</h2>
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div className="text-center">
-                <div className="bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                  <User className="h-8 w-8 text-gray-600" />
+          <div className="bg-white rounded-lg shadow-lg p-6 overflow-visible">
+            <Swiper
+              modules={[Pagination, Autoplay]}  
+              spaceBetween={30}
+              slidesPerView={1}
+              autoplay={{ delay: 3000, disableOnInteraction: false }}
+              pagination={{ clickable: true }}
+              breakpoints={{
+                768: { slidesPerView: 2 }, // 2 témoignages sur tablette
+                1024: { slidesPerView: 3 }, // 3 témoignages sur desktop
+              }}
+            >
+              <SwiperSlide>
+                <div className="text-center">
+                  <div className="bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                    <User className="h-8 w-8 text-gray-600" />
+                  </div>
+                  <p className="text-gray-600 italic mb-2">
+                    &ldquo;Excellent service, j&apos;ai trouvé la maison de mes rêves grâce à CEA IMMO.&rdquo;
+                  </p>
+                  <p className="font-semibold text-gray-900">Marie Diallo</p>
                 </div>
-                <p className="text-gray-600 italic mb-2">
-                  &ldquo;Excellent service, j&apos;ai trouvé la maison de mes rêves grâce à CEA IMMO.&rdquo;
-                </p>
-                <p className="font-semibold text-gray-900">Marie Diallo</p>
-              </div>
-              <div className="text-center">
-                <div className="bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                  <User className="h-8 w-8 text-gray-600" />
+              </SwiperSlide>
+
+              <SwiperSlide>
+                <div className="text-center">
+                  <div className="bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                    <User className="h-8 w-8 text-gray-600" />
+                  </div>
+                  <p className="text-gray-600 italic mb-2">
+                    &ldquo;Processus rapide et transparent. Je recommande vivement.&rdquo;
+                  </p>
+                  <p className="font-semibold text-gray-900">Amadou Ba</p>
                 </div>
-                <p className="text-gray-600 italic mb-2">
-                  &ldquo;Processus rapide et transparent. Je recommande vivement.&rdquo;
-                </p>     
-                <p className="font-semibold text-gray-900">Amadou Ba</p>
-              </div>
-              <div className="text-center">
-                <div className="bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                  <User className="h-8 w-8 text-gray-600" />
+              </SwiperSlide>
+
+              <SwiperSlide>
+                <div className="text-center">
+                  <div className="bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                    <User className="h-8 w-8 text-gray-600" />
+                  </div>
+                  <p className="text-gray-600 italic mb-2">
+                    &ldquo;Équipe professionnelle et à l&apos;écoute de nos besoins.&rdquo;
+                  </p>
+                  <p className="font-semibold text-gray-900">Fatou Sow</p>
                 </div>
-                <p className="text-gray-600 italic mb-2">
-                  &ldquo;Équipe professionnelle et à l&apos;écoute de nos besoins.&rdquo;
-                </p>
-                <p className="font-semibold text-gray-900">Fatou Sow</p>
-              </div>
-            </div>
+              </SwiperSlide>
+
+              {/* Nouveau slide 4 */}
+              <SwiperSlide>
+                <div className="text-center">
+                  <div className="bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                    <User className="h-8 w-8 text-gray-600" />
+                  </div>
+                  <p className="text-gray-600 italic mb-2">
+                    &ldquo;Service irréprochable et équipe très réactive.&rdquo;
+                  </p>
+                  <p className="font-semibold text-gray-900">Moussa Diop</p>
+                </div>
+              </SwiperSlide>
+
+              {/* Nouveau slide 5 */}
+              <SwiperSlide>
+                <div className="text-center">
+                  <div className="bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                    <User className="h-8 w-8 text-gray-600" />
+                  </div>
+                  <p className="text-gray-600 italic mb-2">
+                    &ldquo;Une expérience très agréable, je recommande CEA IMMO !&rdquo;
+                  </p>
+                  <p className="font-semibold text-gray-900">Awa Faye</p>
+                </div>
+              </SwiperSlide>
+
+              {/* Nouveau slide 6 */}
+              <SwiperSlide>
+                <div className="text-center">
+                  <div className="bg-gray-100 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                    <User className="h-8 w-8 text-gray-600" />
+                  </div>
+                  <p className="text-gray-600 italic mb-2">
+                    &ldquo;Très satisfaite du suivi client et du professionnalisme de l&apos;équipe.&rdquo;
+                  </p>
+                  <p className="font-semibold text-gray-900">Ousmane Ndao</p>
+                </div>
+              </SwiperSlide>
+            </Swiper>
           </div>  
         </section>
       </main>
