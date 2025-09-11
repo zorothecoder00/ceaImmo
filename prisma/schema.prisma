@@ -84,6 +84,7 @@ model User {
   favoris           Favori[]
   logs              Log[]
   notifications     Notification[]
+  avis              Avis[]
 }  
 
 model Propriete {   
@@ -94,14 +95,15 @@ model Propriete {
   prix              Int
   surface           Int  
   statut            Statut   
-  // 🖼️ Images multiples (Cloudinary URLs)
-  images            ProprieteImage[]
+  
+  images            ProprieteImage[]// 🖼️ Images multiples (Cloudinary URLs)
 
-  // 🎥 Lien unique ou optionnel vers la visite virtuelle (YouTube, Matterport, etc.)
-  visiteVirtuelle   String?     
+  visiteVirtuelle   String?// 🎥 Lien unique ou optionnel vers la visite virtuelle (YouTube, Matterport, etc.)  
+
   geolocalisation   String  
-  /// Nombre total de chambres disponibles (ex: 50 chambres dans un hôtel)
-  nombreChambres    Int             @default(1)
+  
+  nombreChambres    Int             @default(1)/// Nombre total de chambres disponibles (ex: 50 chambres dans un hôtel)
+
   proprietaireId    Int?
   proprietaire      User?           @relation("UserPropriete", fields: [proprietaireId], references: [id], onDelete: Cascade)
 
@@ -111,6 +113,7 @@ model Propriete {
   offres            Offre[]         @relation("OffrePropriete")
   favoris           Favori[]
   chambres          Chambre[]       @relation("ProprieteChambre")
+  avis              Avis[]
 
 }
 
@@ -239,6 +242,25 @@ model Message {
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
 }
+
+model Avis {
+  id             Int                @id @default(autoincrement())
+  commentaire    String?// texte optionnel
+
+  note           Int// de 1 à 5 par ex.
+  
+  proprieteId    Int
+  propriete      Propriete          @relation(fields: [proprieteId], references: [id], onDelete: Cascade)
+
+  userId         Int
+  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@unique([proprieteId, userId]) // 👈 un user ne peut noter une propriété qu’une seule fois
+}
+
 
 model Log {
   id             Int                @id @default(autoincrement())
