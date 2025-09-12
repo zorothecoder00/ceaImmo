@@ -7,7 +7,7 @@ datasource db {
 
 generator client {  
   provider = "prisma-client-js"
-}
+}    
 
 enum Role { 
   ADMIN    
@@ -24,7 +24,7 @@ enum Categorie {
   HOTEL
   TERRAIN
   CHANTIER
-}
+}  
 
 enum Mode {
   MIXXBYYAS
@@ -115,7 +115,7 @@ model Propriete {
   chambres          Chambre[]       @relation("ProprieteChambre")
   avis              Avis[]
 
-}
+}  
 
 model ProprieteImage {
   id                Int             @id @default(autoincrement())
@@ -283,3 +283,8 @@ model Notification {
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
 }         
+
+model Config {
+  id        Int     @id @default(1)
+  maintenance Boolean @default(false)
+}
