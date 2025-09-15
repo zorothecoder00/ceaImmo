@@ -487,11 +487,11 @@ export default function VendeurDashboard() {
                 <Building className="h-5 w-5" />
                 <span>Mes biens</span>
               </a>
-              <a href="#" className="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 rounded-lg p-2">
+              <a href="/dashboard/vendeur/offres" className="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 rounded-lg p-2">
                 <Euro className="h-5 w-5" />
                 <span>Offres reçues</span>
               </a>
-              <a href="#" className="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 rounded-lg p-2">
+              <a href="/dashboard/vendeur/visites" className="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 rounded-lg p-2">
                 <Calendar className="h-5 w-5" />
                 <span>Visites</span>
               </a>

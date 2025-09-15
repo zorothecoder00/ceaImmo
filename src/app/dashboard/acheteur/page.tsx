@@ -371,15 +371,15 @@ export default function AcheteurDashboard() {
               </a>
               <a href="#" className="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 rounded-lg p-2">
                 <Heart className="h-5 w-5" />
-                <span>Mes favoris</span>
-              </a>
-              <a href="#" className="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 rounded-lg p-2">
+                <span>Mes favoris</span>  
+              </a> 
+              <a href="/dashboard/acheteur/visites" className="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 rounded-lg p-2">
                 <Calendar className="h-5 w-5" />
                 <span>Mes visites</span>
               </a>
-              <a href="#" className="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 rounded-lg p-2">
+              <a href="/dashboard/acheteur/offres" className="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 rounded-lg p-2">
                 <FileText className="h-5 w-5" />
-                <span>Mes offres</span>
+                <span>Mes offres</span>   
               </a>
               <a href="#" className="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 rounded-lg p-2">
                 <Settings className="h-5 w-5" />

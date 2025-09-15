@@ -28,11 +28,12 @@ export async function middleware(request: NextRequest) {
       ADMIN: '/dashboard/admin',
       ACHETEUR: '/dashboard/acheteur',
       VENDEUR: '/dashboard/vendeur',
-      AGENT: '/dashboard/agent',
+      AGENT: '/dashboard/agent',  
       ENTREPRISE: '/dashboard/entreprise',
     }
 
-    if (pathname !== dashboardPaths[role]) {
+    // ✅ Autoriser toutes les sous-routes du dashboard du rôle
+    if (!pathname.startsWith(dashboardPaths[role]!)) {
       return NextResponse.redirect(new URL('/unauthorized', request.url))
     }
   }
