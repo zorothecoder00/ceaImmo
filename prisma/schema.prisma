@@ -287,4 +287,4 @@ model Notification {
 model Config {
   id        Int     @id @default(1)
   maintenance Boolean @default(false)
-}
+}    

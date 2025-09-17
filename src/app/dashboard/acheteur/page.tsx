@@ -369,7 +369,7 @@ export default function AcheteurDashboard() {
                 <Search className="h-5 w-5" />
                 <span>Rechercher</span>
               </a>
-              <a href="#" className="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 rounded-lg p-2">
+              <a href="/dashboard/acheteur/favoris" className="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 rounded-lg p-2">
                 <Heart className="h-5 w-5" />
                 <span>Mes favoris</span>  
               </a> 

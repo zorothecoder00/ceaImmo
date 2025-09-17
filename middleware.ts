@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getToken } from 'next-auth/jwt'
-import { Role } from '@prisma/client'
+import { Role } from '@prisma/client' 
 
 export async function middleware(request: NextRequest) {
   const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET })
   const url = request.nextUrl
-  const { pathname } = url
+  const { pathname } = url  
 
   // Si l'utilisateur n'est pas connecté → rediriger vers /login
   if (!token) {
