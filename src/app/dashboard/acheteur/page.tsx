@@ -365,7 +365,7 @@ export default function AcheteurDashboard() {
                 <Home className="h-5 w-5" />
                 <span>Tableau de bord</span>
               </a>
-              <a href="#" className="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 rounded-lg p-2">
+              <a href="/dashboard/acheteur/recherches" className="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 rounded-lg p-2">
                 <Search className="h-5 w-5" />
                 <span>Rechercher</span>
               </a>
