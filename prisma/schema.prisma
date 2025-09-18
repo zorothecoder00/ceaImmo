@@ -1,10 +1,10 @@
 // prisma/schema.prisma
 
-datasource db {
+datasource db {  
   provider = "postgresql" // ou "mysql", selon ta base
   url      = env("DATABASE_URL")   
-}
-
+}   
+ 
 generator client {  
   provider = "prisma-client-js"
 }    
@@ -19,7 +19,7 @@ enum Role {
 
 enum Categorie {   
   VILLA
-  MAISON
+  MAISON   
   APPARTEMENT
   HOTEL
   TERRAIN

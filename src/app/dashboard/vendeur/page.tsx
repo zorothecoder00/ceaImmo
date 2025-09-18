@@ -483,7 +483,7 @@ export default function VendeurDashboard() {
                 <Home className="h-5 w-5" />
                 <span>Tableau de bord</span>
               </a>
-              <a href="#" className="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 rounded-lg p-2">
+              <a href="/dashboard/vendeur/mesBiens" className="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 rounded-lg p-2">
                 <Building className="h-5 w-5" />
                 <span>Mes biens</span>
               </a>
@@ -495,7 +495,7 @@ export default function VendeurDashboard() {
                 <Calendar className="h-5 w-5" />
                 <span>Visites</span>
               </a>
-              <a href="#" className="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 rounded-lg p-2">
+              <a href="/dashboard/vendeur/statistiques" className="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 rounded-lg p-2">
                 <TrendingUp className="h-5 w-5" />
                 <span>Statistiques</span>
               </a>
