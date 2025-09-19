@@ -298,15 +298,15 @@ export default function AgentDashboard() {
                 <Building className="h-5 w-5" />
                 <span>Propriétés</span>
               </a>
-              <a href="#" className="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 rounded-lg p-2">
+              <a href="/dashboard/agent/clients" className="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 rounded-lg p-2">
                 <Users className="h-5 w-5" />
                 <span>Mes clients</span>
               </a>
-              <a href="#" className="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 rounded-lg p-2">
+              <a href="/dashboard/agent/visites" className="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 rounded-lg p-2">
                 <Calendar className="h-5 w-5" />
                 <span>Rendez-vous</span>
               </a>
-              <a href="#" className="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 rounded-lg p-2">
+              <a href="/dashboard/agent/messages" className="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 rounded-lg p-2">
                 <FileText className="h-5 w-5" />
                 <span>Messagerie</span>
               </a>
