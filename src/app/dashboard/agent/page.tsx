@@ -294,7 +294,7 @@ export default function AgentDashboard() {
                 <Home className="h-5 w-5" />
                 <span>Accueil</span>
               </a>
-              <a href="#" className="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 rounded-lg p-2">
+              <a href="/dashboard/agent/proprietes" className="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 rounded-lg p-2">
                 <Building className="h-5 w-5" />
                 <span>Propriétés</span>
               </a>
@@ -310,7 +310,7 @@ export default function AgentDashboard() {
                 <FileText className="h-5 w-5" />
                 <span>Messagerie</span>
               </a>
-              <a href="#" className="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 rounded-lg p-2">
+              <a href="/dashboard/agent/ventesEtLocations" className="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 rounded-lg p-2">
                 <Settings className="h-5 w-5" />
                 <span>Ventes et locations</span>
               </a>
