@@ -3,13 +3,13 @@
 datasource db {  
   provider = "postgresql" // ou "mysql", selon ta base
   url      = env("DATABASE_URL")   
-}   
+}     
  
 generator client {  
   provider = "prisma-client-js"
-}    
+}      
 
-enum Role { 
+enum Role {    
   ADMIN    
   ACHETEUR
   VENDEUR
@@ -50,9 +50,8 @@ enum Statut {
 }  
 
 enum Type {
-  VISITE
+  SEJOUR
   LOCATION
-  ACHAT
 }
 
 enum OffreStatut {
@@ -60,6 +59,20 @@ enum OffreStatut {
   ACCEPTEE
   REFUSEE
   EXPIREE
+}
+
+enum ReservationStatut {
+  DEMANDEE
+  CONFIRMEE
+  ANNULEE
+  REPORTEE
+}
+
+enum VisiteStatut {
+  DEMANDEE
+  CONFIRMEE
+  ANNULEE
+  REPORTEE
 }
 
 model User {    
@@ -73,6 +86,8 @@ model User {
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
   proprietes        Propriete[]     @relation("UserPropriete")
+  visites           Visite[]        @relation("UserVisite")
+  visitesAgent      Visite[]        @relation("AgentVisite")
   reservations      Reservation[]   @relation("UserReservation")
   reservationsAgent Reservation[]   @relation("AgentReservation")
   messagesEnvoyes   Message[]       @relation("MessagesEnvoyes")
@@ -94,7 +109,7 @@ model Propriete {
   categorie         Categorie
   prix              Int
   surface           Int  
-  statut            Statut   
+  statut            Statut     
   
   images            ProprieteImage[]// 🖼️ Images multiples (Cloudinary URLs)
 
@@ -109,6 +124,7 @@ model Propriete {
 
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
+  visites           Visite[]
   reservations      Reservation[]   @relation("ProprieteReservation") 
   offres            Offre[]         @relation("OffrePropriete")
   favoris           Favori[]
@@ -139,7 +155,8 @@ model Chambre {
   proprieteId       Int
   propriete         Propriete        @relation("ProprieteChambre", fields: [proprieteId], references: [id], onDelete: Cascade)
 
-  reservations      Reservation[]
+  reservations      Reservation[]    @relation("ChambreReservation")
+
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
 }
@@ -157,18 +174,37 @@ model Favori {
 
 }
 
+model Visite {
+  id           Int                  @id @default(autoincrement())
+  date         DateTime
+ 
+  statut       VisiteStatut    @default(DEMANDEE)
+  userId       Int
+  user         User                 @relation("UserVisite", fields: [userId], references: [id], onDelete: Cascade)
+  
+  agentId      Int?
+  agent        User?                @relation("AgentVisite", fields: [agentId], references: [id], onDelete: Cascade)
+
+  proprieteId  Int?
+  propriete    Propriete?           @relation(fields: [proprieteId], references: [id], onDelete: Cascade)
+
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+}
+
 model Reservation {
   id             Int                @id @default(autoincrement())
   dateArrivee    DateTime
-  dateDepart     DateTime
+  dateDepart     DateTime    
   nombreVoyageurs Int
   type           Type
+  statut         ReservationStatut  @default(DEMANDEE)
 
   proprieteId    Int?
   propriete      Propriete?         @relation("ProprieteReservation", fields: [proprieteId], references: [id], onDelete: Cascade)
 
   chambreId      Int?
-  chambre        Chambre?     @relation(fields: [chambreId], references: [id], onDelete: Cascade)
+  chambre        Chambre?           @relation("ChambreReservation", fields: [chambreId], references: [id], onDelete: Cascade)
 
   userId         Int?
   user           User?              @relation("UserReservation", fields: [userId], references: [id], onDelete: Cascade)
@@ -189,7 +225,7 @@ model Offre {
   id             Int                @id @default(autoincrement())
   montant        Int
   statut         OffreStatut        @default(EN_ATTENTE)
-  message        String?
+  message        String?   
 
   userId         Int
   user           User               @relation("AcheteurOffre",fields: [userId], references: [id], onDelete: Cascade)
@@ -272,7 +308,7 @@ model Log {
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
 }
-
+   
 model Notification {
   id             Int                @id @default(autoincrement())
   systeme        Systeme
