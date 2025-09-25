@@ -49,23 +49,23 @@ export async function getMesOffresRecus(userId: string)
 export async function getMesProchainesVisites(userId: string){
 	const parsedUserId = parseInt(userId)
 
-	const prochainesVisites = await prisma.reservation.findMany({
+	const prochainesVisites = await prisma.visite.findMany({
     where: {
-      type: Type.VISITE,
-      dateArrivee: { gte: new Date() },
       propriete: {
-        proprietaireId: parsedUserId, // on filtre par propriétaire de la propriété
+        proprietaireId: parsedUserId, // filtre sur les propriétés que je possède
       },
+      date: { gte: new Date() }, // uniquement les visites à venir
     },
     include: {
-      propriete: true, // on inclut les infos de la propriété si besoin
-      user: true,      // on inclut les infos de l'utilisateur qui a réservé
+      propriete: true, // infos de la propriété visitée
+      user: true,      // infos de l'utilisateur qui a demandé la visite
+      agent: true,     // si besoin, infos de l'agent assigné
     },
     orderBy: {
-      dateArrivee: 'asc', // les visites les plus proches en premier
+      date: "asc", // visites les plus proches en premier
     },
-    take: 10, // exemple : limiter à 10 prochaines visites
-  })
+    take: 10, // limite à 10 visites par exemple
+  });
 
   return prochainesVisites
 }

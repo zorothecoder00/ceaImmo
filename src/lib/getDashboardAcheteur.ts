@@ -6,7 +6,7 @@ export async function getAvailableProprietes(){
 		where: { statut: Statut.DISPONIBLE },
 		orderBy: { createdAt:'desc' },
 		take: 3
-	})  
+	})    
 }
 
 // Filtrer par catégorie + budget
@@ -34,27 +34,26 @@ export async function getMesProchainesVisites(userId: string){
 
 	const [visites, total] = await Promise.all([
     // 1️⃣ Récupérer les prochaines visites de l'utilisateur
-    prisma.reservation.findMany({
+    prisma.visite.findMany({
       where: {
-        userId: parsedUserId,       // filtrer sur l'utilisateur
-        type: Type.VISITE,          // uniquement les visites
-        dateArrivee: { gte: new Date() },  // visites à venir
+        userId: parsedUserId,
+        date: { gte: new Date() }, // visites à venir
       },
       include: {
         propriete: true, // infos de la propriété visitée
+        agent: true,     // infos de l'agent si besoin
       },
       orderBy: {
-        dateArrivee: 'asc',     // les visites les plus proches en premier
+        date: "asc", // les visites les plus proches en premier
       },
-      take: 2,           // limiter à 2 visites, par exemple
+      take: 2, // limiter à 2 visites par exemple
     }),
 
     // 2️⃣ Compter le nombre total de prochaines visites
-    prisma.reservation.count({
+    prisma.visite.count({
       where: {
         userId: parsedUserId,
-        type: Type.VISITE,
-        dateArrivee: { gte: new Date() },
+        date: { gte: new Date() },
       },
     }),
   ])

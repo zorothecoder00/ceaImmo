@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
-import { prisma } from "@/lib/prisma"; // ton client prisma
-import { getAuthSession } from "@/lib/auth"; // ta fonction d’auth
-import { Type, ReservationStatut } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
+import { getAuthSession } from "@/lib/auth";
+import { VisiteStatut } from "@prisma/client";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getAuthSession(req, res);
@@ -10,19 +10,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(401).json({ error: "Non autorisé" });
   }
 
-  const userId = session.user.id;
+  const userId = Number(session.user.id);
 
   try {
+    // Récupérer les visites de l'utilisateur
     if (req.method === "GET") {
-      const { dateArrivee } = req.query;
+      const { date } = req.query;
 
-      const visites = await prisma.reservation.findMany({
+      const visites = await prisma.visite.findMany({
         where: {
           userId,
-          type: Type.VISITE,
-          ...(dateArrivee
-            ? { dateArrivee: new Date(dateArrivee as string) }
-            : {}),
+          ...(date ? { date: new Date(date as string) } : {}),
         },
         include: {
           propriete: {
@@ -35,59 +33,59 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               proprietaire: { select: { nom: true } },
             },
           },
+          agent: { select: { nom: true } },
         },
-        orderBy: { dateArrivee: "asc" },
+        orderBy: { date: "asc" },
       });
 
-      return res.status(200).json(visites);
+      return res.status(200).json({ data: visites });
     }
 
+    // Créer une demande de visite
     if (req.method === "POST") {
-      const { proprieteId, dateArrivee } = req.body;
+      const { proprieteId, date } = req.body;
 
-      if (!proprieteId || !dateArrivee) {
+      if (!proprieteId || !date) {
         return res.status(400).json({ error: "Champs requis manquants" });
       }
 
-      const reservation = await prisma.reservation.create({
+      const visite = await prisma.visite.create({
         data: {
-          dateArrivee: new Date(dateArrivee),
-          dateDepart: new Date(dateArrivee), // pour une visite, tu peux mettre dateArrivee = dateDepart
-          nombreVoyageurs: 1,
-          type: Type.VISITE,
-          statut: ReservationStatut.DEMANDEE,
+          date: new Date(date),
+          statut: VisiteStatut.DEMANDEE,
           proprieteId,
           userId,
         },
       });
 
-      return res.status(201).json(reservation);
+      return res.status(201).json({ data: visite });
     }
 
+    // Mettre à jour le statut d'une visite (CONFIRMER, ANNULER, REPORTER)
     if (req.method === "PATCH") {
-      const { reservationId, action } = req.body;
+      const { visiteId, action } = req.body;
 
-      if (!reservationId || !action) {
+      if (!visiteId || !action) {
         return res.status(400).json({ error: "Champs requis manquants" });
       }
 
-      let newStatut: ReservationStatut;
+      let newStatut: VisiteStatut;
       switch (action) {
         case "CONFIRMER":
-          newStatut = ReservationStatut.CONFIRMEE;
+          newStatut = VisiteStatut.CONFIRMEE;
           break;
         case "ANNULER":
-          newStatut = ReservationStatut.ANNULEE;
+          newStatut = VisiteStatut.ANNULEE;
           break;
         case "REPORTER":
-          newStatut = ReservationStatut.REPORTEE;
+          newStatut = VisiteStatut.REPORTEE;
           break;
         default:
           return res.status(400).json({ error: "Action invalide" });
       }
 
-      const updated = await prisma.reservation.update({
-        where: { id: reservationId },
+      const updated = await prisma.visite.update({
+        where: { id: visiteId },
         data: { statut: newStatut },
       });
 
@@ -96,7 +94,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(405).json({ error: "Méthode non autorisée" });
   } catch (error) {
-    console.error(error);
-    return res.status(500).json({ error: "Erreur serveur", details: error.message });
+    console.error("Erreur interne", error);
+    return res.status(500).json({ error: "Erreur serveur" });
   }
 }
