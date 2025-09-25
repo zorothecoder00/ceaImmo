@@ -19,6 +19,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       maxSurface,
       minChambres,
       maxChambres,
+      geolocalisation,          
+      minNote,
       page = "1",
       limit = "10",
       sortField = "createdAt",
@@ -30,7 +32,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const skip = (pageNum - 1) * take;
 
     // Champs autorisés pour le tri
-    const allowedFields = ["createdAt", "prix", "surface", "nombreChambres"];
+    const allowedFields = ["createdAt", "prix", "surface", "nombreChambres", "note"];
     const safeField = allowedFields.includes(sortField as string)
       ? (sortField as string)
       : "createdAt";
@@ -51,11 +53,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             OR: [
               { nom: { contains: searchStr, mode: "insensitive" } },
               { prenom: { contains: searchStr, mode: "insensitive" } },
-              { email: { contains: searchStr, mode: "insensitive" } },
             ],
           },
         },
       ];
+    }
+
+    // 🔹 Filtrage par geolocalisation (optionnel)
+    if (geolocalisation) {
+      where.geolocalisation = { contains: geolocalisation.toString(), mode: "insensitive" };
     }
 
     // 🔹 Filtrage par catégorie
@@ -70,21 +76,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // 🔹 Filtres numériques avec objets séparés
     if (minPrix || maxPrix) {
-      where.prix = {};
-      if (minPrix) (where.prix as Prisma.IntFilter).gte = Number(minPrix);
-      if (maxPrix) (where.prix as Prisma.IntFilter).lte = Number(maxPrix);
+      where.prix = {
+        ...(minPrix ? { gte: Number(minPrix) } : {}),
+        ...(maxPrix ? { lte: Number(maxPrix) } : {}),
+      };
     }
 
     if (minSurface || maxSurface) {
-      where.surface = {};
-      if (minSurface) (where.surface as Prisma.IntFilter).gte = Number(minSurface);
-      if (maxSurface) (where.surface as Prisma.IntFilter).lte = Number(maxSurface);
+      where.surface = {
+        ...(minSurface ? { gte: Number(minSurface) } : {}),
+        ...(maxSurface ? { lte: Number(maxSurface) } : {}),
+      };
     }
 
     if (minChambres || maxChambres) {
-      where.nombreChambres = {};
-      if (minChambres) (where.nombreChambres as Prisma.IntFilter).gte = Number(minChambres);
-      if (maxChambres) (where.nombreChambres as Prisma.IntFilter).lte = Number(maxChambres);
+      where.nombreChambres = {
+        ...(minChambres ? { gte: Number(minChambres) } : {}),
+        ...(maxChambres ? { lte: Number(maxChambres) } : {}),
+      };
     }
 
     // 🔹 Récupération des résultats
@@ -93,26 +102,50 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         where,
         include: {
           images: true,
-          avis: true,
           chambres: true,
           proprietaire: {
-            select: { id: true, nom: true, prenom: true, email: true },
+            select: { id: true, nom: true, prenom: true },
           },
+          _count: { select: { avis: true } },
+          avis: { select: { note: true } },
         },
-        orderBy: { [safeField]: order },
+        orderBy: safeField !== "note" ? { [safeField]: order } : undefined,
         skip,
         take,
       }),
       prisma.propriete.count({ where }),
     ]);
 
+    // 🔹 Ajout de la note moyenne
+    let data = proprietes.map((p) => {
+      const moyenne = p.avis.length
+        ? p.avis.reduce((s, n) => s + n.note, 0) / p.avis.length
+        : 0;
+      return { ...p, note: moyenne };
+    });
+
+    // 🔹 Filtrage par note
+    if (minNote) {
+      data = data.filter((p) => p.note >= Number(minNote));
+    }
+
+    // recalcul du total après filtrage
+    const totalFiltre = data.length;
+
+    // 🔹 Tri manuel si sortField === "note"
+    if (safeField === "note") {
+      data.sort((a, b) =>
+        order === "asc" ? a.note - b.note : b.note - a.note
+      );
+    }
+
     return res.status(200).json({
-      data: proprietes,
+      data,
       meta: {
-        total,
+        total: totalFiltre,
         page: pageNum,
         limit: take,
-        totalPages: Math.ceil(total / take),
+        totalPages: Math.ceil(totalFiltre / take),
       },
     });
   } catch (error) {
