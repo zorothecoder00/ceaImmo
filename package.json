@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "check-deps": "npm outdated && npm audit --audit-level=moderate || exit 0 && npm ls deprecated || exit 0",
     "check": "npm run lint && tsc --noEmit && next build",
     "prisma:generate": "prisma generate",
