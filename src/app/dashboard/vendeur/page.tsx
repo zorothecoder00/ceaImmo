@@ -499,7 +499,7 @@ export default function VendeurDashboard() {
                 <TrendingUp className="h-5 w-5" />
                 <span>Statistiques</span>
               </a>
-              <a href="#" className="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 rounded-lg p-2">
+              <a href="/dashboard/vendeur/parametres" className="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 rounded-lg p-2">
                 <Settings className="h-5 w-5" />
                 <span>Paramètres</span>
               </a>

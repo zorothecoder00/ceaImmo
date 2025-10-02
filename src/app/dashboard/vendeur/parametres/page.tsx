@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { User, Lock, Bell, Eye, Palette, Globe, Clock, Save, Package } from 'lucide-react';
 
-interface Ad {
+interface Ad {   
   id: number;
   title: string;
   visibility: 'public' | 'private';

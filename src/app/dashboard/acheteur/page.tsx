@@ -381,7 +381,7 @@ export default function AcheteurDashboard() {
                 <FileText className="h-5 w-5" />
                 <span>Mes offres</span>   
               </a>
-              <a href="#" className="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 rounded-lg p-2">
+              <a href="/dashboard/acheteur/parametres" className="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 rounded-lg p-2">
                 <Settings className="h-5 w-5" />
                 <span>Paramètres</span>
               </a>
