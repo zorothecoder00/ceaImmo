@@ -92,7 +92,7 @@ const RegisterPage = () => {
     e.preventDefault();
     if (!validateForm()) return;
 
-    setIsLoading(true);
+    setIsLoading(true); 
     
     // Simulate API call
     try {
