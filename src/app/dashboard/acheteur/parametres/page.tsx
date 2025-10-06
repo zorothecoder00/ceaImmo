@@ -11,7 +11,7 @@ export default function BuyerSettingsPage() {
   const [notifications, setNotifications] = useState({
     email: true,
     push: true,
-    messages: true,
+    messages: true,  
     promotions: false
   });
   const [userData, setUserData] = useState({

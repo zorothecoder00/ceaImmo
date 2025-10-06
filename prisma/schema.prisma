@@ -75,6 +75,20 @@ enum VisiteStatut {
   REPORTEE
 }
 
+enum Theme {
+  CLAIR
+  SOMBRE
+}
+
+enum Langue {
+  FR
+  EN
+  IT
+  ES
+  DE
+}
+
+
 model User {    
   id                Int             @id @default(autoincrement())
   role              Role?
@@ -83,6 +97,12 @@ model User {
   email             String          @unique
   password          String?
   photo             String?
+
+  // 🆕 Paramètres de profil
+  confidentialite   Boolean?        @default(false) // false = public, true = privé
+  theme             Theme?          @default(CLAIR)
+  langue            Langue?         @default(FR)
+
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
   proprietes        Propriete[]     @relation("UserPropriete")
