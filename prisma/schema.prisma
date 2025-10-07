@@ -94,12 +94,16 @@ model User {
   role              Role?
   nom               String  
   prenom            String
-  email             String          @unique
+  email             String          @unique   
   password          String?
   photo             String?
 
   // 🆕 Paramètres de profil
   confidentialite   Boolean?        @default(false) // false = public, true = privé
+
+  // 🔹 Nouvelle propriété : visibilité des annonces
+  visibiliteAnnonces Boolean?       @default(true)  // true = annonces publiques, false = annonces privées
+  
   theme             Theme?          @default(CLAIR)
   langue            Langue?         @default(FR)
 
