@@ -16,6 +16,7 @@ import {
   Bath,
   Square
 } from 'lucide-react'
+import Link from "next/link"
 
 // Types
 interface Property {
@@ -259,9 +260,10 @@ export default function AgentDashboard() {
             </div>
             
             <div className="flex items-center space-x-4">
-              <button className="p-2 text-gray-400 hover:text-gray-600">
+              <Link href="/dashboard/agent/notifications" className="p-2 text-gray-400 hover:text-gray-600 relative transition-colors"
+              >
                 <Bell className="h-5 w-5" />
-              </button>
+              </Link>
               <button className="flex items-center space-x-2 text-gray-700">
                 <User className="h-5 w-5" />
                 <span className="text-sm">Mon Profil</span>
