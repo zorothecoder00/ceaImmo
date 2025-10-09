@@ -9,10 +9,8 @@ import {
   Edit, 
   Trash2, 
   MapPin, 
-  Bed, 
+  Bed,    
   Square, 
-  Calendar,
-  Star,
   Heart,
   MessageSquare,
   Camera,
@@ -30,18 +28,33 @@ import {
   TreePine,
   HardHat,
   Image,
-  Settings
+  Settings,
+  Upload,
+  X,
+  Loader2
 } from 'lucide-react';
-
-
+import { motion, AnimatePresence } from "framer-motion";
+import { Button } from '@/components/ui/button' 
+import { Card } from '@/components/ui/card'
+import { Statut, Categorie } from '@prisma/client'
 // === Types ===
-interface ImageType {
+
+interface Chambre { 
+  nom: string; 
+  description: string; 
+  prixParNuit: string; 
+  capacite: string; 
+  disponible: boolean
+  ; 
+}
+
+interface PropertyImage {
   id: number;
+  file?: File;
   url: string;
   ordre: number;
 }
 
-type Categorie = "VILLA" | "MAISON" | "APPARTEMENT" | "HOTEL" | "TERRAIN" | "CHANTIER";
 interface Bien {
   id: number;
   nom: string;
@@ -49,10 +62,11 @@ interface Bien {
   categorie: Categorie; // ✅
   prix: number;
   surface: number;
-  statut: "DISPONIBLE" | "RESERVE" | "VENDU" | "EN_LOCATION" | "EN_NEGOCIATION";
+  statut: Statut
+  chambres?: Chambre[];
   nombreChambres: number;
   geolocalisation: string;
-  images: ImageType[];
+  images: PropertyImage[];
   visiteVirtuelle: string | null;
   createdAt: string;
   updatedAt: string;
@@ -219,6 +233,8 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ bien, onEdit, onDelete, onV
   const statusInfo = getStatusInfo(bien.statut);
   const CategoryIcon = getCategoryIcon(bien.categorie);
 
+  const StatusIcon = statusInfo.icon;
+
   if (viewMode === 'list') {
     return (
       <div className="bg-white rounded-lg border border-gray-200 hover:shadow-md transition-all duration-200 overflow-hidden">
@@ -237,7 +253,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ bien, onEdit, onDelete, onV
                   <CategoryIcon size={16} className="text-gray-400" />
                   <span className="text-sm text-gray-500">{bien.categorie}</span>
                   <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${statusInfo.color}`}>
-                    <statusInfo.icon size={12} />
+                    <StatusIcon size={12} />
                     {statusInfo.label}
                   </span>
                 </div>
@@ -322,7 +338,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ bien, onEdit, onDelete, onV
         
         <div className="absolute top-4 left-4">
           <span className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${statusInfo.color}`}>
-            <statusInfo.icon size={12} />
+            <StatusIcon size={12} />
             {statusInfo.label}
           </span>
         </div>
@@ -434,8 +450,33 @@ export default function MesBiens() {
   const [selectedStatut, setSelectedStatut] = useState('');
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid"); // 'grid' ou 'list'
 
-  const categories = ['VILLA', 'MAISON', 'APPARTEMENT', 'HOTEL', 'TERRAIN', 'CHANTIER'];
-  const statuts = ['DISPONIBLE', 'RESERVE', 'VENDU', 'EN_LOCATION', 'EN_NEGOCIATION'];
+  const [showModal, setShowModal] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
+  const [formData, setFormData] = useState<{
+  nom: string;
+  description: string;
+  categorie: Categorie | ''; // 👈
+  prix: string;
+  surface: string;
+  statut: Statut;
+  geolocalisation: string;
+  nombreChambres: string;
+  visiteVirtuelle: string;
+}>({
+  nom: '',
+  description: '',
+  categorie: '',
+  prix: '',
+  surface: '',
+  statut: Statut.DISPONIBLE,
+  geolocalisation: '',
+  nombreChambres: '1',
+  visiteVirtuelle: ''
+});
+
+  const [images, setImages] = useState<PropertyImage[]>([]);
+  const [chambres, setChambres] = useState<Chambre[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Filtrage des biens
   const filteredBiens = biens.filter(bien => {
@@ -466,9 +507,110 @@ export default function MesBiens() {
   };
 
   const handleAddNew = () => {
-    console.log('Ajouter un nouveau bien');
-    // Ici tu peux naviguer vers une page de création
+    setShowModal(true)
+    setCurrentStep(1)
+    setFormData({
+      nom: '',
+      description: '',
+      categorie: '',
+      prix: '',
+      surface: '',
+      statut: 'DISPONIBLE',
+      geolocalisation: '',
+      nombreChambres: '1',
+      visiteVirtuelle: ''
+    })
+    setImages([])
+    setChambres([])
+  }
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (files) {
+      const newImages: PropertyImage[] = Array.from(files).map((file, index) => ({
+        id: Date.now() + index, // 👈 ajouté
+        file,
+        url: URL.createObjectURL(file),
+        ordre: images.length + index
+      }))
+      setImages([...images, ...newImages])
+    }
+  }
+
+  const removeImage = (index: number) => {
+    setImages(images.filter((_, i) => i !== index))
+  }
+
+  const addChambre = () => {
+    setChambres([...chambres, {
+      nom: '',
+      description: '',
+      prixParNuit: '',
+      capacite: '2',
+      disponible: true
+    }])
+  }
+
+  const removeChambre = (index: number) => {
+    setChambres(chambres.filter((_, i) => i !== index))
+  }
+
+  const updateChambre = <K extends keyof Chambre>(
+    index: number,
+    field: K,
+    value: Chambre[K]
+  ) => {
+    const updated = [...chambres];
+    updated[index][field] = value;
+    setChambres(updated);
   };
+
+  const handleSubmit = async () => {
+    setIsSubmitting(true)
+    
+    // Simulation d'upload
+    await new Promise(resolve => setTimeout(resolve, 2000))
+    
+    const newBien: Bien = {
+      id: Date.now(),
+      nom: formData.nom,
+      description: formData.description,
+      categorie: formData.categorie as Categorie, // 👈 cast
+      prix: parseInt(formData.prix),
+      surface: parseInt(formData.surface),
+      statut: formData.statut as Statut,   // 👈 cast
+      geolocalisation: formData.geolocalisation,
+      chambres: chambres,
+      nombreChambres: parseInt(formData.nombreChambres),
+      images,
+      visiteVirtuelle: formData.visiteVirtuelle || null,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      vues: 0,
+      favoris: 0,
+      messages: 0
+    };
+
+    
+    setBiens([...biens, newBien])
+    setIsSubmitting(false)
+    setShowModal(false)
+  }
+
+  const isStepValid = () => {
+    if (currentStep === 1) {
+      return formData.nom && formData.categorie && formData.prix && formData.surface && formData.geolocalisation
+    }
+    if (currentStep === 2) {
+      return images.length > 0
+    }
+    return true
+  }
+
+  // Récupération des valeurs des enums Prisma
+  const categories = Object.values(Categorie);
+  const statuts = Object.values(Statut);
+
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -615,9 +757,389 @@ export default function MesBiens() {
                 viewMode={viewMode}
               />
             ))}
-          </div>
+          </div>  
         )}
       </div>
+
+
+    {/* Modal d'ajout */}
+      <AnimatePresence>
+        {showModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto"
+            onClick={() => setShowModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden my-8"
+            >
+              {/* Header */}
+              <div className="bg-gradient-to-r from-orange-500 to-orange-600 p-6 text-white">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold">Ajouter une propriété</h2>
+                    <p className="text-orange-100 text-sm mt-1">
+                      Étape {currentStep} sur 3
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowModal(false)}
+                    className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                  >
+                    <X size={24} />
+                  </button>
+                </div>
+
+                {/* Progress bar */}
+                <div className="mt-6 flex gap-2">
+                  {[1, 2, 3].map(step => (
+                    <div
+                      key={step}
+                      className={`h-1 flex-1 rounded-full transition-all ${
+                        step <= currentStep ? 'bg-white' : 'bg-white/30'
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="p-6 overflow-y-auto max-h-[calc(90vh-250px)]">
+                {/* Étape 1: Informations principales */}
+                {currentStep === 1 && (
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="space-y-6"
+                  >
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Nom de la propriété *
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.nom}
+                          onChange={(e) => setFormData({...formData, nom: e.target.value})}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                          placeholder="Villa Moderne Lomé"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Catégorie *
+                        </label>
+                        <select
+                          value={formData.categorie}
+                          onChange={(e) => setFormData({...formData, categorie: e.target.value as Categorie,})}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                        >
+                          <option value="">Sélectionner...</option>
+                          {Object.values(Categorie).map(cat => (
+                            <option key={cat} value={cat}>{cat}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Prix (FCFA) *
+                        </label>
+                        <input
+                          type="number"
+                          value={formData.prix}
+                          onChange={(e) => setFormData({...formData, prix: e.target.value})}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                          placeholder="150000000"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Surface (m²) *
+                        </label>
+                        <input
+                          type="number"
+                          value={formData.surface}
+                          onChange={(e) => setFormData({...formData, surface: e.target.value})}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                          placeholder="350"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Statut
+                        </label>
+                        <select
+                          value={formData.statut}
+                          onChange={(e) => setFormData({...formData, statut: e.target.value as Statut,})}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                        >
+                          {Object.values(Statut).map(st => (
+                            <option key={st} value={st}>{st.replace('_', ' ')}</option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Nombre de chambres *
+                        </label>
+                        <input
+                          type="number"
+                          value={formData.nombreChambres}
+                          onChange={(e) => setFormData({...formData, nombreChambres: e.target.value})}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                          min="1"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Géolocalisation *
+                      </label>
+                      <div className="relative">
+                        <MapPin size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                        <input
+                          type="text"
+                          value={formData.geolocalisation}
+                          onChange={(e) => setFormData({...formData, geolocalisation: e.target.value})}
+                          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                          placeholder="Lomé, Bè"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Description
+                      </label>
+                      <textarea
+                        value={formData.description}
+                        onChange={(e) => setFormData({...formData, description: e.target.value})}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 h-24 resize-none"
+                        placeholder="Décrivez votre propriété..."
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Lien visite virtuelle (optionnel)
+                      </label>
+                      <input
+                        type="url"
+                        value={formData.visiteVirtuelle}
+                        onChange={(e) => setFormData({...formData, visiteVirtuelle: e.target.value})}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+                        placeholder="https://youtube.com/..."
+                      />
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Étape 2: Images */}
+                {currentStep === 2 && (
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="space-y-6"
+                  >
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-4">
+                        Photos de la propriété *
+                      </label>
+                      
+                      <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-orange-400 transition-colors">
+                        <input
+                          type="file"
+                          multiple
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          className="hidden"
+                          id="image-upload"
+                        />
+                        <label htmlFor="image-upload" className="cursor-pointer">
+                          <Upload className="mx-auto w-12 h-12 text-gray-400 mb-4" />
+                          <p className="text-gray-600 font-medium mb-2">
+                            Cliquez pour ajouter des photos
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            PNG, JPG jusqu&apos;à 10MB
+                          </p>
+                        </label>
+                      </div>
+
+                      {images.length > 0 && (
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+                          {images.map((img, index) => (
+                            <div key={index} className="relative group">
+                              <img
+                                src={img.url}
+                                alt={`Image ${index + 1}`}
+                                className="w-full h-32 object-cover rounded-lg"
+                              />
+                              <button
+                                onClick={() => removeImage(index)}
+                                className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <X size={16} />
+                              </button>
+                              <div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                                #{index + 1}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Étape 3: Chambres (optionnel) */}
+                {currentStep === 3 && (
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className="space-y-6"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          Chambres (Optionnel)
+                        </h3>
+                        <p className="text-sm text-gray-500">
+                          Pour les hôtels et locations de courte durée
+                        </p>
+                      </div>
+                      <Button
+                        onClick={addChambre}
+                        size="sm"
+                        className="bg-orange-500 hover:bg-orange-600"
+                      >
+                        <Plus size={16} className="mr-1" /> Ajouter
+                      </Button>
+                    </div>
+
+                    {chambres.length === 0 ? (
+                      <div className="text-center py-12 bg-gray-50 rounded-xl">
+                        <Bed className="mx-auto w-12 h-12 text-gray-300 mb-3" />
+                        <p className="text-gray-500">Aucune chambre ajoutée</p>
+                        <p className="text-sm text-gray-400 mt-1">
+                          Vous pouvez passer cette étape si non applicable
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {chambres.map((chambre, index) => (
+                          <Card key={index} className="p-4">
+                            <div className="flex items-start justify-between mb-4">
+                              <h4 className="font-medium text-gray-900">Chambre {index + 1}</h4>
+                              <button
+                                onClick={() => removeChambre(index)}
+                                className="text-red-500 hover:text-red-600"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-3">
+                              <input
+                                type="text"
+                                value={chambre.nom}
+                                onChange={(e) => updateChambre(index, 'nom', e.target.value)}
+                                placeholder="Nom de la chambre"
+                                className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                              />
+                              <input
+                                type="number"
+                                value={chambre.capacite}
+                                onChange={(e) => updateChambre(index, 'capacite', e.target.value)}
+                                placeholder="Capacité"
+                                className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                              />
+                              <input
+                                type="number"
+                                value={chambre.prixParNuit}
+                                onChange={(e) => updateChambre(index, 'prixParNuit', e.target.value)}
+                                placeholder="Prix/nuit (FCFA)"
+                                className="px-3 py-2 border border-gray-300 rounded-lg text-sm col-span-2"
+                              />
+                              <textarea
+                                value={chambre.description}
+                                onChange={(e) => updateChambre(index, 'description', e.target.value)}
+                                placeholder="Description"
+                                className="px-3 py-2 border border-gray-300 rounded-lg text-sm col-span-2 h-20 resize-none"
+                              />
+                            </div>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </motion.div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="border-t border-gray-200 p-6 bg-gray-50">
+                <div className="flex items-center justify-between">
+                  <Button
+                    variant="outline"
+                    onClick={() => currentStep > 1 ? setCurrentStep(currentStep - 1) : setShowModal(false)}
+                  >
+                    {currentStep === 1 ? 'Annuler' : 'Précédent'}
+                  </Button>
+
+                  <div className="flex gap-2">
+                    {!isStepValid() && currentStep !== 3 && (
+                      <div className="flex items-center gap-2 text-sm text-amber-600 mr-4">
+                        <AlertCircle size={16} />
+                        Veuillez remplir tous les champs requis
+                      </div>
+                    )}
+                    
+                    {currentStep < 3 ? (
+                      <Button
+                        onClick={() => setCurrentStep(currentStep + 1)}
+                        disabled={!isStepValid()}
+                        className="bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300"
+                      >
+                        Suivant
+                      </Button>
+                    ) : (
+                      <Button
+                        onClick={handleSubmit}
+                        disabled={isSubmitting}
+                        className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700"
+                      >
+                        {isSubmitting ? (
+                          <>
+                            <Loader2 className="mr-2 animate-spin" size={16} />
+                            Enregistrement...
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle className="mr-2" size={16} />
+                            Enregistrer
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
-  );
+  )
 }
