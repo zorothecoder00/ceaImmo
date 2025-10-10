@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Filter, MapPin, Home, DollarSign, Maximize, Users, Star, Heart, Eye } from 'lucide-react';
+import { Search, Filter, MapPin, Home, DollarSign, Maximize, Users, Star, Heart, Eye, X } from 'lucide-react';
 
 // Types basés sur votre schéma Prisma
 type Categorie = 'VILLA' | 'MAISON' | 'APPARTEMENT' | 'HOTEL' | 'TERRAIN' | 'CHANTIER';
@@ -28,6 +28,12 @@ interface Propriete {
     favoris: number;
   };
   createdAt: string;
+}
+
+interface OffreData {
+  montant: string;
+  message: string;
+  mode?: string;
 }
 
 interface SearchFilters {
@@ -66,6 +72,9 @@ export default function RecherchesPage() {
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
   const [favoris, setFavoris] = useState<Set<number>>(new Set());
+  const [showOffreModal, setShowOffreModal] = useState(false);
+  const [selectedPropriete, setSelectedPropriete] = useState<Propriete | null>(null);
+  const [offreData, setOffreData] = useState<OffreData>({ montant: '', message: '', mode: '' });
 
   const [filters, setFilters] = useState<SearchFilters>({
     search: '',
@@ -171,6 +180,57 @@ export default function RecherchesPage() {
       avecVisiteVirtuelle: false,
       noteMin: ''
     });
+  };
+
+  const openOffreModal = (propriete: Propriete) => {
+    setSelectedPropriete(propriete);
+    setOffreData({
+      montant: propriete.prix.toString(),
+      message: ''
+    });
+    setShowOffreModal(true);
+  };
+
+  const closeOffreModal = () => {
+    setShowOffreModal(false);
+    setSelectedPropriete(null);
+    setOffreData({
+      montant: '',
+      message: ''
+    });
+  };
+
+  const handleOffreSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!selectedPropriete) return;
+
+    // Validation
+    if (!offreData.montant || parseFloat(offreData.montant) <= 0) {
+      alert('Veuillez entrer un montant valide');
+      return;
+    }
+
+    try {
+      // TODO: Remplacer par votre appel API
+      // const response = await fetch('/api/offres', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify({
+      //     montant: parseFloat(offreData.montant),
+      //     message: offreData.message,
+      //     proprieteId: selectedPropriete.id,
+      //     userId: currentUserId, // À récupérer depuis votre contexte d'auth
+      //   })
+      // });
+
+      // Simulation de succès
+      alert(`Offre de ${formatPrice(parseFloat(offreData.montant))} envoyée pour ${selectedPropriete.nom}`);
+      closeOffreModal();
+    } catch (error) {
+      console.error('Erreur lors de l\'envoi de l\'offre:', error);
+      alert('Erreur lors de l\'envoi de l\'offre');
+    }
   };
 
   return (
@@ -520,7 +580,10 @@ export default function RecherchesPage() {
                     <button className="flex-1 bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 text-sm">
                       Voir détails
                     </button>
-                    <button className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-md hover:bg-gray-200 text-sm">
+                    <button
+                      onClick={() => openOffreModal(propriete)}
+                      className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-md hover:bg-gray-200 text-sm"
+                    >
                       Faire une offre
                     </button>
                   </div>
@@ -551,6 +614,143 @@ export default function RecherchesPage() {
           </>
         )}
       </div>
-    </div>
+
+      {/* Modale Faire une Offre */}
+      {showOffreModal && selectedPropriete && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          {/* Overlay */}
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+            onClick={closeOffreModal}
+          ></div>
+
+          {/* Modal */}
+          <div className="flex min-h-full items-center justify-center p-4">
+            <div className="relative bg-white rounded-lg shadow-xl max-w-2xl w-full">
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b">
+                <h2 className="text-2xl font-bold text-gray-900">
+                  Faire une offre
+                </h2>
+                <button
+                  onClick={closeOffreModal}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              {/* Body */}
+              <form onSubmit={handleOffreSubmit} className="p-6">
+                {/* Informations de la propriété */}
+                <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                  <div className="flex gap-4">
+                    <div className="w-24 h-24 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+                      {selectedPropriete.images.length > 0 ? (
+                        <img
+                          src={selectedPropriete.images[0].url}
+                          alt={selectedPropriete.nom}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Home className="h-8 w-8 text-gray-400" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-lg text-gray-900 mb-1">
+                        {selectedPropriete.nom}
+                      </h3>
+                      <p className="text-sm text-gray-600 mb-2">
+                        {selectedPropriete.categorie} • {selectedPropriete.surface} m² • {selectedPropriete.nombreChambres} chambres
+                      </p>
+                      <div className="flex items-center gap-1">
+                        <MapPin className="h-4 w-4 text-gray-400" />
+                        <span className="text-sm text-gray-600">{selectedPropriete.geolocalisation}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Montant de l'offre */}
+                <div className="mb-5">
+                  <label htmlFor="montant" className="block text-sm font-medium text-gray-700 mb-1">
+                    Montant de l’offre (€)
+                  </label>
+                  <input
+                    type="number"
+                    id="montant"
+                    name="montant"
+                    value={offreData.montant}
+                    onChange={(e) => setOffreData({ ...offreData, montant: e.target.value })}
+                    required
+                    min={1000}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Ex: 120000"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Le prix initial est de {selectedPropriete.prix.toLocaleString()} €</p>
+                </div>
+
+                {/* Message optionnel */}
+                <div className="mb-5">
+                  <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
+                    Message à l’agent (optionnel)
+                  </label>
+                  <textarea
+                    id="message"
+                    name="message"
+                    rows={3}
+                    value={offreData.message}
+                    onChange={(e) => setOffreData({ ...offreData, message: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Ex: Je suis vraiment intéressé par cette propriété..."
+                  ></textarea>
+                </div>
+
+                {/* Mode de paiement (optionnel pour acompte) */}
+                <div className="mb-6">
+                  <label htmlFor="mode" className="block text-sm font-medium text-gray-700 mb-1">
+                    Mode de paiement (optionnel)
+                  </label>
+                  <select
+                    id="mode"
+                    name="mode"
+                    value={offreData.mode || ''}
+                    onChange={(e) => setOffreData({ ...offreData, mode: e.target.value })}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Sélectionner un mode</option>
+                    <option value="MIXXBYYAS">MixxByYas</option>
+                    <option value="MOOV">Moov</option>
+                    <option value="CARTEBANCAIRE">Carte bancaire</option>
+                    <option value="WESTERNUNION">Western Union</option>
+                    <option value="PAYPAL">PayPal</option>
+                    <option value="STRIPE">Stripe</option>
+                  </select>
+                </div>
+
+                {/* Boutons d’action */}
+                <div className="flex justify-end gap-3 border-t pt-4">
+                  <button
+                    type="button"
+                    onClick={closeOffreModal}
+                    className="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Envoyer l’offre
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>  
   );
 }

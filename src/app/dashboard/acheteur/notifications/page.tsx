@@ -5,10 +5,10 @@ import { Bell, Trash2, Eye, Loader2, CheckCheck, Mail, MessageSquare, X, AlertCi
 import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import clsx from 'clsx'
+import clsx from 'clsx'   
 
 interface Notification {
-  id: number
+  id: number  
   contenu: string
   systeme: string
   createdAt: string
