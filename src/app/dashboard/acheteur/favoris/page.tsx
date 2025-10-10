@@ -1,103 +1,172 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Heart, MapPin, Bed, Bath, Square, Eye, Trash2, Filter } from 'lucide-react'
+import {
+  Heart, MapPin, Bed, Bath, Square, Eye, Trash2, Filter, Send
+} from 'lucide-react'
+import { Categorie } from '@prisma/client'
 
-// Données d'exemple des propriétés favorites
-const mockFavorites = [     
+// 🧩 Types corrigés
+interface ProprieteImage {
+  url: string
+  ordre: number
+}
+
+interface Property {
+  id: number
+  nom: string
+  geolocalisation: string
+  prix: string
+  nombreChambres: number
+  bathrooms: number
+  surface: string
+  images: string // pour simplifier (URL unique)
+  createdAt: string
+  categorie: string // si c’est une string (pas un enum de Prisma)
+}
+
+interface OffreForm {
+  montant: string
+  message: string
+}
+
+// 🧪 Données mock
+const mockFavorites: Property[] = [
   {
     id: 1,
-    title: "Villa moderne avec piscine",
-    location: "Cannes, France",
-    price: "€850,000",
-    bedrooms: 4,
+    nom: "Villa moderne avec piscine",
+    geolocalisation: "Cannes, France",
+    prix: "€850,000",
+    nombreChambres: 4,
     bathrooms: 3,
-    area: "250 m²",
-    image: "/api/placeholder/400/250",
-    dateAdded: "2024-01-15",
-    type: "Villa"
+    surface: "250 m²",
+    images: "/api/placeholder/400/250",
+    createdAt: "2024-01-15",
+    categorie: "Villa"
   },
   {
     id: 2,
-    title: "Appartement vue mer",
-    location: "Nice, France",
-    price: "€450,000",
-    bedrooms: 2,
+    nom: "Appartement vue mer",
+    geolocalisation: "Nice, France",
+    prix: "€450,000",
+    nombreChambres: 2,
     bathrooms: 2,
-    area: "85 m²",
-    image: "/api/placeholder/400/250",
-    dateAdded: "2024-01-10",
-    type: "Appartement"
+    surface: "85 m²",
+    images: "/api/placeholder/400/250",
+    createdAt: "2024-01-10",
+    categorie: "Appartement"
   },
   {
     id: 3,
-    title: "Maison de campagne",
-    location: "Provence, France",
-    price: "€320,000",
-    bedrooms: 3,
+    nom: "Maison de campagne",
+    geolocalisation: "Provence, France",
+    prix: "€320,000",
+    nombreChambres: 3,
     bathrooms: 2,
-    area: "180 m²",
-    image: "/api/placeholder/400/250",
-    dateAdded: "2024-01-08",
-    type: "Maison"
+    surface: "180 m²",
+    images: "/api/placeholder/400/250",
+    createdAt: "2024-01-08",
+    categorie: "Maison"
   },
   {
     id: 4,
-    title: "Penthouse de luxe",
-    location: "Monaco",
-    price: "€2,200,000",
-    bedrooms: 3,
+    nom: "Penthouse de luxe",
+    geolocalisation: "Monaco",
+    prix: "€2,200,000",
+    nombreChambres: 3,
     bathrooms: 3,
-    area: "150 m²",
-    image: "/api/placeholder/400/250",
-    dateAdded: "2024-01-05",
-    type: "Penthouse"
+    surface: "150 m²",
+    images: "/api/placeholder/400/250",
+    createdAt: "2024-01-05",
+    categorie: "Penthouse"
   }
 ]
 
 export default function FavorisPage() {
-  const [favorites, setFavorites] = useState(mockFavorites)
-  const [filteredFavorites, setFilteredFavorites] = useState(mockFavorites)
+  const [favorites, setFavorites] = useState<Property[]>(mockFavorites)
+  const [filteredFavorites, setFilteredFavorites] = useState<Property[]>(mockFavorites)
   const [selectedFilter, setSelectedFilter] = useState('all')
   const [sortBy, setSortBy] = useState('recent')
+  const [showOffreModal, setShowOffreModal] = useState(false)
+  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
+  const [offreForm, setOffreForm] = useState<OffreForm>({
+    montant: '',
+    message: ''
+  })
 
-  // Filtrer par type de propriété
   useEffect(() => {
     let filtered = favorites
 
     if (selectedFilter !== 'all') {
-      filtered = favorites.filter(property => 
-        property.type.toLowerCase() === selectedFilter.toLowerCase()
+      filtered = favorites.filter(
+        (property) =>
+          property.categorie.toLowerCase() === selectedFilter.toLowerCase()
       )
     }
 
-    // Trier les résultats
     if (sortBy === 'recent') {
-      filtered = filtered.sort((a, b) => new Date(b.dateAdded).getTime() - new Date(a.dateAdded).getTime())
+      filtered = [...filtered].sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      )
     } else if (sortBy === 'price-high') {
-      filtered = filtered.sort((a, b) => 
-        parseInt(b.price.replace(/[€,]/g, '')) - parseInt(a.price.replace(/[€,]/g, ''))
+      filtered = [...filtered].sort(
+        (a, b) =>
+          parseInt(b.prix.replace(/[€,]/g, '')) -
+          parseInt(a.prix.replace(/[€,]/g, ''))
       )
     } else if (sortBy === 'price-low') {
-      filtered = filtered.sort((a, b) => 
-        parseInt(a.price.replace(/[€,]/g, '')) - parseInt(b.price.replace(/[€,]/g, ''))
+      filtered = [...filtered].sort(
+        (a, b) =>
+          parseInt(a.prix.replace(/[€,]/g, '')) -
+          parseInt(b.prix.replace(/[€,]/g, ''))
       )
     }
 
     setFilteredFavorites(filtered)
   }, [favorites, selectedFilter, sortBy])
 
-  // Retirer des favoris
   const removeFavorite = (id: number) => {
-    setFavorites(prev => prev.filter(property => property.id !== id))
+    setFavorites((prev) => prev.filter((property) => property.id !== id))
+  }
+
+  const handleFaireOffre = (id: number) => {
+    const property = favorites.find((p) => p.id === id)
+    if (property) {
+      setSelectedProperty(property)
+      setShowOffreModal(true)
+    }
+  }
+
+  const handleSubmitOffre = (e: React.FormEvent) => {
+    e.preventDefault()
+
+    console.log('Offre soumise:', {
+      proprieteId: selectedProperty?.id,
+      montant: offreForm.montant,
+      message: offreForm.message,
+      statut: 'EN_ATTENTE'
+    })
+
+    setOffreForm({ montant: '', message: '' })
+    setShowOffreModal(false)
+    setSelectedProperty(null)
+
+    alert('Votre offre a été envoyée avec succès!')
+  }
+
+  const closeModal = () => {
+    setShowOffreModal(false)
+    setSelectedProperty(null)
+    setOffreForm({ montant: '', message: '' })
   }
 
   const propertyTypes = ['all', 'villa', 'appartement', 'maison', 'penthouse']
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      {/* Header */}
       <div className="max-w-7xl mx-auto">
+        {/* HEADER */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Mes Propriétés Favorites
@@ -107,7 +176,7 @@ export default function FavorisPage() {
           </p>
         </div>
 
-        {/* Stats */}
+        {/* STATS */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
@@ -123,15 +192,14 @@ export default function FavorisPage() {
           </div>
         </div>
 
-        {/* Filtres et tri */}
+        {/* FILTRES */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
           <div className="flex flex-wrap items-center justify-between gap-4">
-            {/* Filtres par type */}
             <div className="flex items-center space-x-2">
               <Filter className="w-5 h-5 text-gray-500" />
               <span className="text-sm font-medium text-gray-700">Type:</span>
               <div className="flex space-x-2">
-                {propertyTypes.map(type => (
+                {propertyTypes.map((type) => (
                   <button
                     key={type}
                     onClick={() => setSelectedFilter(type)}
@@ -141,15 +209,18 @@ export default function FavorisPage() {
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
                   >
-                    {type === 'all' ? 'Tous' : type.charAt(0).toUpperCase() + type.slice(1)}
+                    {type === 'all'
+                      ? 'Tous'
+                      : type.charAt(0).toUpperCase() + type.slice(1)}
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Tri */}
             <div className="flex items-center space-x-2">
-              <span className="text-sm font-medium text-gray-700">Trier par:</span>
+              <span className="text-sm font-medium text-gray-700">
+                Trier par:
+              </span>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
@@ -163,7 +234,7 @@ export default function FavorisPage() {
           </div>
         </div>
 
-        {/* Liste des favoris */}
+        {/* LISTE DES FAVORIS */}
         {filteredFavorites.length === 0 ? (
           <div className="bg-white rounded-lg shadow-sm p-12 text-center">
             <Heart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -171,22 +242,30 @@ export default function FavorisPage() {
               Aucun favori trouvé
             </h3>
             <p className="text-gray-600">
-              {selectedFilter === 'all' 
+              {selectedFilter === 'all'
                 ? "Vous n'avez pas encore ajouté de propriétés à vos favoris."
-                : `Aucune propriété de type "${selectedFilter}" dans vos favoris.`
-              }
+                : `Aucune propriété de type "${selectedFilter}" dans vos favoris.`}
             </p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredFavorites.map(property => (
-              <div key={property.id} className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-lg transition-shadow">
-                {/* Image */}
-                <div className="relative h-48 bg-gray-300">
+            {filteredFavorites.map((property) => (
+              <div
+                key={property.id}
+                className="bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-lg transition-shadow"
+              >
+                <div
+                  className="relative h-48 bg-gray-300"
+                  style={{
+                    backgroundImage: `url(${property.images})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center'
+                  }}
+                >
                   <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
                   <div className="absolute top-3 left-3">
                     <span className="bg-white/90 backdrop-blur-sm px-2 py-1 rounded text-xs font-medium text-gray-700">
-                      {property.type}
+                      {property.categorie}
                     </span>
                   </div>
                   <div className="absolute top-3 right-3">
@@ -200,27 +279,25 @@ export default function FavorisPage() {
                   </div>
                 </div>
 
-                {/* Contenu */}
                 <div className="p-5">
                   <div className="mb-3">
                     <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                      {property.title}
+                      {property.nom}
                     </h3>
                     <div className="flex items-center text-gray-600 text-sm">
                       <MapPin className="w-4 h-4 mr-1" />
-                      {property.location}
+                      {property.geolocalisation}
                     </div>
                   </div>
 
                   <div className="text-2xl font-bold text-blue-600 mb-4">
-                    {property.price}
+                    {property.prix}
                   </div>
 
-                  {/* Caractéristiques */}
                   <div className="flex items-center justify-between text-sm text-gray-600 mb-4">
                     <div className="flex items-center">
                       <Bed className="w-4 h-4 mr-1" />
-                      {property.bedrooms}
+                      {property.nombreChambres}
                     </div>
                     <div className="flex items-center">
                       <Bath className="w-4 h-4 mr-1" />
@@ -228,20 +305,25 @@ export default function FavorisPage() {
                     </div>
                     <div className="flex items-center">
                       <Square className="w-4 h-4 mr-1" />
-                      {property.area}
+                      {property.surface}
                     </div>
                   </div>
 
-                  {/* Date ajoutée */}
                   <div className="text-xs text-gray-500 mb-4">
-                    Ajouté le {new Date(property.dateAdded).toLocaleDateString('fr-FR')}
+                    Ajouté le {new Date(property.createdAt).toLocaleDateString('fr-FR')}
                   </div>
 
-                  {/* Actions */}
                   <div className="flex space-x-2">
                     <button className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2">
                       <Eye className="w-4 h-4" />
                       <span>Voir détails</span>
+                    </button>
+                    <button
+                      onClick={() => handleFaireOffre(property.id)}
+                      className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center space-x-2"
+                    >
+                      <Send className="w-4 h-4" />
+                      <span>Faire une offre</span>
                     </button>
                     <button
                       onClick={() => removeFavorite(property.id)}
@@ -257,6 +339,103 @@ export default function FavorisPage() {
           </div>
         )}
       </div>
+
+      {/* MODAL D'OFFRE */}
+      {showOffreModal && selectedProperty && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-gray-900">
+                Faire une offre
+              </h2>
+              <button
+                onClick={closeModal}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="p-6 bg-gray-50 border-b border-gray-200">
+              <h3 className="font-semibold text-gray-900 mb-2">
+                {selectedProperty.nom}
+              </h3>
+              <div className="flex items-center text-sm text-gray-600 mb-2">
+                <MapPin className="w-4 h-4 mr-1" />
+                {selectedProperty.geolocalisation}
+              </div>
+              <div className="text-lg font-bold text-blue-600">
+                Prix demandé: {selectedProperty.prix}
+              </div>
+            </div>
+
+            <form onSubmit={handleSubmitOffre} className="p-6 space-y-6">
+              <div>
+                <label
+                  htmlFor="montant"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Montant de votre offre *
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500">
+                    €
+                  </span>
+                  <input
+                    type="number"
+                    id="montant"
+                    value={offreForm.montant}
+                    onChange={(e) =>
+                      setOffreForm({ ...offreForm, montant: e.target.value })
+                    }
+                    className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Entrez votre montant"
+                    required
+                    min="0"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="message"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Message au vendeur (optionnel)
+                </label>
+                <textarea
+                  id="message"
+                  value={offreForm.message}
+                  onChange={(e) =>
+                    setOffreForm({ ...offreForm, message: e.target.value })
+                  }
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                  rows={4}
+                  placeholder="Ajoutez un message pour expliquer votre offre..."
+                  maxLength={500}
+                />
+              </div>
+
+              <div className="flex space-x-3">
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium flex items-center justify-center space-x-2"
+                >
+                  <Send className="w-4 h-4" />
+                  <span>Envoyer l&apos;offre</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

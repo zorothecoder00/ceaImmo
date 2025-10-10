@@ -526,7 +526,7 @@ export default function RecherchesPage() {
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="text-lg font-semibold text-gray-900 truncate">
                         {propriete.nom}
-                      </h3>
+                      </h3>  
                       <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
                         {propriete.categorie}
                       </span>
