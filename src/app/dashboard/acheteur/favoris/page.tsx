@@ -94,6 +94,10 @@ export default function FavorisPage() {
     message: ''
   })
 
+  // 🆕 Pour la modale de demande de visite
+  const [showVisiteModal, setShowVisiteModal] = useState(false);
+  const [visiteDate, setVisiteDate] = useState(''); // pour la date saisie par l’utilisateur
+
   useEffect(() => {
     let filtered = favorites
 
@@ -159,6 +163,38 @@ export default function FavorisPage() {
     setShowOffreModal(false)
     setSelectedProperty(null)
     setOffreForm({ montant: '', message: '' })
+  }
+
+  // 📅 Ouvrir la modale de visite
+  const handleDemandeVisite = (property: Property) => {
+    setSelectedProperty(property)
+    setShowVisiteModal(true)
+  }
+
+  const closeVisiteModal = () => {
+    setShowVisiteModal(false)
+    setVisiteDate('')
+    setSelectedProperty(null)
+  }
+
+
+  // 📆 Soumettre une demande de visite
+  const handleSubmitVisite = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedProperty || !visiteDate) {
+      alert('Veuillez choisir une date.')
+      return
+    }
+
+    alert(
+      `Demande de visite envoyée pour ${selectedProperty.nom} le ${new Date(
+        visiteDate
+      ).toLocaleDateString('fr-FR')}`
+    )
+
+    setVisiteDate('')
+    setShowVisiteModal(false)
+    setSelectedProperty(null)
   }
 
   const propertyTypes = ['all', 'villa', 'appartement', 'maison', 'penthouse']
@@ -318,13 +354,24 @@ export default function FavorisPage() {
                       <Eye className="w-4 h-4" />
                       <span>Voir détails</span>
                     </button>
+
                     <button
                       onClick={() => handleFaireOffre(property.id)}
                       className="flex-1 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center space-x-2"
                     >
                       <Send className="w-4 h-4" />
-                      <span>Faire une offre</span>
+                      <span>Offre</span>
                     </button>
+
+                    {/* 🟠 Nouveau bouton : Demander une visite */}
+                    <button
+                      onClick={() => handleDemandeVisite(property)}
+                      className="flex-1 bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors flex items-center justify-center space-x-2"
+                    >
+                      <MapPin className="w-4 h-4" />
+                      <span>Demander une visite</span>
+                    </button>
+
                     <button
                       onClick={() => removeFavorite(property.id)}
                       className="bg-gray-100 text-gray-600 px-3 py-2 rounded-lg hover:bg-red-50 hover:text-red-600 transition-colors"
@@ -333,6 +380,7 @@ export default function FavorisPage() {
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
+ 
                 </div>
               </div>
             ))}
@@ -344,7 +392,7 @@ export default function FavorisPage() {
       {showOffreModal && selectedProperty && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+            <div className="bg-gradient-to-r from-orange-500 to-orange-600 p-6 border-b border-gray-200 flex justify-between items-center">
               <h2 className="text-2xl font-bold text-gray-900">
                 Faire une offre
               </h2>
@@ -414,7 +462,7 @@ export default function FavorisPage() {
                   placeholder="Ajoutez un message pour expliquer votre offre..."
                   maxLength={500}
                 />
-              </div>
+              </div>   
 
               <div className="flex space-x-3">
                 <button
@@ -430,6 +478,34 @@ export default function FavorisPage() {
                 >
                   <Send className="w-4 h-4" />
                   <span>Envoyer l&apos;offre</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* 🟢 Modale Demande de Visite */}
+      {showVisiteModal && selectedProperty && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center">
+          <div className="bg-white p-6 rounded-xl shadow-xl w-full max-w-md">
+            <h2 className="text-xl font-semibold mb-4">Demande de visite pour {selectedProperty.nom}</h2>
+            <form onSubmit={handleSubmitVisite}>
+              <label className="block mb-3">
+                <span className="text-gray-700">Date souhaitée :</span>
+                <input
+                  type="datetime-local"
+                  value={visiteDate}
+                  onChange={(e) => setVisiteDate(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg p-2 mt-1"
+                />
+              </label>
+              <div className="flex justify-end gap-3 mt-4">
+                <button type="button" onClick={closeVisiteModal} className="px-4 py-2 border rounded-lg">
+                  Annuler
+                </button>
+                <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                  Envoyer la demande
                 </button>
               </div>
             </form>

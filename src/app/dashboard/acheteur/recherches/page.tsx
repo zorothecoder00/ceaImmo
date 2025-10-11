@@ -12,7 +12,7 @@ interface Propriete {
   nom: string;
   description?: string;
   categorie: Categorie;
-  prix: number;
+  prix: number;  
   surface: number;
   statut: Statut;
   nombreChambres: number;
@@ -75,6 +75,11 @@ export default function RecherchesPage() {
   const [showOffreModal, setShowOffreModal] = useState(false);
   const [selectedPropriete, setSelectedPropriete] = useState<Propriete | null>(null);
   const [offreData, setOffreData] = useState<OffreData>({ montant: '', message: '', mode: '' });
+
+  // 🆕 Pour la modale de demande de visite
+  const [showVisiteModal, setShowVisiteModal] = useState(false);
+  const [visiteDate, setVisiteDate] = useState(''); // pour la date saisie par l’utilisateur
+
 
   const [filters, setFilters] = useState<SearchFilters>({
     search: '',
@@ -200,6 +205,20 @@ export default function RecherchesPage() {
     });
   };
 
+  // 🔹 Ouvrir la modale de visite
+  const openVisiteModal = (propriete: Propriete) => {
+    setSelectedPropriete(propriete);
+    setShowVisiteModal(true);
+  };
+
+  // 🔹 Fermer la modale
+  const closeVisiteModal = () => {
+    setShowVisiteModal(false);
+    setSelectedPropriete(null);
+    setVisiteDate('');
+  };
+
+
   const handleOffreSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -231,6 +250,38 @@ export default function RecherchesPage() {
       console.error('Erreur lors de l\'envoi de l\'offre:', error);
       alert('Erreur lors de l\'envoi de l\'offre');
     }
+  };
+
+  const handleVisiteSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!selectedPropriete) return;
+    if (!visiteDate) {
+      alert('Veuillez choisir une date de visite.');
+      return;
+    }
+
+    try {
+      // Exemple d’appel API (à implémenter côté serveur avec Prisma)
+      /*const response = await fetch('/api/visites', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          date: new Date(visiteDate),
+          proprieteId: selectedPropriete.id,
+          userId: 1, // ⚠️ Remplacez par l’ID utilisateur réel (ex : session.user.id)
+        }),
+      });    
+
+      if (!response.ok) throw new Error('Erreur serveur');
+      */
+      alert(`Demande de visite envoyée pour ${selectedPropriete.nom} le ${new Date(visiteDate).toLocaleDateString('fr-FR')}`);
+      closeVisiteModal();
+    } catch (error) {
+      console.error('Erreur lors de l’envoi de la demande de visite :', error);
+      alert('Erreur lors de l’envoi de la demande de visite.');
+    }
+
   };
 
   return (
@@ -586,6 +637,12 @@ export default function RecherchesPage() {
                     >
                       Faire une offre
                     </button>
+                    <button
+                      onClick={() => openVisiteModal(propriete)}
+                      className="flex-1 bg-green-600 text-white py-2 rounded-md hover:bg-green-700 text-sm"
+                    >
+                      Demander une visite
+                    </button>
                   </div>
                 </div>
               ))}
@@ -628,7 +685,7 @@ export default function RecherchesPage() {
           <div className="flex min-h-full items-center justify-center p-4">
             <div className="relative bg-white rounded-lg shadow-xl max-w-2xl w-full">
               {/* Header */}
-              <div className="flex items-center justify-between p-6 border-b">
+              <div className="bg-gradient-to-r from-orange-500 to-orange-600 flex items-center justify-between p-6 border-b">
                 <h2 className="text-2xl font-bold text-gray-900">
                   Faire une offre
                 </h2>
@@ -748,6 +805,34 @@ export default function RecherchesPage() {
                 </div>
               </form>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* 🟢 Modale Demande de Visite */}
+      {showVisiteModal && selectedPropriete && (
+        <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-center">
+          <div className="bg-white p-6 rounded-xl shadow-xl w-full max-w-md">
+            <h2 className="text-xl font-semibold mb-4">Demande de visite pour {selectedPropriete.nom}</h2>
+            <form onSubmit={handleVisiteSubmit}>
+              <label className="block mb-3">
+                <span className="text-gray-700">Date souhaitée :</span>
+                <input
+                  type="datetime-local"
+                  value={visiteDate}
+                  onChange={(e) => setVisiteDate(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg p-2 mt-1"
+                />
+              </label>
+              <div className="flex justify-end gap-3 mt-4">
+                <button type="button" onClick={closeVisiteModal} className="px-4 py-2 border rounded-lg">
+                  Annuler
+                </button>
+                <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                  Envoyer la demande
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

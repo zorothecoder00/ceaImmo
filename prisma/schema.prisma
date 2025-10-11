@@ -82,11 +82,11 @@ enum Theme {
 
 enum Langue {
   FR
-  EN
+  EN  
   IT
   ES
   DE
-}
+}  
 
 
 model User {    
@@ -103,7 +103,7 @@ model User {
 
   // 🔹 Nouvelle propriété : visibilité des annonces
   visibiliteAnnonces Boolean?       @default(true)  // true = annonces publiques, false = annonces privées
-  
+
   theme             Theme?          @default(CLAIR)
   langue            Langue?         @default(FR)
 
@@ -124,7 +124,7 @@ model User {
   logs              Log[]
   notifications     Notification[]
   avis              Avis[]
-}  
+}     
 
 model Propriete {   
   id                Int             @id @default(autoincrement())
@@ -202,7 +202,7 @@ model Visite {
   id           Int                  @id @default(autoincrement())
   date         DateTime
  
-  statut       VisiteStatut    @default(DEMANDEE)
+  statut       VisiteStatut         @default(DEMANDEE)
   userId       Int
   user         User                 @relation("UserVisite", fields: [userId], references: [id], onDelete: Cascade)
   
@@ -346,5 +346,5 @@ model Notification {
 
 model Config {
   id        Int     @id @default(1)
-  maintenance Boolean @default(false)
+  maintenance Boolean @default(false)  
 }    
