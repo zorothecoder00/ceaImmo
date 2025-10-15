@@ -23,13 +23,49 @@ import {
   CheckCircle,
   Clock,
   AlertCircle,
-  Settings
+  Settings,
+  Bell,
+  Target,
+  Activity,
+  TrendingDown,
+  Package
 } from 'lucide-react';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
-interface Image {
+interface ProprieteImage {
   id: number;
   url: string;
   ordre: number;
+}
+
+interface Offre {
+  id: number;
+  montant: number;
+  statut: 'EN_ATTENTE' | 'ACCEPTEE' | 'REFUSEE' | 'EXPIREE';
+  message?: string;
+  createdAt: string;
+}
+
+interface Reservation {
+  id: number;
+  dateArrivee: string;
+  dateDepart: string;
+  nombreVoyageurs: number;
+  type: 'SEJOUR' | 'LOCATION';
+  statut: 'DEMANDEE' | 'CONFIRMEE' | 'ANNULEE' | 'REPORTEE';
+}
+
+interface Visite {
+  id: number;
+  date: string;
+  statut: 'DEMANDEE' | 'CONFIRMEE' | 'ANNULEE' | 'REPORTEE';
+}
+
+interface Avis {
+  id: number;
+  note: number;
+  commentaire?: string;
+  createdAt: string;
 }
 
 interface Bien {
@@ -42,22 +78,19 @@ interface Bien {
   statut: string;
   nombreChambres: number;
   geolocalisation: string;
-  images: Image[];
+  images: ProprieteImage[];
   visiteVirtuelle: string | null;
   createdAt: string;
   updatedAt: string;
-  _count: {
-    reservations: number;
-    offres: number;
-    favoris: number;
-    avis: number;
-  };
-  averageRating: number;
-  totalRevenue: number;
+  offres: Offre[];
+  reservations: Reservation[];
+  favoris: number;
+  visites: Visite[];
+  avis: Avis[];
 }
 
-// Mock data basé sur le schéma Prisma
-const mockBiens = [
+// Mock data RÉALISTE basé sur le schéma Prisma
+const mockBiens: Bien[] = [
   {
     id: 1,
     nom: "Villa Moderne Seaside",
@@ -75,14 +108,24 @@ const mockBiens = [
     visiteVirtuelle: "https://matterport.com/villa-moderne",
     createdAt: "2024-01-15T10:30:00Z",
     updatedAt: "2024-09-15T14:20:00Z",
-    _count: {
-      reservations: 12,
-      offres: 8,
-      favoris: 34,
-      avis: 15
-    },
-    averageRating: 4.8,
-    totalRevenue: 45000
+    offres: [
+      { id: 1, montant: 820000, statut: 'ACCEPTEE', createdAt: "2024-08-10T09:00:00Z" },
+      { id: 2, montant: 800000, statut: 'REFUSEE', createdAt: "2024-07-15T14:30:00Z" },
+      { id: 3, montant: 830000, statut: 'EN_ATTENTE', createdAt: "2024-10-01T11:20:00Z" }
+    ],
+    reservations: [
+      { id: 1, dateArrivee: "2024-11-01", dateDepart: "2024-11-15", nombreVoyageurs: 6, type: 'SEJOUR', statut: 'CONFIRMEE' },
+      { id: 2, dateArrivee: "2024-12-20", dateDepart: "2025-01-05", nombreVoyageurs: 4, type: 'SEJOUR', statut: 'DEMANDEE' }
+    ],
+    favoris: 34,
+    visites: [
+      { id: 1, date: "2024-10-20T10:00:00Z", statut: 'DEMANDEE' },
+      { id: 2, date: "2024-10-18T15:00:00Z", statut: 'CONFIRMEE' }
+    ],
+    avis: [
+      { id: 1, note: 5, commentaire: "Superbe villa!", createdAt: "2024-09-01T12:00:00Z" },
+      { id: 2, note: 4, commentaire: "Très bien située", createdAt: "2024-09-10T16:30:00Z" }
+    ]
   },
   {
     id: 2,
@@ -100,14 +143,21 @@ const mockBiens = [
     visiteVirtuelle: null,
     createdAt: "2024-02-10T09:15:00Z",
     updatedAt: "2024-09-10T11:45:00Z",
-    _count: {
-      reservations: 6,
-      offres: 15,
-      favoris: 18,
-      avis: 8
-    },
-    averageRating: 4.3,
-    totalRevenue: 8500
+    offres: [
+      { id: 4, montant: 115000, statut: 'ACCEPTEE', createdAt: "2024-09-01T10:00:00Z" },
+      { id: 5, montant: 110000, statut: 'REFUSEE', createdAt: "2024-08-25T14:00:00Z" },
+      { id: 6, montant: 118000, statut: 'EN_ATTENTE', createdAt: "2024-09-28T09:30:00Z" }
+    ],
+    reservations: [
+      { id: 3, dateArrivee: "2024-10-25", dateDepart: "2024-11-25", nombreVoyageurs: 2, type: 'LOCATION', statut: 'CONFIRMEE' }
+    ],
+    favoris: 18,
+    visites: [
+      { id: 3, date: "2024-10-22T14:00:00Z", statut: 'CONFIRMEE' }
+    ],
+    avis: [
+      { id: 3, note: 4, commentaire: "Bien situé", createdAt: "2024-09-05T10:00:00Z" }
+    ]
   },
   {
     id: 3,
@@ -125,14 +175,16 @@ const mockBiens = [
     visiteVirtuelle: null,
     createdAt: "2024-03-05T14:20:00Z",
     updatedAt: "2024-09-12T16:30:00Z",
-    _count: {
-      reservations: 0,
-      offres: 3,
-      favoris: 7,
-      avis: 0
-    },
-    averageRating: 0,
-    totalRevenue: 0
+    offres: [
+      { id: 7, montant: 175000, statut: 'EN_ATTENTE', createdAt: "2024-09-20T11:00:00Z" },
+      { id: 8, montant: 170000, statut: 'REFUSEE', createdAt: "2024-09-10T15:00:00Z" }
+    ],
+    reservations: [],
+    favoris: 7,
+    visites: [
+      { id: 4, date: "2024-10-16T09:00:00Z", statut: 'DEMANDEE' }
+    ],
+    avis: []
   },
   {
     id: 4,
@@ -151,15 +203,41 @@ const mockBiens = [
     visiteVirtuelle: "https://matterport.com/hotel-boutique",
     createdAt: "2024-01-20T12:00:00Z",
     updatedAt: "2024-09-14T10:15:00Z",
-    _count: {
-      reservations: 28,
-      offres: 5,
-      favoris: 42,
-      avis: 31
-    },
-    averageRating: 4.6,
-    totalRevenue: 125000
+    offres: [
+      { id: 9, montant: 440000, statut: 'EN_ATTENTE', createdAt: "2024-10-05T10:00:00Z" },
+      { id: 10, montant: 435000, statut: 'REFUSEE', createdAt: "2024-09-28T13:00:00Z" }
+    ],
+    reservations: [
+      { id: 4, dateArrivee: "2024-11-10", dateDepart: "2024-11-12", nombreVoyageurs: 2, type: 'SEJOUR', statut: 'CONFIRMEE' },
+      { id: 5, dateArrivee: "2024-12-01", dateDepart: "2024-12-03", nombreVoyageurs: 4, type: 'SEJOUR', statut: 'CONFIRMEE' }
+    ],
+    favoris: 42,
+    visites: [
+      { id: 5, date: "2024-10-25T11:00:00Z", statut: 'DEMANDEE' },
+      { id: 6, date: "2024-10-28T14:00:00Z", statut: 'DEMANDEE' }
+    ],
+    avis: [
+      { id: 4, note: 5, commentaire: "Excellent hôtel", createdAt: "2024-08-15T12:00:00Z" },
+      { id: 5, note: 4, commentaire: "Très bon accueil", createdAt: "2024-09-01T10:00:00Z" }
+    ]
   }
+];
+
+// Données pour les graphiques
+const evolutionOffresData = [
+  { mois: 'Avr', offres: 12, acceptees: 4 },
+  { mois: 'Mai', offres: 19, acceptees: 7 },
+  { mois: 'Juin', offres: 15, acceptees: 5 },
+  { mois: 'Juil', offres: 22, acceptees: 9 },
+  { mois: 'Août', offres: 28, acceptees: 11 },
+  { mois: 'Sept', offres: 25, acceptees: 10 },
+  { mois: 'Oct', offres: 18, acceptees: 6 }
+];
+
+const repartitionStatutsData = [
+  { name: 'Disponible', value: 2, color: '#10b981' },
+  { name: 'Réservé', value: 1, color: '#f59e0b' },
+  { name: 'En Négociation', value: 1, color: '#3b82f6' }
 ];
 
 interface StatCardProps {
@@ -168,23 +246,27 @@ interface StatCardProps {
   value: number | string;
   change?: number;
   color?: string;
+  subtitle?: string;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ icon: Icon, title, value, change, color = "blue" }) => (
+const StatCard: React.FC<StatCardProps> = ({ icon: Icon, title, value, change, color = "blue", subtitle }) => (
   <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow">
     <div className="flex items-center justify-between">
-      <div>
+      <div className="flex-1">
         <p className="text-gray-600 text-sm font-medium">{title}</p>
-        <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
+        <p className="text-3xl font-bold text-gray-900 mt-2">{value}</p>
+        {subtitle && (
+          <p className="text-xs text-gray-500 mt-1">{subtitle}</p>
+        )}
         {change !== undefined && (
-          <p className={`text-sm mt-1 flex items-center ${change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-            <TrendingUp size={14} className="mr-1" />
+          <p className={`text-sm mt-2 flex items-center ${change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            {change >= 0 ? <TrendingUp size={14} className="mr-1" /> : <TrendingDown size={14} className="mr-1" />}
             {change >= 0 ? '+' : ''}{change}% vs mois dernier
           </p>
         )}
       </div>
-      <div className={`p-3 rounded-lg bg-${color}-50`}>
-        <Icon size={24} className={`text-${color}-600`} />
+      <div className={`p-4 rounded-xl bg-${color}-50 shrink-0`}>
+        <Icon size={28} className={`text-${color}-600`} />
       </div>
     </div>
   </div>
@@ -219,6 +301,13 @@ const BienCard: React.FC<BienCardProps> = ({ bien, onEdit, onDelete, onView }) =
       default: return <Clock size={14} />;
     }
   };
+
+  // Calculs réalistes basés sur les vraies données
+  const offresEnAttente = bien.offres.filter(o => o.statut === 'EN_ATTENTE').length;
+  const visitesAPlanifier = bien.visites.filter(v => v.statut === 'DEMANDEE').length;
+  const noteGlobale = bien.avis.length > 0 
+    ? (bien.avis.reduce((sum, a) => sum + a.note, 0) / bien.avis.length).toFixed(1)
+    : '—';
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 group">
@@ -273,6 +362,13 @@ const BienCard: React.FC<BienCardProps> = ({ bien, onEdit, onDelete, onView }) =
             </span>
           </div>
         )}
+        {offresEnAttente > 0 && (
+          <div className="absolute bottom-3 right-3">
+            <span className="bg-red-500 text-white px-2 py-1 rounded-full text-xs font-bold animate-pulse">
+              {offresEnAttente} offre{offresEnAttente > 1 ? 's' : ''}
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="p-5">
@@ -294,13 +390,22 @@ const BienCard: React.FC<BienCardProps> = ({ bien, onEdit, onDelete, onView }) =
 
         <p className="text-gray-600 text-sm mb-4 line-clamp-2">{bien.description}</p>
 
-        <div className="grid grid-cols-2 gap-4 mb-4">
+        {visitesAPlanifier > 0 && (
+          <div className="mb-3 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-xs text-yellow-800 font-medium flex items-center gap-1">
+              <AlertCircle size={12} />
+              {visitesAPlanifier} visite{visitesAPlanifier > 1 ? 's' : ''} à confirmer
+            </p>
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-3 mb-4">
           <div className="text-center p-2 bg-gray-50 rounded-lg">
-            <p className="text-lg font-semibold text-gray-900">{bien._count.reservations}</p>
+            <p className="text-lg font-semibold text-gray-900">{bien.reservations.length}</p>
             <p className="text-xs text-gray-600">Réservations</p>
           </div>
           <div className="text-center p-2 bg-gray-50 rounded-lg">
-            <p className="text-lg font-semibold text-gray-900">{bien._count.offres}</p>
+            <p className="text-lg font-semibold text-gray-900">{bien.offres.length}</p>
             <p className="text-xs text-gray-600">Offres</p>
           </div>
         </div>
@@ -309,15 +414,15 @@ const BienCard: React.FC<BienCardProps> = ({ bien, onEdit, onDelete, onView }) =
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1">
               <Heart size={14} className="text-red-500" />
-              <span className="text-sm text-gray-600">{bien._count.favoris}</span>
+              <span className="text-sm text-gray-600">{bien.favoris}</span>
             </div>
             <div className="flex items-center gap-1">
               <Star size={14} className="text-yellow-500" />
-              <span className="text-sm text-gray-600">{bien.averageRating || '—'}</span>
+              <span className="text-sm text-gray-600">{noteGlobale}</span>
             </div>
             <div className="flex items-center gap-1">
               <MessageSquare size={14} className="text-gray-400" />
-              <span className="text-sm text-gray-600">{bien._count.avis}</span>
+              <span className="text-sm text-gray-600">{bien.avis.length}</span>
             </div>
           </div>
           {bien.visiteVirtuelle && (
@@ -326,14 +431,6 @@ const BienCard: React.FC<BienCardProps> = ({ bien, onEdit, onDelete, onView }) =
             </button>
           )}
         </div>
-
-        {bien.totalRevenue > 0 && (
-          <div className="mt-3 p-2 bg-green-50 rounded-lg">
-            <p className="text-sm text-green-800 font-medium">
-              Revenus générés: {(bien.totalRevenue / 1000).toFixed(1)}k€
-            </p>
-          </div>
-        )}
       </div>
     </div>
   );
@@ -346,16 +443,58 @@ export default function VendeurDashboard() {
   const [selectedCategorie, setSelectedCategorie] = useState('');
   const [selectedStatut, setSelectedStatut] = useState('');
   const [sortBy, setSortBy] = useState('recent');
+  const [showAnalytics, setShowAnalytics] = useState(true);
 
   const categories = ['VILLA', 'MAISON', 'APPARTEMENT', 'HOTEL', 'TERRAIN', 'CHANTIER'];
   const statuts = ['DISPONIBLE', 'RESERVE', 'VENDU', 'EN_LOCATION', 'EN_NEGOCIATION'];
 
-  // Calcul des statistiques
+  // Calcul des statistiques RÉALISTES
   const stats = {
     totalBiens: biens.length,
-    totalRevenue: biens.reduce((sum, bien) => sum + bien.totalRevenue, 0),
-    totalReservations: biens.reduce((sum, bien) => sum + bien._count.reservations, 0),
-    totalOffres: biens.reduce((sum, bien) => sum + bien._count.offres, 0),
+    
+    // Revenus depuis les offres acceptées
+    totalRevenue: biens.reduce((sum, bien) => {
+      const revenus = bien.offres
+        .filter(o => o.statut === 'ACCEPTEE')
+        .reduce((s, o) => s + o.montant, 0);
+      return sum + revenus;
+    }, 0),
+    
+    // Réservations confirmées uniquement
+    totalReservations: biens.reduce((sum, bien) => 
+      sum + bien.reservations.filter(r => r.statut === 'CONFIRMEE').length, 0
+    ),
+    
+    totalOffres: biens.reduce((sum, bien) => sum + bien.offres.length, 0),
+    
+    // Offres en attente (ACTION REQUISE)
+    offresEnAttente: biens.reduce((sum, bien) => 
+      sum + bien.offres.filter(o => o.statut === 'EN_ATTENTE').length, 0
+    ),
+    
+    // Taux de conversion
+    tauxConversion: (() => {
+      const total = biens.reduce((s, b) => s + b.offres.length, 0);
+      const acceptees = biens.reduce((s, b) => 
+        s + b.offres.filter(o => o.statut === 'ACCEPTEE').length, 0
+      );
+      return total > 0 ? ((acceptees / total) * 100).toFixed(1) : 0;
+    })(),
+    
+    // Note globale moyenne
+    noteGlobale: (() => {
+      const allAvis = biens.flatMap(b => b.avis);
+      if (allAvis.length === 0) return 0;
+      return (allAvis.reduce((s, a) => s + a.note, 0) / allAvis.length).toFixed(1);
+    })(),
+    
+    // Visites à planifier (ACTION REQUISE)
+    visitesAPlanifier: biens.reduce((sum, bien) => 
+      sum + bien.visites.filter(v => v.statut === 'DEMANDEE').length, 0
+    ),
+
+    // Total favoris
+    totalFavoris: biens.reduce((sum, bien) => sum + bien.favoris, 0)
   };
 
   // Filtrage et tri
@@ -378,7 +517,6 @@ export default function VendeurDashboard() {
       filtered = filtered.filter(bien => bien.statut === selectedStatut);
     }
 
-    // Tri
     filtered.sort((a, b) => {
       switch (sortBy) {
         case 'prix-asc':
@@ -389,8 +527,10 @@ export default function VendeurDashboard() {
           return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
         case 'ancien':
           return new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime();
-        case 'revenus':
-          return b.totalRevenue - a.totalRevenue;
+        case 'offres':
+          return b.offres.length - a.offres.length;
+        case 'popularite':
+          return b.favoris - a.favoris;
         default:
           return 0;
       }
@@ -401,12 +541,10 @@ export default function VendeurDashboard() {
 
   const handleView = (bien: Bien) => {
     console.log('Voir bien:', bien);
-    // Navigation vers la page de détail
   };
 
   const handleEdit = (bien: Bien) => {
     console.log('Modifier bien:', bien);
-    // Navigation vers la page d'édition
   };
 
   const handleDelete = (bien: Bien) => {
@@ -416,25 +554,35 @@ export default function VendeurDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between py-6">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Mes Biens</h1>
-              <p className="text-gray-600 mt-1">Gérez votre portefeuille immobilier</p>
+              <h1 className="text-3xl font-bold text-gray-900">Tableau de Bord Vendeur</h1>
+              <p className="text-gray-600 mt-1">Gérez vos propriétés et suivez vos performances</p>
             </div>
-            <button className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2 font-medium shadow-sm">
-              <Plus size={20} />
-              Ajouter un bien
-            </button>
+            <div className="flex items-center gap-3">
+              <button className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors relative">
+                <Bell size={20} className="text-gray-600" />
+                {(stats.offresEnAttente + stats.visitesAPlanifier) > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                    {stats.offresEnAttente + stats.visitesAPlanifier}
+                  </span>
+                )}
+              </button>
+              <button className="bg-indigo-600 text-white px-6 py-2.5 rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2 font-medium shadow-md">
+                <Plus size={20} />
+                Ajouter un bien
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Statistiques */}
+        {/* Statistiques Principales */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatCard 
             icon={Home} 
@@ -444,117 +592,191 @@ export default function VendeurDashboard() {
             color="blue"
           />
           <StatCard 
-            icon={DollarSign} 
-            title="Revenus Totaux" 
-            value={`${(stats.totalRevenue / 1000).toFixed(0)}k€`} 
-            change={8}
+            icon={Target} 
+            title="Taux de Conversion" 
+            value={`${stats.tauxConversion}%`} 
+            change={5}
             color="green"
+            subtitle={`${biens.reduce((s, b) => s + b.offres.filter(o => o.statut === 'ACCEPTEE').length, 0)} offres acceptées`}
           />
           <StatCard 
-            icon={Calendar} 
-            title="Réservations" 
-            value={stats.totalReservations} 
-            change={-3}
-            color="orange"
+            icon={AlertCircle} 
+            title="Actions Requises" 
+            value={stats.offresEnAttente + stats.visitesAPlanifier} 
+            change={-8}
+            color="red"
+            subtitle={`${stats.offresEnAttente} offres + ${stats.visitesAPlanifier} visites`}
           />
           <StatCard 
-            icon={Users} 
-            title="Offres Reçues" 
-            value={stats.totalOffres} 
-            change={15}
-            color="purple"
+            icon={Star} 
+            title="Note Moyenne" 
+            value={stats.noteGlobale || '—'} 
+            change={3}
+            color="yellow"
+            subtitle={`${biens.flatMap(b => b.avis).length} avis reçus`}
           />
         </div>
 
-        {/* Filtres et recherche */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
-          <div className="flex flex-col lg:flex-row gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Rechercher un bien..."
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
+        {/* Statistiques Secondaires */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-gray-600 text-sm font-medium">Revenus Générés</p>
+              <DollarSign size={18} className="text-green-600" />
+            </div>
+            <p className="text-2xl font-bold text-gray-900">{(stats.totalRevenue / 1000).toFixed(0)}k€</p>
+            <p className="text-xs text-gray-500 mt-1">Depuis les offres acceptées</p>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-gray-600 text-sm font-medium">Réservations</p>
+              <Calendar size={18} className="text-orange-600" />
+            </div>
+            <p className="text-2xl font-bold text-gray-900">{stats.totalReservations}</p>
+            <p className="text-xs text-gray-500 mt-1">Confirmées uniquement</p>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-gray-600 text-sm font-medium">Total Offres</p>
+              <Package size={18} className="text-purple-600" />
+            </div>
+            <p className="text-2xl font-bold text-gray-900">{stats.totalOffres}</p>
+            <p className="text-xs text-gray-500 mt-1">Toutes catégories</p>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-shadow">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-gray-600 text-sm font-medium">Popularité</p>
+              <Heart size={18} className="text-red-600" />
+            </div>
+            <p className="text-2xl font-bold text-gray-900">{stats.totalFavoris}</p>
+            <p className="text-xs text-gray-500 mt-1">Favoris totaux</p>
+          </div>
+        </div>
+
+        {/* Section Analytics */}
+        {showAnalytics && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            {/* Graphique Évolution des Offres */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Évolution des Offres</h3>
+                  <p className="text-sm text-gray-500">Performance des 6 derniers mois</p>
+                </div>
+                <Activity size={24} className="text-indigo-600" />
+              </div>
+              <ResponsiveContainer width="100%" height={250}>
+                <LineChart data={evolutionOffresData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis dataKey="mois" stroke="#9ca3af" style={{ fontSize: '12px' }} />
+                  <YAxis stroke="#9ca3af" style={{ fontSize: '12px' }} />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'white', 
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                    }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: '12px' }} />
+                  <Line 
+                    type="monotone" 
+                    dataKey="offres" 
+                    stroke="#6366f1" 
+                    strokeWidth={3}
+                    name="Offres reçues"
+                    dot={{ fill: '#6366f1', r: 4 }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="acceptees" 
+                    stroke="#10b981" 
+                    strokeWidth={3}
+                    name="Offres acceptées"
+                    dot={{ fill: '#10b981', r: 4 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Graphique Répartition des Statuts */}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Répartition des Biens</h3>
+                  <p className="text-sm text-gray-500">Par statut actuel</p>
+                </div>
+                <BarChart3 size={24} className="text-indigo-600" />
+              </div>
+              <div className="flex items-center justify-center">
+                <ResponsiveContainer width="100%" height={250}>
+                  <PieChart>
+                    <Pie
+                      data={repartitionStatutsData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={90}
+                      paddingAngle={5}
+                      dataKey="value"
+                      label={({ name, value }) => `${name}: ${value}`}
+                    >
+                      {repartitionStatutsData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="grid grid-cols-3 gap-3 mt-4">
+                {repartitionStatutsData.map((item, idx) => (
+                  <div key={idx} className="text-center p-2 bg-gray-50 rounded-lg">
+                    <div className="w-3 h-3 rounded-full mx-auto mb-1" style={{ backgroundColor: item.color }}></div>
+                    <p className="text-xs font-medium text-gray-700">{item.name}</p>
+                    <p className="text-sm font-bold text-gray-900">{item.value}</p>
+                  </div>
+                ))}
               </div>
             </div>
-            <div className="flex flex-wrap gap-3">
-              <select
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                value={selectedCategorie}
-                onChange={(e) => setSelectedCategorie(e.target.value)}
-              >
-                <option value="">Toutes catégories</option>
-                {categories.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
-              <select
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                value={selectedStatut}
-                onChange={(e) => setSelectedStatut(e.target.value)}
-              >
-                <option value="">Tous statuts</option>
-                {statuts.map(statut => (
-                  <option key={statut} value={statut}>{statut.replace('_', ' ')}</option>
-                ))}
-              </select>
-              <select
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-              >
-                <option value="recent">Plus récents</option>
-                <option value="ancien">Plus anciens</option>
-                <option value="prix-desc">Prix décroissant</option>
-                <option value="prix-asc">Prix croissant</option>
-                <option value="revenus">Revenus élevés</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Résultats */}
-        <div className="flex items-center justify-between mb-6">
-          <p className="text-gray-600">
-            {filteredBiens.length} bien{filteredBiens.length > 1 ? 's' : ''} trouvé{filteredBiens.length > 1 ? 's' : ''}
-          </p>
-          <div className="flex items-center gap-2">
-            <button className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-              <BarChart3 size={16} />
-            </button>
-            <button className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-              <Settings size={16} />
-            </button>
-          </div>
-        </div>
-
-        {/* Grille des biens */}
-        {filteredBiens.length === 0 ? (
-          <div className="text-center py-12">
-            <Home size={48} className="text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Aucun bien trouvé</h3>
-            <p className="text-gray-600 mb-6">Essayez de modifier vos critères de recherche</p>
-            <button className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
-              Ajouter votre premier bien
-            </button>
-          </div>
-        ) : (  
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredBiens.map(bien => (
-              <BienCard
-                key={bien.id}
-                bien={bien}
-                onView={handleView}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-              />
-            ))}
           </div>
         )}
+
+        {/* Actions Urgentes */}
+        {(stats.offresEnAttente > 0 || stats.visitesAPlanifier > 0) && (
+          <div className="bg-gradient-to-r from-red-50 to-orange-50 border-l-4 border-red-500 rounded-xl p-6 mb-8">
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-red-100 rounded-lg">
+                <AlertCircle size={24} className="text-red-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Actions Urgentes</h3>
+                <div className="space-y-2">
+                  {stats.offresEnAttente > 0 && (
+                    <div className="flex items-center gap-2 text-sm text-gray-700">
+                      <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                      <span className="font-medium">{stats.offresEnAttente} offre{stats.offresEnAttente > 1 ? 's' : ''}</span> en attente de réponse
+                    </div>
+                  )}
+                  {stats.visitesAPlanifier > 0 && (
+                    <div className="flex items-center gap-2 text-sm text-gray-700">
+                      <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                      <span className="font-medium">{stats.visitesAPlanifier} visite{stats.visitesAPlanifier > 1 ? 's' : ''}</span> à confirmer
+                    </div>
+                  )}
+                </div>
+                <button className="mt-3 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm font-medium">
+                  Traiter maintenant
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        
       </div>
     </div>
   );

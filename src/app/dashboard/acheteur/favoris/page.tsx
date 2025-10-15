@@ -363,7 +363,7 @@ export default function FavorisPage() {
                       <span>Offre</span>
                     </button>
 
-                    {/* 🟠 Nouveau bouton : Demander une visite */}
+                    {/* 🟠 Nouveau bouton : Demander une visite */}     
                     <button
                       onClick={() => handleDemandeVisite(property)}
                       className="flex-1 bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors flex items-center justify-center space-x-2"
