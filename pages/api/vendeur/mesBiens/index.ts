@@ -3,6 +3,27 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/lib/prisma"; 
 import { Prisma, Role, Categorie, Statut } from "@prisma/client";
 import { getAuthSession } from "@/lib/auth"; 
+import formidable, { File } from 'formidable';
+import fs from 'fs';
+import path from 'path';
+import cloudinary from '@/lib/cloudinary'
+
+export const config = { api: { bodyParser: false } }
+
+const uploadDir = path.join('/tmp/', 'uploads')
+if(!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true })
+
+/* Parse multipart -------------------------------------------------------- */
+function parseForm(req: NextApiRequest): Promise<{ fields: formidable.Fields; files: formidable.Files }> {
+  const form = formidable({ uploadDir, keepExtensions: true, maxFileSize: 5_242_880 })
+  return new Promise((resolve, reject) => {
+    form.parse(req, (err, fields, files) => {
+      if (err) reject(err);
+      else resolve({ fields, files });
+    });
+  })
+}
+
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // 1️⃣ Vérification user connecté
@@ -33,7 +54,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       minPrix,
       maxPrix,
       minSurface,
-      maxSurface,
+      maxSurface,     
       minChambres,
       maxChambres,
       latitude,
@@ -128,66 +149,76 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       console.error("Erreur API /mesBiens:", error);
       return res.status(500).json({ message: "Erreur interne", error });
     }
+  }
 
-  }else if (req.method === "POST") {
-    const {  
-      nom,
-      description,
-      categorie,
-      prix,
-      surface,
-      statut,
-      geolocalisation,
-      nombreChambres,
-      visiteVirtuelle,
-      images, // tableau de string URLs
-    } = req.body;
-
-    // --- validation minimale ---
-    if (!nom || !prix || !surface || !categorie || !statut || !geolocalisation) {
-      return res.status(400).json({ message: "Champs obligatoires manquants" });
-    }
-
-    if (!Object.values(Categorie).includes(categorie as Categorie)) {
-      return res.status(400).json({ message: "Catégorie invalide" });
-    }
-
-    if (!Object.values(Statut).includes(statut as Statut)) {
-      return res.status(400).json({ message: "Statut invalide" });
-    }
-
+  /* --------------------------------------------------------------- POST */
+  if(req.method ==='POST'){
     try{
-      const newPropriete = await prisma.propriete.create({
+      const { fields, files } = await parseForm(req);
+
+      const nom = Array.isArray(fields.nom) ? fields.nom[0] : fields.nom;
+      const description = Array.isArray(fields.description) ? fields.description[0] : (fields.description ?? "");
+      const categorie = Array.isArray(fields.categorie) ? fields.categorie[0] : fields.categorie;
+      const prix = Number(Array.isArray(fields.prix) ? fields.prix[0] : fields.prix);
+      const surface = Number(Array.isArray(fields.surface) ? fields.surface[0] : fields.surface);
+      const statut = Array.isArray(fields.statut) ? fields.statut[0] : fields.statut;
+      const geolocalisation = Array.isArray(fields.geolocalisation) ? fields.geolocalisation[0] : fields.geolocalisation ?? "";
+      const nombreChambres = Number(Array.isArray(fields.nombreChambres) ? fields.nombreChambres[0] : (fields.nombreChambres ?? 1));
+      const visiteVirtuelle = Array.isArray(fields.visiteVirtuelle) ? fields.visiteVirtuelle[0] : fields.visiteVirtuelle ?? null;
+
+      if (!nom || !categorie || !statut || !prix || !surface || !geolocalisation) {
+        return res.status(400).json({ message: 'Champs requis manquants' })
+      }
+
+      if (!Object.values(Categorie).includes(categorie as Categorie))
+        return res.status(400).json({ message: "Catégorie invalide" });
+      if (!Object.values(Statut).includes(statut as Statut))
+        return res.status(400).json({ message: "Statut invalide" });
+
+      /* Upload fichiers sur cloudinary -------------------------------------------------- */
+      const uploadedImages: string[] = []
+      if(files.images){
+        const fileArray = Array.isArray(files.images) ? files.images : [files.images]
+        for(const f of fileArray) {
+          const file = f as File
+          const uploaded = await cloudinary.uploader.upload((file as File).filepath, {
+            folder: "cea-immo/biens",
+            resource_type: 'auto',
+            type: 'upload', // Spécifie le type de livraison (upload = public)
+            upload_preset: 'my_unsigned_public'
+          })
+
+          uploadedImages.push(uploaded.secure_url);
+          fs.unlinkSync(file.filepath);
+        }
+      }
+
+      // 🧱 Création de la propriété + images liées
+      const propriete = await prisma.propriete.create({
         data: {
           nom,
           description,
           categorie: categorie as Categorie,
-          prix: Number(prix),
-          surface: Number(surface),
+          prix,
+          surface,
           statut: statut as Statut,
           geolocalisation,
-          nombreChambres: nombreChambres ? Number(nombreChambres) : 1,
-          visiteVirtuelle: visiteVirtuelle || null,
+          nombreChambres,
+          visiteVirtuelle,
           proprietaireId: userId,
-          images: images && Array.isArray(images)
-            ? {
-                createMany: {
-                  data: images.map((url: string) => ({ url })),
-                },
-              }
-            : undefined,
+          images: {
+            create: uploadedImages.map((url, index) => ({ url, ordre: index })),
+          },
         },
-        include: {
-          images: true,
-        },
+        include: { images: true },
       });
 
-      return res.status(201).json({ message: "Propriété créée avec succès", data: newPropriete });
-    } catch (error) {
-      console.error("Erreur API /mesBiens POST:", error);
-      return res.status(500).json({ message: "Erreur interne", error });
-    }
+      return res.status(201).json({ message: "Propriété créée avec succès", data: propriete });
 
+    }catch (error) {
+      console.error('Erreur serveur POST /mesBiens:', error)
+      return res.status(500).json({ message: 'Erreur serveur' })
+    }
   }
 
   return res.status(405).json({ message: 'Méthode non autorisée' })

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {   
   Plus, 
   Search, 
@@ -37,6 +37,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from '@/components/ui/button' 
 import { Card } from '@/components/ui/card'
 import { Statut, Categorie } from '@prisma/client'
+import { toast } from 'react-hot-toast';
+
 // === Types ===
 
 interface Chambre { 
@@ -83,114 +85,7 @@ interface PropertyCardProps {
   viewMode: "grid" | "list";
 }
 
-// Mock data des propriétés du vendeur
-const mesBiens: Bien[] = [
-  {
-    id: 1,
-    nom: "Villa Moderne Bord de Mer",
-    description: "Superbe villa avec vue panoramique sur l'océan, piscine privée et jardin tropical. Idéale pour les vacances en famille ou la location saisonnière.",
-    categorie: "VILLA",
-    prix: 850000,
-    surface: 320,
-    statut: "DISPONIBLE",
-    nombreChambres: 4,
-    geolocalisation: "Lomé, Bord de Mer",
-    images: [
-      { id: 1, url: "https://images.unsplash.com/photo-1613977257363-707ba9348227?w=800", ordre: 0 },
-      { id: 2, url: "https://images.unsplash.com/photo-1613977257592-4871e5fcd7c4?w=800", ordre: 1 },
-      { id: 3, url: "https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800", ordre: 2 }
-    ],
-    visiteVirtuelle: "https://matterport.com/villa-moderne",
-    createdAt: "2024-01-15T10:30:00Z",
-    updatedAt: "2024-09-15T14:20:00Z",
-    vues: 245,
-    favoris: 34,
-    messages: 12
-  },
-  {
-    id: 2,
-    nom: "Appartement Centre-Ville Premium",
-    description: "Magnifique appartement de standing dans le quartier résidentiel le plus prisé. Proche de toutes commodités, transport et écoles.",
-    categorie: "APPARTEMENT",
-    prix: 120000,
-    surface: 85,
-    statut: "RESERVE",
-    nombreChambres: 2,
-    geolocalisation: "Lomé Centre",
-    images: [
-      { id: 4, url: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800", ordre: 0 },
-      { id: 5, url: "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800", ordre: 1 }
-    ],
-    visiteVirtuelle: null,
-    createdAt: "2024-02-10T09:15:00Z",
-    updatedAt: "2024-09-10T11:45:00Z",
-    vues: 156,
-    favoris: 18,
-    messages: 8
-  },
-  {
-    id: 3,
-    nom: "Terrain Constructible Zone Commerciale",
-    description: "Terrain de 2000m² parfaitement situé pour projet commercial ou résidentiel. Toutes commodités à proximité, accès facile.",
-    categorie: "TERRAIN",
-    prix: 180000,
-    surface: 2000,
-    statut: "EN_NEGOCIATION",
-    nombreChambres: 0,
-    geolocalisation: "Kpalimé",
-    images: [
-      { id: 6, url: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=800", ordre: 0 }
-    ],
-    visiteVirtuelle: null,
-    createdAt: "2024-03-05T14:20:00Z",
-    updatedAt: "2024-09-12T16:30:00Z",
-    vues: 89,
-    favoris: 7,
-    messages: 3
-  },
-  {
-    id: 4,
-    nom: "Maison Familiale avec Jardin",
-    description: "Charmante maison familiale dans quartier calme. Grand jardin, garage double et terrasse couverte. Parfaite pour une famille.",
-    categorie: "MAISON",
-    prix: 200000,
-    surface: 150,
-    statut: "DISPONIBLE",
-    nombreChambres: 3,
-    geolocalisation: "Sokodé",
-    images: [
-      { id: 7, url: "https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=800", ordre: 0 },
-      { id: 8, url: "https://images.unsplash.com/photo-1572120360610-d971b9d7767c?w=800", ordre: 1 }
-    ],
-    visiteVirtuelle: "https://matterport.com/maison-familiale",
-    createdAt: "2024-04-12T16:45:00Z",
-    updatedAt: "2024-09-08T09:30:00Z",
-    vues: 198,
-    favoris: 25,
-    messages: 15
-  },
-  {
-    id: 5,
-    nom: "Hôtel Boutique Centre Historique",
-    description: "Petit hôtel de charme entièrement rénové. 12 chambres, restaurant gastronomique et bar. Clientèle haut de gamme établie.",
-    categorie: "HOTEL",
-    prix: 450000,
-    surface: 800,
-    statut: "VENDU",
-    nombreChambres: 12,
-    geolocalisation: "Kara",
-    images: [
-      { id: 9, url: "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800", ordre: 0 },
-      { id: 10, url: "https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800", ordre: 1 }
-    ],
-    visiteVirtuelle: "https://matterport.com/hotel-boutique",
-    createdAt: "2024-01-20T12:00:00Z",
-    updatedAt: "2024-08-25T14:15:00Z",
-    vues: 312,
-    favoris: 42,
-    messages: 28
-  }
-];
+
 
 // === PropertyCard ===
 const PropertyCard: React.FC<PropertyCardProps> = ({ bien, onEdit, onDelete, onView, viewMode }) => {
@@ -211,19 +106,19 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ bien, onEdit, onDelete, onV
     }
   };
 
-  const getCategoryIcon = (categorie: Bien["categorie"]) => {
+  const getCategoryIcon = (categorie: Categorie) => {
     switch (categorie) {
-      case "VILLA":
+      case Categorie.VILLA:
         return Home;
-      case "MAISON":
+      case Categorie.MAISON:
         return Home;
-      case "APPARTEMENT":
+      case Categorie.APPARTEMENT:
         return Building;
-      case "HOTEL":
+      case Categorie.HOTEL:
         return Hotel;
-      case "TERRAIN":
+      case Categorie.TERRAIN:
         return TreePine;
-      case "CHANTIER":
+      case Categorie.CHANTIER:
         return HardHat;
       default:
         return Home;
@@ -444,7 +339,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ bien, onEdit, onDelete, onV
 };
 
 export default function MesBiens() {
-  const [biens, setBiens] = useState<Bien[]>(mesBiens);
+  const [biens, setBiens] = useState<Bien[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategorie, setSelectedCategorie] = useState('');
   const [selectedStatut, setSelectedStatut] = useState('');
@@ -453,26 +348,26 @@ export default function MesBiens() {
   const [showModal, setShowModal] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<{
-  nom: string;
-  description: string;
-  categorie: Categorie | ''; // 👈
-  prix: string;
-  surface: string;
-  statut: Statut;
-  geolocalisation: string;
-  nombreChambres: string;
-  visiteVirtuelle: string;
-}>({
-  nom: '',
-  description: '',
-  categorie: '',
-  prix: '',
-  surface: '',
-  statut: Statut.DISPONIBLE,
-  geolocalisation: '',
-  nombreChambres: '1',
-  visiteVirtuelle: ''
-});
+    nom: string;
+    description: string;
+    categorie: Categorie; // 👈
+    prix: string;
+    surface: string;
+    statut: Statut;
+    geolocalisation: string;
+    nombreChambres: string;
+    visiteVirtuelle: string;
+  }>({
+    nom: '',
+    description: '',
+    categorie: Categorie.VILLA,
+    prix: '',
+    surface: '',
+    statut: Statut.DISPONIBLE,
+    geolocalisation: '',
+    nombreChambres: '1',
+    visiteVirtuelle: ''
+  });
 
   const [images, setImages] = useState<PropertyImage[]>([]);
   const [chambres, setChambres] = useState<Chambre[]>([]);
@@ -488,6 +383,13 @@ export default function MesBiens() {
     
     return matchSearch && matchCategorie && matchStatut;
   });
+
+  useEffect(() => {
+    return () => {
+      images.forEach(img => img.file && URL.revokeObjectURL(img.url))
+    }
+  }, [images])
+
 
   const handleView = (bien: Bien) => {
     console.log('Consulter bien:', bien);
@@ -512,10 +414,10 @@ export default function MesBiens() {
     setFormData({
       nom: '',
       description: '',
-      categorie: '',
+      categorie: Categorie.VILLA,
       prix: '',
       surface: '',
-      statut: 'DISPONIBLE',
+      statut: Statut.DISPONIBLE,
       geolocalisation: '',
       nombreChambres: '1',
       visiteVirtuelle: ''
@@ -576,12 +478,12 @@ export default function MesBiens() {
       nom: formData.nom,
       description: formData.description,
       categorie: formData.categorie as Categorie, // 👈 cast
-      prix: parseInt(formData.prix),
-      surface: parseInt(formData.surface),
+      prix: parseInt(formData.prix) || 0,
+      surface: parseInt(formData.surface) || 0,
       statut: formData.statut as Statut,   // 👈 cast
       geolocalisation: formData.geolocalisation,
       chambres: chambres,
-      nombreChambres: parseInt(formData.nombreChambres),
+      nombreChambres: parseInt(formData.nombreChambres) || 1,
       images,
       visiteVirtuelle: formData.visiteVirtuelle || null,
       createdAt: new Date().toISOString(),
@@ -593,6 +495,7 @@ export default function MesBiens() {
 
     
     setBiens([...biens, newBien])
+    toast.success('Bien ajouté avec succès !');      
     setIsSubmitting(false)
     setShowModal(false)
   }
