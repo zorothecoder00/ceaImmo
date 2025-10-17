@@ -381,7 +381,7 @@ export default function MesBiens() {
     const fetchBiens = async () => {
       try {
         setIsLoading(true);
-        const res = await fetch('/api/vendeurs/mesBiens');
+        const res = await fetch('/api/vendeur/mesBiens');
         if (!res.ok) throw new Error('Erreur lors du chargement des biens');
         const data = await res.json();
         setBiens(data.data);
@@ -412,7 +412,7 @@ export default function MesBiens() {
       images.forEach(img => img.file && URL.revokeObjectURL(img.url))
     }
   }, [images])
-
+  
 
   const handleView = (bien: Bien) => {
     console.log('Consulter bien:', bien);
@@ -528,7 +528,7 @@ export default function MesBiens() {
       formData.append('chambres', JSON.stringify(chambres));
 
       // 📡 Envoi vers l'API
-      const res = await fetch('/api/vendeurs/mesBiens', {
+      const res = await fetch('/api/vendeur/mesBiens', {
         method: 'POST',
         body: formData,
       });
@@ -556,7 +556,7 @@ export default function MesBiens() {
       setChambres([]);
 
     } catch (error) {
-      console.error(error);
+      console.error("Erreur lors de la création", error);
       toast.error('Erreur lors de la création du bien.');
     } finally {
       setIsSubmitting(false);

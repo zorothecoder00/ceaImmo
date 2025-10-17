@@ -176,22 +176,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(400).json({ message: "Statut invalide" });
 
       /* Upload fichiers sur cloudinary -------------------------------------------------- */
-      const uploadedImages: string[] = []
-      if(files.images){
-        const fileArray = Array.isArray(files.images) ? files.images : [files.images]
-        for(const f of fileArray) {
-          const file = f as File
-          const uploaded = await cloudinary.uploader.upload((file as File).filepath, {
-            folder: "cea-immo/biens",
-            resource_type: 'auto',
-            type: 'upload', // Spécifie le type de livraison (upload = public)
-            upload_preset: 'my_unsigned_public'
+      let uploadedImages: string[] = [];
+      if (files.images) {
+        const fileArray = Array.isArray(files.images) ? files.images : [files.images];
+        uploadedImages = await Promise.all(
+          fileArray.map(async (file) => {
+            const uploaded = await cloudinary.uploader.upload((file as File).filepath, {
+              folder: "cea-immo/biens",
+              resource_type: 'auto',
+              type: 'upload',
+              upload_preset: 'my_unsigned_public'
+            });
+            fs.unlinkSync((file as File).filepath);
+            return uploaded.secure_url;
           })
-
-          uploadedImages.push(uploaded.secure_url);
-          fs.unlinkSync(file.filepath);
-        }
+        );
       }
+
 
       // 🧱 Création de la propriété + images liées
       const propriete = await prisma.propriete.create({
@@ -206,9 +207,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           nombreChambres,
           visiteVirtuelle,
           proprietaireId: userId,
-          images: {
-            create: uploadedImages.map((url, index) => ({ url, ordre: index })),
-          },
+          images: uploadedImages.length
+            ? {
+                create: uploadedImages.map((url, index) => ({
+                  url,
+                  ordre: index,
+                })),
+              }
+            : undefined
         },
         include: { images: true },
       });
