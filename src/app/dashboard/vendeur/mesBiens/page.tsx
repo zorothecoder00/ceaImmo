@@ -72,9 +72,9 @@ interface Bien {
   visiteVirtuelle: string | null;
   createdAt: string;
   updatedAt: string;
-  vues: number;
-  favoris: number;
-  messages: number;
+  vues?: number;
+  favoris?: number;
+  messages?: number;
 }
 
 interface PropertyCardProps {
@@ -89,17 +89,17 @@ interface PropertyCardProps {
 
 // === PropertyCard ===
 const PropertyCard: React.FC<PropertyCardProps> = ({ bien, onEdit, onDelete, onView, viewMode }) => {
-  const getStatusInfo = (statut: Bien["statut"]) => {
+  const getStatusInfo = (statut: Statut) => {
     switch (statut) {
-      case "DISPONIBLE":
+      case Statut.DISPONIBLE:
         return { color: "text-green-700 bg-green-100", icon: CheckCircle, label: "Disponible" };
-      case "RESERVE":
+      case Statut.RESERVE:
         return { color: "text-orange-700 bg-orange-100", icon: Clock, label: "Réservé" };
-      case "VENDU":
+      case Statut.VENDU:
         return { color: "text-gray-700 bg-gray-100", icon: XCircle, label: "Vendu" };
-      case "EN_NEGOCIATION":
+      case Statut.EN_NEGOCIATION:
         return { color: "text-blue-700 bg-blue-100", icon: AlertCircle, label: "En négociation" };
-      case "EN_LOCATION":
+      case Statut.EN_LOCATION:
         return { color: "text-purple-700 bg-purple-100", icon: Home, label: "En location" };
       default:
         return { color: "text-gray-700 bg-gray-100", icon: Clock, label: statut };
@@ -347,7 +347,7 @@ export default function MesBiens() {
 
   const [showModal, setShowModal] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
-  const [formData, setFormData] = useState<{
+  const [form, setForm] = useState<{
     nom: string;
     description: string;
     categorie: Categorie; // 👈
@@ -356,6 +356,7 @@ export default function MesBiens() {
     statut: Statut;
     geolocalisation: string;
     nombreChambres: string;
+    images: string;
     visiteVirtuelle: string;
   }>({
     nom: '',
@@ -366,12 +367,34 @@ export default function MesBiens() {
     statut: Statut.DISPONIBLE,
     geolocalisation: '',
     nombreChambres: '1',
+    images: '',
     visiteVirtuelle: ''
   });
 
   const [images, setImages] = useState<PropertyImage[]>([]);
   const [chambres, setChambres] = useState<Chambre[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+
+  useEffect(() => {
+    const fetchBiens = async () => {
+      try {
+        setIsLoading(true);
+        const res = await fetch('/api/vendeurs/mesBiens');
+        if (!res.ok) throw new Error('Erreur lors du chargement des biens');
+        const data = await res.json();
+        setBiens(data.data);
+      } catch (error) {
+        console.error(error);
+        toast.error("Impossible de charger vos biens");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchBiens();
+  }, []);
 
   // Filtrage des biens
   const filteredBiens = biens.filter(bien => {
@@ -401,17 +424,25 @@ export default function MesBiens() {
     // Ici tu peux naviguer vers une page d'édition
   };
 
-  const handleDelete = (bien: Bien) => {
-    const confirmed = window.confirm(`Êtes-vous sûr de vouloir supprimer "${bien.nom}" ?`);
-    if (confirmed) {
-      setBiens(biens.filter(b => b.id !== bien.id));
+  const handleDelete = async (bien: Bien) => {
+    const confirmed = window.confirm(`Supprimer "${bien.nom}" ?`);
+    if (!confirmed) return;
+
+    try {
+      const res = await fetch(`/api/vendeurs/mesBiens/${bien.id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Échec de la suppression');
+      setBiens(prev => prev.filter(b => b.id !== bien.id));
+      toast.success('Bien supprimé');
+    } catch(error) {
+      console.error('Erreur lors de la suppression', error)
+      toast.error('Erreur lors de la suppression');
     }
   };
 
   const handleAddNew = () => {
     setShowModal(true)
     setCurrentStep(1)
-    setFormData({
+    setForm({
       nom: '',
       description: '',
       categorie: Categorie.VILLA,
@@ -420,7 +451,8 @@ export default function MesBiens() {
       statut: Statut.DISPONIBLE,
       geolocalisation: '',
       nombreChambres: '1',
-      visiteVirtuelle: ''
+      images: '',
+      visiteVirtuelle: '',
     })
     setImages([])
     setChambres([])
@@ -467,48 +499,85 @@ export default function MesBiens() {
     setChambres(updated);
   };
 
-  const handleSubmit = async () => {
-    setIsSubmitting(true)
-    
-    // Simulation d'upload
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    
-    const newBien: Bien = {
-      id: Date.now(),
-      nom: formData.nom,
-      description: formData.description,
-      categorie: formData.categorie as Categorie, // 👈 cast
-      prix: parseInt(formData.prix) || 0,
-      surface: parseInt(formData.surface) || 0,
-      statut: formData.statut as Statut,   // 👈 cast
-      geolocalisation: formData.geolocalisation,
-      chambres: chambres,
-      nombreChambres: parseInt(formData.nombreChambres) || 1,
-      images,
-      visiteVirtuelle: formData.visiteVirtuelle || null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      vues: 0,
-      favoris: 0,
-      messages: 0
-    };
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
 
-    
-    setBiens([...biens, newBien])
-    toast.success('Bien ajouté avec succès !');      
-    setIsSubmitting(false)
-    setShowModal(false)
-  }
+    try {
+      const formData = new FormData();
+
+      // 🧱 Champs texte
+      formData.append('nom', form.nom);
+      formData.append('description', form.description);
+      formData.append('categorie', form.categorie);
+      formData.append('prix', form.prix);
+      formData.append('surface', form.surface);
+      formData.append('statut', form.statut);
+      formData.append('geolocalisation', form.geolocalisation);
+      formData.append('nombreChambres', form.nombreChambres);
+      formData.append('visiteVirtuelle', form.visiteVirtuelle);
+
+      // 🖼️ Images (depuis le state `images`)
+      images.forEach((img) => {
+        if (img.file) {
+          formData.append('images', img.file);
+        }
+      });
+
+      // 🛏️ Chambres (si applicable)
+      formData.append('chambres', JSON.stringify(chambres));
+
+      // 📡 Envoi vers l'API
+      const res = await fetch('/api/vendeurs/mesBiens', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || 'Erreur lors de l’ajout du bien');
+      }
+
+      toast.success('Bien ajouté avec succès !');
+      setShowModal(false);
+      setForm({
+        nom: '',
+        description: '',
+        categorie: Categorie.VILLA,
+        prix: '',
+        surface: '',
+        statut: Statut.DISPONIBLE,
+        geolocalisation: '',
+        nombreChambres: '1',
+        images: '',
+        visiteVirtuelle: '',
+      });
+      setImages([]);
+      setChambres([]);
+
+    } catch (error) {
+      console.error(error);
+      toast.error('Erreur lors de la création du bien.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const isStepValid = () => {
     if (currentStep === 1) {
-      return formData.nom && formData.categorie && formData.prix && formData.surface && formData.geolocalisation
+      return (
+        form.nom.trim() !== '' &&
+        form.categorie &&
+        form.prix.trim() !== '' &&
+        form.surface.trim() !== '' &&
+        form.geolocalisation.trim() !== ''
+      );
     }
     if (currentStep === 2) {
-      return images.length > 0
+      return images.length > 0;
     }
-    return true
-  }
+    return true;
+  };
 
   // Récupération des valeurs des enums Prisma
   const categories = Object.values(Categorie);
@@ -728,8 +797,8 @@ export default function MesBiens() {
                         </label>
                         <input
                           type="text"
-                          value={formData.nom}
-                          onChange={(e) => setFormData({...formData, nom: e.target.value})}
+                          value={form.nom}
+                          onChange={(e) => setForm({...form, nom: e.target.value})}
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                           placeholder="Villa Moderne Lomé"
                         />
@@ -740,8 +809,8 @@ export default function MesBiens() {
                           Catégorie *
                         </label>
                         <select
-                          value={formData.categorie}
-                          onChange={(e) => setFormData({...formData, categorie: e.target.value as Categorie,})}
+                          value={form.categorie}
+                          onChange={(e) => setForm({...form, categorie: e.target.value as Categorie,})}
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
                         >
                           <option value="">Sélectionner...</option>
@@ -757,8 +826,8 @@ export default function MesBiens() {
                         </label>
                         <input
                           type="number"
-                          value={formData.prix}
-                          onChange={(e) => setFormData({...formData, prix: e.target.value})}
+                          value={form.prix}
+                          onChange={(e) => setForm({...form, prix: e.target.value})}
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
                           placeholder="150000000"
                         />
@@ -770,8 +839,8 @@ export default function MesBiens() {
                         </label>
                         <input
                           type="number"
-                          value={formData.surface}
-                          onChange={(e) => setFormData({...formData, surface: e.target.value})}
+                          value={form.surface}
+                          onChange={(e) => setForm({...form, surface: e.target.value})}
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
                           placeholder="350"
                         />
@@ -782,8 +851,8 @@ export default function MesBiens() {
                           Statut
                         </label>
                         <select
-                          value={formData.statut}
-                          onChange={(e) => setFormData({...formData, statut: e.target.value as Statut,})}
+                          value={form.statut}
+                          onChange={(e) => setForm({...form, statut: e.target.value as Statut,})}
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
                         >
                           {Object.values(Statut).map(st => (
@@ -798,8 +867,8 @@ export default function MesBiens() {
                         </label>
                         <input
                           type="number"
-                          value={formData.nombreChambres}
-                          onChange={(e) => setFormData({...formData, nombreChambres: e.target.value})}
+                          value={form.nombreChambres}
+                          onChange={(e) => setForm({...form, nombreChambres: e.target.value})}
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
                           min="1"
                         />
@@ -814,8 +883,8 @@ export default function MesBiens() {
                         <MapPin size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                         <input
                           type="text"
-                          value={formData.geolocalisation}
-                          onChange={(e) => setFormData({...formData, geolocalisation: e.target.value})}
+                          value={form.geolocalisation}
+                          onChange={(e) => setForm({...form, geolocalisation: e.target.value})}
                           className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
                           placeholder="Lomé, Bè"
                         />
@@ -827,8 +896,8 @@ export default function MesBiens() {
                         Description
                       </label>
                       <textarea
-                        value={formData.description}
-                        onChange={(e) => setFormData({...formData, description: e.target.value})}
+                        value={form.description}
+                        onChange={(e) => setForm({...form, description: e.target.value})}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 h-24 resize-none"
                         placeholder="Décrivez votre propriété..."
                       />
@@ -840,8 +909,8 @@ export default function MesBiens() {
                       </label>
                       <input
                         type="url"
-                        value={formData.visiteVirtuelle}
-                        onChange={(e) => setFormData({...formData, visiteVirtuelle: e.target.value})}
+                        value={form.visiteVirtuelle}
+                        onChange={(e) => setForm({...form, visiteVirtuelle: e.target.value})}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
                         placeholder="https://youtube.com/..."
                       />
@@ -1021,11 +1090,11 @@ export default function MesBiens() {
                       <Button
                         onClick={handleSubmit}
                         disabled={isSubmitting}
-                        className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700"
+                        className={`${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700'} `}
                       >
                         {isSubmitting ? (
                           <>
-                            <Loader2 className="mr-2 animate-spin" size={16} />
+                            <Loader2 className="mr-2 animate-spin mr-2" size={16} />
                             Enregistrement...
                           </>
                         ) : (
@@ -1035,7 +1104,7 @@ export default function MesBiens() {
                           </>
                         )}
                       </Button>
-                    )}
+                    )}  
                   </div>
                 </div>
               </div>
