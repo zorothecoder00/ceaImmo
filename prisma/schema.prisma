@@ -1,0 +1,350 @@
+// prisma/schema.prisma
+
+datasource db {  
+  provider = "postgresql" // ou "mysql", selon ta base
+  url      = env("DATABASE_URL")   
+}     
+ 
+generator client {  
+  provider = "prisma-client-js"
+}      
+
+enum Role {    
+  ADMIN    
+  ACHETEUR
+  VENDEUR
+  AGENT
+  ENTREPRISE
+}
+
+enum Categorie {   
+  VILLA
+  MAISON   
+  APPARTEMENT
+  HOTEL
+  TERRAIN
+  CHANTIER
+}  
+
+enum Mode {
+  MIXXBYYAS
+  MOOV
+  CARTEBANCAIRE
+  WESTERNUNION
+  PAYPAL
+  STRIPE
+}
+  
+enum Systeme {         
+  SMS
+  MAIL
+  PUSH  
+}
+
+enum Statut {
+  VENDU   
+  DISPONIBLE
+  RESERVE
+  EN_LOCATION
+  EN_NEGOCIATION
+}  
+
+enum Type {
+  SEJOUR
+  LOCATION
+}
+
+enum OffreStatut {
+  EN_ATTENTE
+  ACCEPTEE
+  REFUSEE
+  EXPIREE
+}
+
+enum ReservationStatut {
+  DEMANDEE
+  CONFIRMEE
+  ANNULEE
+  REPORTEE
+}
+
+enum VisiteStatut {
+  DEMANDEE
+  CONFIRMEE
+  ANNULEE
+  REPORTEE
+}
+
+enum Theme {
+  CLAIR
+  SOMBRE
+}
+
+enum Langue {
+  FR
+  EN  
+  IT
+  ES
+  DE
+}  
+
+
+model User {    
+  id                Int             @id @default(autoincrement())
+  role              Role?
+  nom               String  
+  prenom            String
+  email             String          @unique   
+  password          String?
+  photo             String?
+
+  // 🆕 Paramètres de profil
+  confidentialite   Boolean?        @default(false) // false = public, true = privé
+
+  // 🔹 Nouvelle propriété : visibilité des annonces
+  visibiliteAnnonces Boolean?       @default(true)  // true = annonces publiques, false = annonces privées
+
+  theme             Theme?          @default(CLAIR)
+  langue            Langue?         @default(FR)
+
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  proprietes        Propriete[]     @relation("UserPropriete")
+  visites           Visite[]        @relation("UserVisite")
+  visitesAgent      Visite[]        @relation("AgentVisite")
+  reservations      Reservation[]   @relation("UserReservation")
+  reservationsAgent Reservation[]   @relation("AgentReservation")
+  messagesEnvoyes   Message[]       @relation("MessagesEnvoyes")
+  messagesRecus     Message[]       @relation("MessagesRecus")
+  transactions      Transaction[]   @relation("UserTransaction")
+  transactionsAgent Transaction[]   @relation("AgentTransaction")
+  offres            Offre[]         @relation("AcheteurOffre")
+  offresAgent       Offre[]         @relation("AgentOffre")
+  favoris           Favori[]
+  logs              Log[]
+  notifications     Notification[]
+  avis              Avis[]
+}     
+
+model Propriete {   
+  id                Int             @id @default(autoincrement())
+  nom               String    
+  description       String?
+  categorie         Categorie
+  prix              BigInt// ✅ permet des valeurs énormes
+  surface           BigInt// ✅ permet des valeurs énormes      
+  statut            Statut     
+  
+  images            ProprieteImage[]// 🖼️ Images multiples (Cloudinary URLs)
+
+  visiteVirtuelle   String?// 🎥 Lien unique ou optionnel vers la visite virtuelle (YouTube, Matterport, etc.)  
+
+  geolocalisation   String  
+  
+  nombreChambres    Int             @default(1)/// Nombre total de chambres disponibles (ex: 50 chambres dans un hôtel)
+
+  proprietaireId    Int?
+  proprietaire      User?           @relation("UserPropriete", fields: [proprietaireId], references: [id], onDelete: Cascade)
+
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  visites           Visite[]
+  reservations      Reservation[]   @relation("ProprieteReservation") 
+  offres            Offre[]         @relation("OffrePropriete")
+  favoris           Favori[]
+  chambres          Chambre[]       @relation("ProprieteChambre")
+  avis              Avis[]
+
+}  
+
+model ProprieteImage {
+  id                Int             @id @default(autoincrement())
+  url               String          // lien Cloudinary
+
+  ordre             Int             @default(0) // pour trier les images
+  proprieteId       Int
+  propriete         Propriete       @relation(fields: [proprieteId], references: [id], onDelete: Cascade)
+
+  createdAt         DateTime         @default(now())
+}
+
+model Chambre {
+  id                Int              @id @default(autoincrement())
+  nom               String
+  description       String?
+  prixParNuit       Int
+  capacite          Int              // nombre max de voyageurs dans cette chambre
+
+  disponible        Boolean          @default(true)
+  proprieteId       Int
+  propriete         Propriete        @relation("ProprieteChambre", fields: [proprieteId], references: [id], onDelete: Cascade)
+
+  reservations      Reservation[]    @relation("ChambreReservation")
+
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+}
+
+model Favori {  
+  id             Int                @id @default(autoincrement())
+  propriete      Propriete          @relation(fields: [proprieteId], references: [id], onDelete: Cascade)
+  proprieteId    Int 
+
+  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         Int
+
+  createdAt      DateTime           @default(now())
+  @@unique([userId, proprieteId])
+
+}
+
+model Visite {
+  id           Int                  @id @default(autoincrement())
+  date         DateTime
+ 
+  statut       VisiteStatut         @default(DEMANDEE)
+  userId       Int
+  user         User                 @relation("UserVisite", fields: [userId], references: [id], onDelete: Cascade)
+  
+  agentId      Int?
+  agent        User?                @relation("AgentVisite", fields: [agentId], references: [id], onDelete: Cascade)
+
+  proprieteId  Int?
+  propriete    Propriete?           @relation(fields: [proprieteId], references: [id], onDelete: Cascade)
+
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+}
+
+model Reservation {
+  id             Int                @id @default(autoincrement())
+  dateArrivee    DateTime
+  dateDepart     DateTime    
+  nombreVoyageurs Int
+  type           Type
+  statut         ReservationStatut  @default(DEMANDEE)
+
+  proprieteId    Int?
+  propriete      Propriete?         @relation("ProprieteReservation", fields: [proprieteId], references: [id], onDelete: Cascade)
+
+  chambreId      Int?
+  chambre        Chambre?           @relation("ChambreReservation", fields: [chambreId], references: [id], onDelete: Cascade)
+
+  userId         Int?
+  user           User?              @relation("UserReservation", fields: [userId], references: [id], onDelete: Cascade)
+
+  agentId        Int?
+  agent          User?              @relation("AgentReservation", fields: [agentId], references: [id], onDelete: Cascade)
+
+     
+
+  offres         Offre[]            @relation("OffreReservation")
+
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+}
+
+model Offre {
+  id             Int                @id @default(autoincrement())
+  montant        BigInt// ✅ permet des valeurs énormes
+  statut         OffreStatut        @default(EN_ATTENTE)
+  message        String?   
+
+  userId         Int
+  user           User               @relation("AcheteurOffre",fields: [userId], references: [id], onDelete: Cascade)
+
+  agentId        Int?
+  agent          User?              @relation("AgentOffre", fields: [agentId], references: [id], onDelete: Cascade)
+
+
+  proprieteId    Int
+  propriete      Propriete          @relation("OffrePropriete", fields: [proprieteId], references: [id], onDelete: Cascade)
+
+  reservationId  Int?
+  reservation    Reservation?       @relation("OffreReservation", fields: [reservationId], references: [id], onDelete: Cascade)
+
+  transaction    Transaction?       @relation("OffreTransaction")
+
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+}  
+
+model Transaction {
+  id             Int                @id @default(autoincrement())
+  mode           Mode
+
+  userId         Int?
+  user           User?              @relation("UserTransaction", fields: [userId], references: [id], onDelete: Cascade)
+
+  agentId        Int?
+  agent          User?              @relation("AgentTransaction", fields: [agentId], references: [id], onDelete: Cascade)
+
+  offreId        Int?               @unique // 👈 clé étrangère unique
+  offre          Offre?             @relation("OffreTransaction", fields: [offreId], references: [id], onDelete: Cascade) 
+
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+}
+
+model Message {
+  id             Int                @id @default(autoincrement())
+  texte          String  
+  date           DateTime 
+  fichier        String?
+
+  senderId       Int?
+  sender         User?              @relation("MessagesEnvoyes", fields: [senderId], references: [id], onDelete: Cascade)
+
+  receiverId     Int?
+  receiver       User?              @relation("MessagesRecus", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+}
+
+model Avis {
+  id             Int                @id @default(autoincrement())
+  commentaire    String?// texte optionnel
+
+  note           Int// de 1 à 5 par ex.
+  
+  proprieteId    Int
+  propriete      Propriete          @relation(fields: [proprieteId], references: [id], onDelete: Cascade)
+
+  userId         Int
+  user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@unique([proprieteId, userId]) // 👈 un user ne peut noter une propriété qu’une seule fois
+}
+
+
+model Log {
+  id             Int                @id @default(autoincrement())
+  action         String             // ex: "CREATION_PROPRIETE", "RESERVATION"
+
+  userId         Int?
+  user           User?              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+}
+   
+model Notification {
+  id             Int                @id @default(autoincrement())
+  systeme        Systeme
+  contenu        String             // message à afficher/envoyer
+
+  userId         Int?
+  user           User?              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+}         
+
+model Config {
+  id        Int     @id @default(1)
+  maintenance Boolean @default(false)  
+}    
