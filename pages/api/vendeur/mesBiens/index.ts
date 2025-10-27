@@ -135,14 +135,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       ]);
 
+      const safeBiens = serializeBigInt(biens);
+      const safeTotal = serializeBigInt(total);
+
       // 7️⃣ Réponse
       return res.status(200).json({
-        total,
+        total: safeTotal,
         page: pageNum,
         limit: limitNum,
         sortBy: sortField,
         order: sortOrder,
-        data: biens,
+        data: safeBiens,
       });
 
     } catch (error) {

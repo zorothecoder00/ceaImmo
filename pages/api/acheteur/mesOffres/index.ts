@@ -7,7 +7,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const session = await getAuthSession(req, res);
   if (!session || !session.user) {
     return res.status(401).json({ error: "Non autorisé" });
-  }
+  }  
 
   const userId = Number(session.user.id);
 

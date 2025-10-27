@@ -47,7 +47,7 @@ const MesVisites = () => {
         console.error('Erreur lors du chargement des visites :', error)
         setVisites([]) // état vide si erreur
       } finally {
-        setLoading(false)
+        setLoading(false)  
       }
     }
 

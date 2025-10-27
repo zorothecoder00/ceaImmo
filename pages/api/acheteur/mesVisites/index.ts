@@ -30,7 +30,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           userId,
           ...(date ? { date: new Date(date as string) } : {}),
         },
-        include: {
+        include: {   
           propriete: {
             select: {
               nom: true,

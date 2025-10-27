@@ -62,7 +62,7 @@ const MesOffres = () => {
   // ⚙️ Boutons selon le statut
   const getActionButtons = (statut: OffreStatut) => {
     switch (statut) {
-      case 'EN_ATTENTE':
+      case OffreStatut.EN_ATTENTE:
         return (
           <div className="flex gap-2 mt-4">
             <button className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
@@ -74,7 +74,7 @@ const MesOffres = () => {
           </div>
         )
 
-      case 'ACCEPTEE':
+      case OffreStatut.ACCEPTEE:
         return (
           <div className="flex gap-2 mt-4">
             <button className="px-4 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors">
@@ -86,16 +86,19 @@ const MesOffres = () => {
           </div>
         )
 
-      case 'REFUSEE':
+      case OffreStatut.REFUSEE:
         return (
           <div className="flex gap-2 mt-4">
             <button className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
               Faire une nouvelle offre
             </button>
+            <button className="px-4 py-2 text-sm bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors">
+              Voir des biens similaires
+            </button>
           </div>
         )
 
-      case 'EXPIREE':
+      case OffreStatut.EXPIREE:
         return (
           <div className="flex gap-2 mt-4">
             <button className="px-4 py-2 text-sm bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors">
@@ -221,8 +224,8 @@ const MesOffres = () => {
                       📍 {offre.propriete.geolocalisation}
                     </p>
                     <p className="text-sm text-gray-700">
-                      🏠 {offre.propriete.surface?.toString()} m² — 💰{' '}
-                      {Number(offre.propriete.prix).toLocaleString()} €
+                      🏠 {(offre.propriete.surface ?? '?').toString()} m² — 💰{' '}
+                      {Number(offre.propriete.prix ?? 0).toLocaleString()} €
                     </p>
                     <span
                       className={`px-3 py-1 text-xs font-medium rounded-full uppercase tracking-wide ${badge.className}`}

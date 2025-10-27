@@ -128,11 +128,11 @@ model User {
 
 model Propriete {   
   id                Int             @id @default(autoincrement())
-  nom               String    
-  description       String?
+  nom               String        
+  description       String?  
   categorie         Categorie
   prix              BigInt// ✅ permet des valeurs énormes
-  surface           BigInt// ✅ permet des valeurs énormes      
+  surface           BigInt// ✅ permet des valeurs énormes       
   statut            Statut     
   
   images            ProprieteImage[]// 🖼️ Images multiples (Cloudinary URLs)
@@ -249,7 +249,7 @@ model Offre {
   id             Int                @id @default(autoincrement())
   montant        BigInt// ✅ permet des valeurs énormes
   statut         OffreStatut        @default(EN_ATTENTE)
-  message        String?   
+  message        String?     
 
   userId         Int
   user           User               @relation("AcheteurOffre",fields: [userId], references: [id], onDelete: Cascade)
@@ -305,7 +305,7 @@ model Message {
 
 model Avis {
   id             Int                @id @default(autoincrement())
-  commentaire    String?// texte optionnel
+  commentaire    String?// texte optionnel    
 
   note           Int// de 1 à 5 par ex.
   

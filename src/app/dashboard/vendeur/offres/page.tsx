@@ -1,92 +1,63 @@
 'use client'
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Home, Search, Heart, Calendar, Briefcase, Settings } from 'lucide-react';
-
-type OfferStatus = "pending" | "processing" | "accepted" | "rejected";
-
+import { OffreStatut } from '@prisma/client'
+  
+ interface Propriete {
+  id: number
+  nom: string
+  prix?: number
+  surface?: number
+  geolocalisation?: string
+  nombreChambres?: number
+}
+ 
 interface Offer {
-  id: number;
-  title: string;
-  location: string;
-  details: string[];
-  amount: string;
-  date: string;
-  status: OfferStatus;
-  type: "vente" | "location";
+  id: number
+  montant: number
+  message?: string
+  propriete: Propriete
+  createdAt: string
+  statut: OffreStatut
 }
 
 
 const MesOffres = () => {
-  const [activeFilter, setActiveFilter] = useState('all');
+  const [activeFilter, setActiveFilter] = useState<
+    'all' | 'pending' | 'accepted' | 'rejected' | 'expired'
+  >('all')
+  const [offers, setOffers] = useState<Offer[]>([]);
 
-  const offers: Offer[] = [
-    {
-      id: 1,
-      title: "Appartement Lumineux Centre-ville",
-      location: "15 Rue de la République, Lyon 2ème",
-      details: ["3 pièces", "2 chambres", "75 m²"],
-      amount: "320 000 €",
-      date: "12/09/2025",
-      status: "pending",
-      type: "vente"
-    },
-    {
-      id: 2,
-      title: "Maison avec Jardin",
-      location: "23 Avenue des Chênes, Villeurbanne",
-      details: ["5 pièces", "4 chambres", "120 m²", "Jardin 200m²"],
-      amount: "485 000 €",
-      date: "10/09/2025",
-      status: "processing",
-      type: "vente"
-    },
-    {
-      id: 3,
-      title: "Studio Moderne Montparnasse",
-      location: "8 Rue de Rennes, Paris 14ème",
-      details: ["1 pièce", "25 m²", "Métro 2min"],
-      amount: "1 200 €/mois",
-      date: "08/09/2025",
-      status: "accepted",
-      type: "location"
-    },
-    {
-      id: 4,
-      title: "Loft Industriel Belleville",
-      location: "45 Rue de Belleville, Paris 20ème",
-      details: ["2 pièces", "1 chambre", "60 m²", "Loft"],
-      amount: "2 100 €/mois",
-      date: "05/09/2025",
-      status: "rejected",
-      type: "location"
-    },
-    {
-      id: 5,
-      title: "Appartement Haussmannien",
-      location: "12 Boulevard Saint-Germain, Paris 5ème",
-      details: ["4 pièces", "3 chambres", "95 m²", "Haussmannien"],
-      amount: "850 000 €",
-      date: "13/09/2025",
-      status: "pending",
-      type: "vente"
+  // 🔄 Chargement des offres depuis ton API
+  useEffect(() => {
+    const fetchOffers = async () => {
+      try {
+        const res = await fetch('/api/vendeur/mesOffres')
+        const data = await res.json()
+        setOffers(data.data)
+      } catch (error) {
+        console.error('Erreur lors du chargement des offres', error)
+      }
     }
-  ];
 
-  const getStatusBadge = (status: OfferStatus) => {
-  const statusConfig: Record<OfferStatus, { label: string; className: string }> = {
-    pending: { label: 'En attente', className: 'bg-yellow-100 text-yellow-800' },
-    processing: { label: 'En cours', className: 'bg-blue-100 text-blue-800' },
-    accepted: { label: 'Acceptée', className: 'bg-green-100 text-green-800' },
-    rejected: { label: 'Refusée', className: 'bg-red-100 text-red-800' }
+    fetchOffers()
+  }, [])
+
+  const getStatusBadge = (statut: OffreStatut) => {
+  const statusConfig: Record<OffreStatut, { label: string; className: string }> = {
+    EN_ATTENTE: { label: 'En attente', className: 'bg-yellow-100 text-yellow-800' },
+    EXPIREE: { label: 'Expirée', className: 'bg-blue-100 text-blue-800' },
+    ACCEPTEE: { label: 'Acceptée', className: 'bg-green-100 text-green-800' },
+    REFUSEE: { label: 'Refusée', className: 'bg-red-100 text-red-800' }
   };
 
-  return statusConfig[status];
+  return statusConfig[statut];
 };
 
-  const getActionButtons = (status: OfferStatus) => {
-    switch (status) {
-      case 'pending':
+  const getActionButtons = (statut: OffreStatut) => {
+    switch (statut) {
+      case OffreStatut.EN_ATTENTE:
         return (
           <div className="flex gap-2 mt-4">
             <button className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
@@ -97,18 +68,15 @@ const MesOffres = () => {
             </button>
           </div>
         );
-      case 'processing':
+      case OffreStatut.EXPIREE:
         return (
           <div className="flex gap-2 mt-4">
-            <button className="px-4 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors">
-              Voir la négociation
-            </button>
-            <button className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
-              Contacter l&apos;agent
+            <button className="px-4 py-2 text-sm bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors">
+              Réactiver l&apos;offre
             </button>
           </div>
         );
-      case 'accepted':
+      case OffreStatut.ACCEPTEE:
         return (
           <div className="flex gap-2 mt-4">
             <button className="px-4 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors">
@@ -119,7 +87,7 @@ const MesOffres = () => {
             </button>
           </div>
         );
-      case 'rejected':
+      case OffreStatut.REFUSEE:
         return (
           <div className="flex gap-2 mt-4">
             <button className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
@@ -135,9 +103,27 @@ const MesOffres = () => {
     }
   };
 
-  const filteredOffers = activeFilter === 'all' 
-    ? offers 
-    : offers.filter(offer => offer.status === activeFilter);
+  // ✅ Correction du filtre
+  const filteredOffers =
+    activeFilter === 'all'
+      ? offers
+      : offers.filter((offer) => {
+          if (activeFilter === 'pending') return offer.statut === OffreStatut.EN_ATTENTE;
+          if (activeFilter === 'accepted') return offer.statut === OffreStatut.ACCEPTEE;
+          if (activeFilter === 'rejected') return offer.statut === OffreStatut.REFUSEE;
+          if (activeFilter === 'expired') return offer.statut === OffreStatut.EXPIREE;
+          return true;
+        });
+
+  type FilterKey = 'all' | 'pending' | 'accepted' | 'rejected' | 'expired';
+
+  const filters: { key: FilterKey; label: string }[] = [
+    { key: 'all', label: 'Toutes' },
+    { key: 'pending', label: 'En attente' },
+    { key: 'accepted', label: 'Acceptées' },
+    { key: 'rejected', label: 'Refusées' },
+    { key: 'expired', label: 'Expirées' },
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -186,13 +172,7 @@ const MesOffres = () => {
 
         {/* Filters */}
         <div className="flex gap-4 mb-8 flex-wrap">
-          {[
-            { key: 'all', label: 'Toutes' },
-            { key: 'pending', label: 'En attente' },
-            { key: 'processing', label: 'En cours' },
-            { key: 'accepted', label: 'Acceptées' },
-            { key: 'rejected', label: 'Refusées' }
-          ].map(filter => (
+          {filters.map((filter) => (
             <button
               key={filter.key}
               onClick={() => setActiveFilter(filter.key)}
@@ -210,26 +190,19 @@ const MesOffres = () => {
         {/* Offers Grid */}
         <div className="space-y-6">
           {filteredOffers.map(offer => {
-            const statusBadge = getStatusBadge(offer.status);
-            return (
+            const statusBadge = getStatusBadge(offer.statut);
+            return (  
               <div key={offer.id} className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
                 <div className="flex justify-between items-start mb-4">
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">{offer.title}</h3>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">{offer.propriete.nom}</h3>
                     <p className="text-gray-600 text-sm mb-3 flex items-center">
-                      📍 {offer.location}
+                      📍 {offer.propriete.geolocalisation || 'Localisation inconnue'}
                     </p>
-                    <div className="flex gap-4 text-sm text-gray-600">
-                      {offer.details.map((detail, index) => (
-                        <span key={index}>
-                          {index === 0 && '🏠 '}
-                          {index === 1 && '🛏️ '}
-                          {index === 2 && '📐 '}
-                          {index === 3 && (detail.includes('Jardin') ? '🌳 ' : detail.includes('Métro') ? '🚇 ' : '🏢 ')}
-                          {detail}
-                        </span>
-                      ))}
-                    </div>
+                    <p className="text-sm text-gray-700">
+                      🏠 {offer.propriete.surface ? offer.propriete.surface.toString() : '?'} m² — 💰{' '}
+                      {offer.propriete.prix?.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}
+                    </p>
                   </div>
                   <span className={`px-3 py-1 text-xs font-medium rounded-full uppercase tracking-wide ${statusBadge.className}`}>
                     {statusBadge.label}
@@ -237,11 +210,11 @@ const MesOffres = () => {
                 </div>
                 
                 <div className="flex justify-between items-center pt-4 border-t border-gray-100">
-                  <div className="text-xl font-bold text-green-600">{offer.amount}</div>
-                  <div className="text-sm text-gray-600">Offre du {offer.date}</div>
+                  <div className="text-xl font-bold text-green-600">{offer.montant.toLocaleString('fr-FR', { style: 'currency', currency: 'EUR' })}</div>
+                  <div className="text-sm text-gray-600">Offre du {new Date(offer.createdAt).toLocaleDateString('fr-FR')}</div>
                 </div>
                 
-                {getActionButtons(offer.status)}
+                {getActionButtons(offer.statut)}
               </div>
             );
           })}
