@@ -4,20 +4,20 @@ import React, { useState, useEffect } from 'react';
 import { Home, Search, Heart, Calendar, Briefcase, Settings, MapPin, Clock, User } from 'lucide-react';
 import { VisiteStatut } from '@prisma/client'
 
-interface Propriete {
+interface Proprietaire {
   id: number
+  prenom: string
+  nom: string
+}
+
+interface Propriete {
+  id: number 
   nom: string
   prix: number
   surface: number 
   geolocalisation: string 
   nombreChambres: number
   proprietaire?: Proprietaire
-}
-
-interface Proprietaire {
-  id: number
-  prenom: string
-  nom: string
 }
 
 interface Visite {

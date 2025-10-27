@@ -32,7 +32,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(403).json({ message: "Accès refusé : réservé aux vendeurs" });
   }
 
-  function serializeBigInt<T>(obj: T): T {
+  function serializeBigInt<T>(obj: T): T {  
     return JSON.parse(
       JSON.stringify(obj, (_, value) =>
         typeof value === "bigint" ? value.toString() : value

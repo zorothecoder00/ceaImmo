@@ -2,233 +2,219 @@
 
 import React, { useState, useEffect } from 'react';
 import { Home, Search, Heart, Calendar, Briefcase, Settings, MapPin, Clock, User } from 'lucide-react';
+import { VisiteStatut } from '@prisma/client'
 
-interface Visit {
-  id: number;
-  title: string;
-  location: string;
-  details: string[];
-  price: string;
-  date: string;   // ex: "2025-09-15"
-  time: string;   // ex: "14:30"
-  agent: { name: string; avatar: string };
-  status: "today" | "tomorrow" | "upcoming" | "later";
-  category: "urgent" | "today" | "upcoming";
+
+interface Propriete {
+  id: number 
+  nom: string
+  prix: number
+  surface: number 
+  geolocalisation: string 
+  nombreChambres: number
 }
+
+interface Acheteur {
+  id: number
+  prenom: string
+  nom: string
+}
+
+interface Visit {     
+  id: number
+  date: string // format ISO (ex: "2025-10-25T15:30:00Z")
+  statut: VisiteStatut
+  propriete?: Propriete
+  user: Acheteur
+}
+
+type CategorizedVisit = Visit & { category: 'urgent' | 'today' | 'upcoming' };
 
 const MesVisites = () => {
   const [activeFilter, setActiveFilter] = useState('all');
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [visits, setVisits] = useState<Visit[]>([])
+
+  // 🔄 Récupération des visites depuis l’API
+  useEffect(() => {
+    const fetchVisits = async () => {
+      try {
+        const res = await fetch('/api/acheteur/mesVisites')
+        if (!res.ok) throw new Error('Erreur API')
+        const data = await res.json()
+        setVisits(data.data)
+      } catch (error) {
+        console.error('Erreur lors du chargement des visites :', error)
+        setVisits([]) // état vide si erreur
+      } 
+    }
+
+    fetchVisits()
+  }, [])
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
     return () => clearInterval(timer);
   }, []);
 
-  const visits = [
-    {
-      id: 1,
-      title: "Appartement Lumineux Centre-ville",
-      location: "15 Rue de la République, Lyon 2ème",
-      details: ["3 pièces", "2 chambres", "75 m²"],
-      price: "320 000 €",
-      date: "2025-09-15",
-      time: "14:30",
-      agent: { name: "Marie Dubois", avatar: "MD" },
-      status: "today" as const,
-      category: "urgent" as const
-    },
-    {
-      id: 2,
-      title: "Studio Moderne Montparnasse",
-      location: "8 Rue de Rennes, Paris 14ème",
-      details: ["1 pièce", "25 m²", "Métro 2min"],
-      price: "1 200 €/mois",
-      date: "2025-09-15",
-      time: "16:00",
-      agent: { name: "Pierre Martin", avatar: "PM" },
-      status: "today" as const,
-      category: "today" as const
-    },
-    {
-      id: 3,
-      title: "Maison avec Jardin",
-      location: "23 Avenue des Chênes, Villeurbanne",
-      details: ["5 pièces", "4 chambres", "120 m²", "Jardin 200m²"],
-      price: "485 000 €",
-      date: "2025-09-16",
-      time: "10:00",
-      agent: { name: "Sophie Laurent", avatar: "SL" },
-      status: "tomorrow" as const,
-      category: "upcoming" as const
-    },
-    {
-      id: 4,
-      title: "Loft Industriel Belleville",
-      location: "45 Rue de Belleville, Paris 20ème",
-      details: ["2 pièces", "1 chambre", "60 m²", "Loft"],
-      price: "2 100 €/mois",
-      date: "2025-09-18",
-      time: "15:30",
-      agent: { name: "Jean Rousseau", avatar: "JR" },
-      status: "upcoming" as const,
-      category: "upcoming" as const
-    },
-    {
-      id: 5,
-      title: "Appartement Haussmannien",
-      location: "12 Boulevard Saint-Germain, Paris 5ème",
-      details: ["4 pièces", "3 chambres", "95 m²", "Haussmannien"],
-      price: "850 000 €",
-      date: "2025-09-20",
-      time: "11:00",
-      agent: { name: "Claire Bernard", avatar: "CB" },
-      status: "upcoming" as const,
-      category: "upcoming" as const
-    },
-    {
-      id: 6,
-      title: "Penthouse Vue Seine",
-      location: "7 Quai de Conti, Paris 6ème",
-      details: ["6 pièces", "4 chambres", "150 m²", "Terrasse"],
-      price: "1 200 000 €",
-      date: "2025-09-25",
-      time: "14:00",
-      agent: { name: "Thomas Moreau", avatar: "TM" },
-      status: "later" as const,
-      category: "upcoming" as const
+  const getTimeRemaining = (dateString: string): { text: string; className: string } => {
+    const visitDateTime = new Date(dateString);
+    const now = currentTime;
+    const diff = visitDateTime.getTime() - now.getTime();
+
+    if (diff < 0) return { text: "Passée", className: "bg-gray-100 text-gray-600" };
+
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const days = Math.floor(hours / 24);
+
+    if (hours < 2) {
+      return { text: `Dans ${hours}h`, className: "bg-red-100 text-red-800" };
+    } else if (hours < 24) {
+      return { text: `Dans ${hours}h`, className: "bg-green-100 text-green-800" };
+    } else if (days === 1) {
+      return { text: "Demain", className: "bg-blue-100 text-blue-800" };
+    } else {
+      return { text: `Dans ${days}j`, className: "bg-blue-100 text-blue-800" };
     }
-  ];
+  };
 
-  const getTimeRemaining = (date: string, time: string): { text: string; className: string } => {
-  const visitDateTime = new Date(`${date}T${time}`);
-  const now = currentTime;
-  const diff = visitDateTime.getTime() - now.getTime();
+  const getCardStyle = (category?: 'urgent' | 'today' | 'upcoming'): string => {
+    switch (category) {
+      case 'urgent':
+        return "border-l-4 border-l-red-500 bg-gradient-to-r from-white to-red-50";
+      case 'today':
+        return "border-l-4 border-l-green-500 bg-gradient-to-r from-white to-green-50";
+      case 'upcoming':
+        return "border-l-4 border-l-blue-500 bg-white";
+      default:
+        return "bg-white";
+    }
+  };
 
-  if (diff < 0) return { text: "Passée", className: "bg-gray-100 text-gray-600" };
+  // 🧠 Déterminer la catégorie d'affichage selon la date
+  const categorizedVisits: CategorizedVisit[] = visits.map((visit) => {
+    const visitDate = new Date(visit.date);
+    const diffHours = (visitDate.getTime() - currentTime.getTime()) / (1000 * 60 * 60);
 
-  const hours = Math.floor(diff / (1000 * 60 * 60));
-  const days = Math.floor(hours / 24);
+    let category: 'urgent' | 'today' | 'upcoming';
 
-  if (hours < 2) {
-    return { text: `Dans ${hours}h`, className: "bg-red-100 text-red-800" };
-  } else if (hours < 24) {
-    return { text: `Dans ${hours}h`, className: "bg-green-100 text-green-800" };
-  } else if (days === 1) {
-    return { text: "Demain", className: "bg-blue-100 text-blue-800" };
-  } else {
-    return { text: `Dans ${days}j`, className: "bg-blue-100 text-blue-800" };
-  }
-};
+    if (diffHours < 2) category = 'urgent';
+    else if (visitDate.toDateString() === currentTime.toDateString()) category = 'today';
+    else category = 'upcoming';
 
-  const getCardStyle = (category: Visit["category"]): string => {
-  switch (category) {
-    case "urgent":
-      return "border-l-4 border-l-red-500 bg-gradient-to-r from-white to-red-50";
-    case "today":
-      return "border-l-4 border-l-green-500 bg-gradient-to-r from-white to-green-50";
-    case "upcoming":
-      return "border-l-4 border-l-blue-500 bg-white";
-    default:
-      return "bg-white";
-  }
-};
+    return { ...visit, category };
+  });
 
-  const formatDate = (dateString: string): string => {
-  const date = new Date(dateString);
-  const today = new Date();
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
 
-  if (date.toDateString() === today.toDateString()) {
-    return "Aujourd'hui";
-  } else if (date.toDateString() === tomorrow.toDateString()) {
-    return "Demain";
-  } else {
-    return date.toLocaleDateString("fr-FR", {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-    });
-  }
-};
+  // 🧠 Filtrer selon le filtre sélectionné (sans rapport avec statut)
+  const filteredVisits = activeFilter === 'all'
+    ? categorizedVisits
+    : categorizedVisits.filter(v => {
+        const date = new Date(v.date);
+        const now = new Date();
+        const weekFromNow = new Date(now);
+        weekFromNow.setDate(now.getDate() + 7);
 
-  const filteredVisits = activeFilter === 'all' 
-    ? visits 
-    : visits.filter(visit => {
-        if (activeFilter === 'today') return visit.status === 'today';
-        if (activeFilter === 'week') return ['today', 'tomorrow', 'upcoming'].includes(visit.status);
-        if (activeFilter === 'month') return true;
-        return visit.status === activeFilter;
+        if (activeFilter === 'today')
+          return date.toDateString() === now.toDateString();
+        if (activeFilter === 'week')
+          return date >= now && date <= weekFromNow;
+        if (activeFilter === 'month')
+          return date.getMonth() === now.getMonth();
+
+        return true;
       });
 
-  // Group visits by urgency/timing
-  const urgentVisits = filteredVisits.filter(visit => visit.category === 'urgent');
-  const todayVisits = filteredVisits.filter(visit => visit.category === 'today');
-  const upcomingVisits = filteredVisits.filter(visit => visit.category === 'upcoming');
+  // 🧠 Regrouper par catégorie (affichage)
+  const urgentVisits = filteredVisits.filter(v => v.category === 'urgent');
+  const todayVisits = filteredVisits.filter(v => v.category === 'today');
+  const upcomingVisits = filteredVisits.filter(v => v.category === 'upcoming');
 
-  const VisitCard: React.FC<{ visit: Visit }> = ({ visit }) => {
-  const timeRemaining = getTimeRemaining(visit.date, visit.time);
     
+    // 💳 Composant interne pour afficher une carte visite
+  const VisitCard: React.FC<{ visit: CategorizedVisit }> = ({ visit }) => {
+    const timeRemaining = getTimeRemaining(visit.date);
+
     return (
       <div className={`rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 ${getCardStyle(visit.category)}`}>
         <div className="flex justify-between items-start mb-4">
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">{visit.title}</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">🏠 {visit.propriete?.nom ?? 'Propriété inconnue'}</h3>
             <p className="text-gray-600 text-sm mb-3 flex items-center">
               <MapPin className="w-4 h-4 mr-1" />
-              {visit.location}
+              {visit.propriete?.geolocalisation ?? 'Adresse non spécifiée'}
             </p>
             <div className="flex gap-4 text-sm text-gray-600 mb-3">
-              {visit.details.map((detail, index) => (
-                <span key={index}>
-                  {index === 0 && '🏠 '}
-                  {index === 1 && '🛏️ '}
-                  {index === 2 && '📐 '}
-                  {index === 3 && (detail.includes('Jardin') ? '🌳 ' : detail.includes('Métro') ? '🚇 ' : detail.includes('Terrasse') ? '🏢 ' : '🏢 ')}
-                  {detail}
-                </span>
-              ))}
+              🛏️ {visit.propriete?.nombreChambres ?? 0} chambres — 📐 {visit.propriete?.surface ?? 0} m²
             </div>
-            <div className="text-lg font-bold text-green-600">{visit.price}</div>
+            <div className="text-lg font-bold text-green-600">
+              {visit.propriete?.prix
+                ? `${visit.propriete.prix.toLocaleString()} €`
+                : 'Prix non défini'}
+            </div>
           </div>
-          
+
           <div className="text-right">
-            <div className="text-base font-semibold text-gray-900">
-              {formatDate(visit.date)}
-            </div>
+            <div className="text-base font-semibold text-gray-900">{formatDate(visit.date)}</div>
             <div className="text-sm text-gray-600 flex items-center mt-1">
               <Clock className="w-4 h-4 mr-1" />
-              {visit.time}
+              {new Date(visit.date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
             </div>
             <span className={`inline-block px-2 py-1 text-xs font-medium rounded-full mt-2 ${timeRemaining.className}`}>
               {timeRemaining.text}
             </span>
           </div>
         </div>
-        
+
         <div className="flex justify-between items-center pt-4 border-t border-gray-100">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-semibold">
-              {visit.agent.avatar}
+              {visit.user?.prenom ? visit.user.prenom.charAt(0) : '?'}
             </div>
-            <span className="text-sm text-gray-600">{visit.agent.name}</span>
+            <span className="text-sm text-gray-600">
+              {visit.user
+                ? `${visit.user.prenom} ${visit.user.nom}`
+                : 'Acheteur inconnu'}
+            </span>
           </div>
-          
+
+          {/* Boutons liés au statut */}
           <div className="flex gap-2">
-            <button className="px-3 py-1 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors">
-              Confirmer
-            </button>
-            <button className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
-              Reporter
-            </button>
-            <button className="px-3 py-1 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors">
-              Annuler
-            </button>
+            {visit.statut === 'DEMANDEE' && (
+              <button className="px-3 py-1 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors">
+                Confirmer
+              </button>
+            )}
+            {visit.statut === 'CONFIRMEE' && (
+              <button className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
+                Reporter
+              </button>
+            )}
+            {visit.statut !== 'ANNULEE' && (
+              <button className="px-3 py-1 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors">
+                Annuler
+              </button>
+            )}
           </div>
         </div>
       </div>
     );
+  };
+
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+
+    if (date.toDateString() === today.toDateString()) return "Aujourd'hui";
+    if (date.toDateString() === tomorrow.toDateString()) return "Demain";
+
+    return date.toLocaleDateString("fr-FR", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+    });
   };
 
   return (
@@ -240,71 +226,43 @@ const MesVisites = () => {
             + Nouvelle recherche
           </button>
         </div>
-        
+
         <nav className="px-6">
           <a href="#" className="flex items-center py-3 text-gray-600 border-b border-gray-100 hover:text-green-600 transition-colors">
-            <Home className="w-5 h-5 mr-3" />
-            Tableau de bord
+            <Home className="w-5 h-5 mr-3" /> Tableau de bord
           </a>
           <a href="#" className="flex items-center py-3 text-gray-600 border-b border-gray-100 hover:text-green-600 transition-colors">
-            <Search className="w-5 h-5 mr-3" />
-            Rechercher
+            <Search className="w-5 h-5 mr-3" /> Rechercher
           </a>
           <a href="#" className="flex items-center py-3 text-gray-600 border-b border-gray-100 hover:text-green-600 transition-colors">
-            <Heart className="w-5 h-5 mr-3" />
-            Mes favoris
+            <Heart className="w-5 h-5 mr-3" /> Mes favoris
           </a>
           <a href="#" className="flex items-center py-3 text-green-600 font-medium border-b border-gray-100">
-            <Calendar className="w-5 h-5 mr-3" />
-            Mes visites
+            <Calendar className="w-5 h-5 mr-3" /> Mes visites
           </a>
           <a href="#" className="flex items-center py-3 text-gray-600 border-b border-gray-100 hover:text-green-600 transition-colors">
-            <Briefcase className="w-5 h-5 mr-3" />
-            Mes offres
+            <Briefcase className="w-5 h-5 mr-3" /> Mes offres
           </a>
           <a href="#" className="flex items-center py-3 text-gray-600 border-b border-gray-100 hover:text-green-600 transition-colors">
-            <Settings className="w-5 h-5 mr-3" />
-            Paramètres
+            <Settings className="w-5 h-5 mr-3" /> Paramètres
           </a>
         </nav>
       </div>
 
-      {/* Main Content */}
+      {/* Contenu principal */}
       <div className="flex-1 p-8">
         <div className="mb-8">
           <h1 className="text-3xl font-semibold text-gray-900 mb-2">Mes Visites</h1>
           <p className="text-gray-600">Gérez vos rendez-vous de visites immobilières</p>
         </div>
 
-        {/* Stats Bar */}
-        <div className="bg-white rounded-xl p-6 shadow-sm mb-8">
-          <div className="grid grid-cols-4 gap-6">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">2</div>
-              <div className="text-sm text-gray-600 mt-1">Aujourd&apos;hui</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">5</div>
-              <div className="text-sm text-gray-600 mt-1">Cette semaine</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">8</div>
-              <div className="text-sm text-gray-600 mt-1">Ce mois</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">12</div>
-              <div className="text-sm text-gray-600 mt-1">Total planifiées</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Filters */}
+        {/* Filtres */}
         <div className="flex gap-4 mb-8 flex-wrap">
           {[
             { key: 'all', label: 'Toutes' },
             { key: 'today', label: "Aujourd'hui" },
             { key: 'week', label: 'Cette semaine' },
-            { key: 'month', label: 'Ce mois' }
+            { key: 'month', label: 'Ce mois' },
           ].map(filter => (
             <button
               key={filter.key}
@@ -320,46 +278,32 @@ const MesVisites = () => {
           ))}
         </div>
 
-        {/* Urgent Visits */}
+        {/* Groupes */}
         {urgentVisits.length > 0 && (
-          <div className="mb-10">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-              🚨 Visites urgentes (dans les 2h)
-            </h2>
+          <section className="mb-10">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">🚨 Visites urgentes</h2>
             <div className="space-y-4">
-              {urgentVisits.map(visit => (
-                <VisitCard key={visit.id} visit={visit} />
-              ))}
+              {urgentVisits.map(visit => <VisitCard key={visit.id} visit={visit} />)}
             </div>
-          </div>
+          </section>
         )}
 
-        {/* Today's Visits */}
-        {todayVisits.length > 0 && (     
-          <div className="mb-10">   
-            <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-              📅 Visites d&apos;aujourd&apos;hui
-            </h2>
+        {todayVisits.length > 0 && (
+          <section className="mb-10">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">📅 Visites d&apos;aujourd&apos;hui</h2>
             <div className="space-y-4">
-              {todayVisits.map(visit => (
-                <VisitCard key={visit.id} visit={visit} />
-              ))}
+              {todayVisits.map(visit => <VisitCard key={visit.id} visit={visit} />)}
             </div>
-          </div>
+          </section>
         )}
 
-        {/* Upcoming Visits */}
         {upcomingVisits.length > 0 && (
-          <div className="mb-10">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-              🗓️ Visites à venir
-            </h2>
+          <section className="mb-10">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">🗓️ Visites à venir</h2>
             <div className="space-y-4">
-              {upcomingVisits.map(visit => (
-                <VisitCard key={visit.id} visit={visit} />
-              ))}
+              {upcomingVisits.map(visit => <VisitCard key={visit.id} visit={visit} />)}
             </div>
-          </div>
+          </section>
         )}
 
         {filteredVisits.length === 0 && (
