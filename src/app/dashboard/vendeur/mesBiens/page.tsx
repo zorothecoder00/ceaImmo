@@ -85,7 +85,7 @@ interface Bien {
 interface PropertyCardProps {
   bien: Bien;
   onEdit: (bien: Bien) => void;
-  onDelete: (bien: Bien) => void;
+  onDelete: (id: number) => void;
   onView: (bien: Bien) => void;
   viewMode: "grid" | "list";
 }
@@ -222,7 +222,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ bien, onEdit, onDelete, onV
                     <Edit size={16} />
                   </button>
                   <button
-                    onClick={() => onDelete(bien)}
+                    onClick={() => onDelete(bien.id)}
                     className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                     title="Supprimer"
                   >
@@ -355,13 +355,20 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ bien, onEdit, onDelete, onV
 
 export default function MesBiens() {
   const [biens, setBiens] = useState<Bien[]>([]);
+
+  const [selectedBien, setSelectedBien] = useState<Bien | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+
   const [searchTerm, setSearchTerm] = useState('');
+
   const [selectedCategorie, setSelectedCategorie] = useState('');
   const [selectedStatut, setSelectedStatut] = useState('');
+
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid"); // 'grid' ou 'list'
 
   const [showModal, setShowModal] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+
   const [form, setForm] = useState<FormData>({
     nom: '',
     description: '',   
@@ -410,24 +417,62 @@ export default function MesBiens() {
     return matchSearch && matchCategorie && matchStatut;
   });
   
-  const handleView = (bien: Bien) => {
-    console.log('Consulter bien:', bien);
-    // Ici tu peux naviguer vers une page de détail
+  const handleView = async (bien: Bien) => {
+    try{
+      setIsLoading(true)
+      const res = await fetch(`/api/vendeur/mesBiens/${bien.id}`)
+      if (!res.ok) throw new Error("Impossible de charger les détails du bien");
+      const data = await res.json()
+      setSelectedBien(data.data)
+      setIsViewModalOpen(true)
+    }catch (error) {
+    console.error("Erreur lors d chargement du bien", error);
+    toast.error("Erreur lors du chargement des détails du bien");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleEdit = (bien: Bien) => {
-    console.log('Modifier bien:', bien);
-    // Ici tu peux naviguer vers une page d'édition
+  const handleEdit = async (bien: Bien) => {
+    try {
+      setIsLoading(true);
+      const res = await fetch(`/api/vendeur/mesBiens/${bien.id}`);
+      if (!res.ok) throw new Error("Impossible de charger le bien pour modification");
+      const data = await res.json();
+
+      const bienData = data.data;
+
+      setForm({
+        nom: bienData.nom,
+        description: bienData.description,
+        categorie: bienData.categorie,
+        prix: bienData.prix.toString(),
+        surface: bienData.surface.toString(),
+        statut: bienData.statut,
+        geolocalisation: bienData.geolocalisation,
+        nombreChambres: bienData.nombreChambres.toString(),
+        visiteVirtuelle: bienData.visiteVirtuelle || '',
+      });
+      setImages(bienData.images || []);
+      setChambres(bienData.chambres || []);
+      setCurrentStep(1);
+      setShowModal(true);
+    } catch (error) {
+      console.error(error);
+      toast.error("Erreur lors du chargement du bien à modifier");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleDelete = async (bien: Bien) => {
-    const confirmed = window.confirm(`Supprimer "${bien.nom}" ?`);
+  const handleDelete = async (id: number) => {
+    const confirmed = window.confirm("Supprimer cette propriété ?");
     if (!confirmed) return;
 
     try {
-      const res = await fetch(`/api/vendeur/mesBiens/${bien.id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/vendeur/mesBiens/${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Échec de la suppression');
-      setBiens(prev => prev.filter(b => b.id !== bien.id));
+      setBiens(prev => prev.filter(b => b.id !== id));
       toast.success('Bien supprimé');
     } catch(error) {
       console.error('Erreur lors de la suppression', error)
@@ -438,6 +483,7 @@ export default function MesBiens() {
   const handleAddNew = () => {
     setShowModal(true)
     setCurrentStep(1)
+    setSelectedBien(null);  // ✅ Réinitialiser selectedBien
     setForm({
       nom: '',
       description: '',
@@ -496,8 +542,14 @@ export default function MesBiens() {
       // ✅ Extraction des URLs depuis le state images (déjà uploadées via UploadThing)
       const imageUrls = images.map(img => img.url);
 
+      const method = selectedBien ? 'PUT' : 'POST';
+      const url = selectedBien
+      ? `/api/vendeur/mesBiens/${selectedBien.id}`
+      : '/api/vendeur/mesBiens';
+
       // ✅ Préparation des données au format JSON
       const payload = {
+        ...form,
         nom: form.nom,
         description: form.description,
         categorie: form.categorie,
@@ -509,6 +561,7 @@ export default function MesBiens() {
         visiteVirtuelle: form.visiteVirtuelle || null,
         imageUrls, // ✅ Tableau de strings (URLs)
         chambres: chambres.map(ch => ({
+          ...ch,
           nom: ch.nom,
           description: ch.description,
           prixParNuit: Number(ch.prixParNuit),
@@ -518,11 +571,9 @@ export default function MesBiens() {
       };
 
       // 📡 Envoi en JSON (pas en FormData)
-      const res = await fetch('/api/vendeur/mesBiens', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
 
@@ -533,14 +584,20 @@ export default function MesBiens() {
 
       const result = await res.json();
 
-      toast.success('Bien ajouté avec succès !');
-      
-      // ✅ Actualiser la liste des biens
-      setBiens(prev => [result.data, ...prev]);
+      if (selectedBien) {
+        // Mise à jour dans la liste
+        setBiens(prev => prev.map(b => (b.id === result.data.id ? result.data : b)));
+        toast.success('Bien modifié avec succès');
+      } else {
+        // Ajout
+        setBiens(prev => [result.data, ...prev]);
+        toast.success('Bien ajouté avec succès');
+      }
       
       // ✅ Réinitialiser le formulaire
       setShowModal(false);
       setCurrentStep(1);
+      setSelectedBien(null);
       setForm({
         nom: '',
         description: '',
@@ -733,8 +790,89 @@ export default function MesBiens() {
         )}
       </div>
 
+      {/* ✅ CORRECTION: Modal de visualisation au bon endroit */}
+      <AnimatePresence>
+        {isViewModalOpen && selectedBien && (
+          <motion.div
+            className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsViewModalOpen(false)}
+          >
+            <motion.div
+              className="bg-white rounded-xl shadow-lg w-full max-w-3xl overflow-y-auto max-h-[90vh]"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-semibold text-gray-900">
+                    Détails de la propriété
+                  </h2>
+                  <button
+                    onClick={() => setIsViewModalOpen(false)}
+                    className="text-gray-500 hover:text-gray-800 p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
 
-    {/* Modal d'ajout */}
+                <div className="space-y-4">
+                  <img
+                    src={selectedBien.images[0]?.url || '/placeholder.jpg'}
+                    alt={selectedBien.nom}
+                    className="w-full h-64 object-cover rounded-lg"
+                  />
+
+                  <div>
+                    <h3 className="text-lg font-bold">{selectedBien.nom}</h3>
+                    <p className="text-gray-600">{selectedBien.description}</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p><strong>Catégorie:</strong> {selectedBien.categorie}</p>
+                      <p><strong>Statut:</strong> {selectedBien.statut}</p>
+                      <p><strong>Surface:</strong> {selectedBien.surface} m²</p>
+                      <p><strong>Prix:</strong> {selectedBien.prix} €</p>
+                    </div>
+                    <div>
+                      <p><strong>Localisation:</strong> {selectedBien.geolocalisation}</p>
+                      <p><strong>Nombre de chambres:</strong> {selectedBien.nombreChambres}</p>
+                      <p><strong>Visite virtuelle:</strong> 
+                        {selectedBien.visiteVirtuelle 
+                          ? <a href={selectedBien.visiteVirtuelle} target="_blank" rel="noopener noreferrer" className="text-indigo-600 underline ml-1">Voir</a> 
+                          : " -"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {selectedBien.chambres && selectedBien.chambres.length > 0 && (
+                    <div>
+                      <h4 className="font-semibold text-gray-800 mb-2">Chambres :</h4>
+                      {selectedBien.chambres.map((ch, i) => (
+                        <div key={i} className="border rounded-lg p-3 mb-2">
+                          <p><strong>Nom :</strong> {ch.nom}</p>
+                          <p><strong>Description :</strong> {ch.description}</p>
+                          <p><strong>Prix/nuit :</strong> {ch.prixParNuit} €</p>
+                          <p><strong>Capacité :</strong> {ch.capacite}</p>
+                          <p><strong>Disponible :</strong> {ch.disponible ? "Oui" : "Non"}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+
+    {/* Modal d'ajout/modification */}
       <AnimatePresence>
         {showModal && (
           <motion.div
@@ -755,7 +893,9 @@ export default function MesBiens() {
               <div className="bg-gradient-to-r from-orange-500 to-orange-600 p-6 text-white">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-2xl font-bold">Ajouter une propriété</h2>
+                    <h2 className="text-2xl font-bold">
+                      {selectedBien ? 'Modifier la propriété' : 'Ajouter une propriété'}
+                    </h2>
                     <p className="text-orange-100 text-sm mt-1">
                       Étape {currentStep} sur 3
                     </p>
@@ -810,10 +950,9 @@ export default function MesBiens() {
                         </label>
                         <select
                           value={form.categorie}
-                          onChange={(e) => setForm({...form, categorie: e.target.value as Categorie,})}
+                          onChange={(e) => setForm({...form, categorie: e.target.value as Categorie})}
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
                         >
-                          <option value="">Sélectionner...</option>
                           {Object.values(Categorie).map(cat => (
                             <option key={cat} value={cat}>{cat}</option>
                           ))}
@@ -852,7 +991,7 @@ export default function MesBiens() {
                         </label>
                         <select
                           value={form.statut}
-                          onChange={(e) => setForm({...form, statut: e.target.value as Statut,})}
+                          onChange={(e) => setForm({...form, statut: e.target.value as Statut})}
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
                         >
                           {Object.values(Statut).map(st => (
@@ -1004,6 +1143,18 @@ export default function MesBiens() {
                                 placeholder="Description"
                                 className="px-3 py-2 border border-gray-300 rounded-lg text-sm col-span-2 h-20 resize-none"
                               />
+                              <div className="col-span-2 flex items-center gap-2">
+                                <input
+                                  type="checkbox"
+                                  id={`disponible-${index}`}
+                                  checked={chambre.disponible}
+                                  onChange={(e) => updateChambre(index, 'disponible', e.target.checked)}
+                                  className="rounded border-gray-300"
+                                />
+                                <label htmlFor={`disponible-${index}`} className="text-sm text-gray-700">
+                                  Disponible
+                                </label>
+                              </div>
                             </div>
                           </Card>
                         ))}
@@ -1023,7 +1174,7 @@ export default function MesBiens() {
                     {currentStep === 1 ? 'Annuler' : 'Précédent'}
                   </Button>
 
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 items-center">
                     {!isStepValid() && currentStep !== 3 && (
                       <div className="flex items-center gap-2 text-sm text-amber-600 mr-4">
                         <AlertCircle size={16} />
@@ -1043,17 +1194,17 @@ export default function MesBiens() {
                       <Button
                         onClick={handleSubmit}
                         disabled={isSubmitting}
-                        className={`${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700'} `}
+                        className={`${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700'}`}
                       >
                         {isSubmitting ? (
                           <>
-                            <Loader2 className="mr-2 animate-spin mr-2" size={16} />
+                            <Loader2 className="animate-spin mr-2" size={16} />
                             Enregistrement...
                           </>
                         ) : (
                           <>
                             <CheckCircle className="mr-2" size={16} />
-                            Enregistrer
+                            {selectedBien ? 'Mettre à jour' : 'Enregistrer'}
                           </>
                         )}
                       </Button>

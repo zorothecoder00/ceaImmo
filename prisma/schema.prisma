@@ -47,7 +47,7 @@ enum Statut {
   RESERVE
   EN_LOCATION
   EN_NEGOCIATION
-}  
+}    
 
 enum Type {
   SEJOUR
@@ -197,7 +197,7 @@ model Favori {
   @@unique([userId, proprieteId])
 
 }
-
+  
 model Visite {
   id           Int                  @id @default(autoincrement())
   date         DateTime
