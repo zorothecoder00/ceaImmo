@@ -131,7 +131,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (req.method === "DELETE") {
       const propriete = await prisma.propriete.findUnique({
         where: { id: proprieteId },
-      });
+      });   
 
       if (!propriete) {
         return res.status(404).json({ message: "Propriété non trouvée" });

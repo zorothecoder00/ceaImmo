@@ -39,7 +39,7 @@ const MesVisites = () => {
   useEffect(() => {
     const fetchVisits = async () => {
       try {
-        const res = await fetch('/api/acheteur/mesVisites')
+        const res = await fetch('/api/vendeur/mesVisites')
         if (!res.ok) throw new Error('Erreur API')
         const data = await res.json()
         setVisits(data.data)

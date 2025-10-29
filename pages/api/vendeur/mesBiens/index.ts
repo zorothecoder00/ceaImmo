@@ -3,7 +3,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/lib/prisma"; 
 import { Prisma, Role, Categorie, Statut } from "@prisma/client";
 import { getAuthSession } from "@/lib/auth"; 
-
+   
 interface ChambreInput {
   nom: string;
   description?: string;

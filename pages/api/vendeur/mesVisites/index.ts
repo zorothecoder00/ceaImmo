@@ -3,10 +3,19 @@ import { prisma } from '@/lib/prisma'
 import { getAuthSession } from '@/lib/auth'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+
+  function serializeBigInt<T>(obj: T): T {  
+    return JSON.parse(
+      JSON.stringify(obj, (_, value) =>
+        typeof value === "bigint" ? value.toString() : value
+      )
+    );
+  }
+
   try {
     // ✅ Vérification de la méthode
     if (req.method !== 'GET') {
-      return res.status(405).json({ message: 'Méthode non autorisée' })
+      return res.status(405).json({ message: 'Méthode non autorisée' })    
     }
 
     // ✅ Vérification de la session utilisateur
@@ -36,7 +45,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         propriete: {
           proprietaireId: Number(userId),
         },
-      },
+      }, 
       include: {
         propriete: {
           select: {
@@ -59,8 +68,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       orderBy: { date: 'asc' },
     })
 
+    const safeVisites = serializeBigInt(visites);
+
     // ✅ Retour des données
-    return res.status(200).json({ data: visites })
+    return res.status(200).json({ data: safeVisites })
   } catch (error) {
     console.error('Erreur /api/vendeur/mesVisites :', error)
     return res.status(500).json({
