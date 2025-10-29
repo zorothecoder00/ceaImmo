@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { Home, Search, Heart, Calendar, Briefcase, Settings, MapPin, Clock, User } from 'lucide-react';
-import { VisiteStatut } from '@prisma/client'
-
-
+import { VisiteStatut } from '@prisma/client'  
+import { toast } from 'react-hot-toast';
+  
 interface Propriete {
   id: number 
   nom: string
@@ -34,6 +34,7 @@ const MesVisites = () => {
   const [activeFilter, setActiveFilter] = useState('all');
   const [currentTime, setCurrentTime] = useState(new Date());
   const [visits, setVisits] = useState<Visit[]>([])
+  const [loadingId, setLoadingId] = useState<number | null>(null); // Pour suivre la visite en cours de modification
 
   // 🔄 Récupération des visites depuis l’API
   useEffect(() => {
@@ -50,12 +51,43 @@ const MesVisites = () => {
     }
 
     fetchVisits()
-  }, [])
+  }, [])    
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
     return () => clearInterval(timer);
   }, []);
+
+  const updateVisitStatut = async(id: number, statut: VisiteStatut) => {
+    try{
+      setLoadingId(id)
+
+      const res = await fetch(`/api/vendeur/mesVisites/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ statut })
+      })
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Erreur de mise à jour');
+
+      // ✅ Mettre à jour localement
+      setVisits(prev =>
+        prev.map(v => (v.id === id ? { ...v, statut: statut } : v))
+      );
+
+    }catch(error){
+      console.error('Erreur lors de la mise à jour du statut :', error);
+      alert('❌ Impossible de mettre à jour le statut.');
+    } finally {
+      setLoadingId(null);
+    }
+  }
+
+  // Handlers spécifiques
+  const handleConfirmer = (id: number) => updateVisitStatut(id, 'CONFIRMEE');
+  const handleAnnuler = (id: number) => updateVisitStatut(id, 'ANNULEE');
+  const handleReporter = (id: number) => updateVisitStatut(id, 'REPORTEE');
 
   const getTimeRemaining = (dateString: string): { text: string; className: string } => {
     const visitDateTime = new Date(dateString);
@@ -181,18 +213,27 @@ const MesVisites = () => {
           {/* Boutons liés au statut */}
           <div className="flex gap-2">
             {visit.statut === 'DEMANDEE' && (
-              <button className="px-3 py-1 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors">
-                Confirmer
+              <button 
+                onClick={() => handleConfirmer(visit.id)}
+                disabled={loadingId===visit.id}
+                className="px-3 py-1 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors">
+                {loadingId === visit.id ? '...' : 'Confirmer'}
               </button>
             )}
             {visit.statut === 'CONFIRMEE' && (
-              <button className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
-                Reporter
+              <button 
+                onClick={() => handleReporter(visit.id)}
+                disabled={loadingId===visit.id}
+                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
+                {loadingId === visit.id ? '...' : 'Reporter'}
               </button>
             )}
             {visit.statut !== 'ANNULEE' && (
-              <button className="px-3 py-1 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors">
-                Annuler
+              <button 
+                onClick={() => handleAnnuler(visit.id)}
+                disabled={loadingId===visit.id}
+                className="px-3 py-1 text-sm bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors">
+                {loadingId === visit.id ? '...' : 'Annuler'}
               </button>
             )}
           </div>
