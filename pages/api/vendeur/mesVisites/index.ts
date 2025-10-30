@@ -19,7 +19,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // ✅ Vérification de la session utilisateur
-    const session = await getAuthSession(req, res)
+    const session = await getAuthSession(req, res)  
 
     if (!session || !session.user) {
       return res.status(401).json({ message: 'Non authentifié' })

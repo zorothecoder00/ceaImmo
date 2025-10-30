@@ -9,6 +9,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (!session?.user?.id) return res.status(401).json({ message: 'Non autorisé' });
 
   const userId = Number(session.user.id);
+  
+  function serializeBigInt<T>(obj: T): T {  
+    return JSON.parse(
+      JSON.stringify(obj, (_, value) =>
+        typeof value === "bigint" ? value.toString() : value
+      )
+    );
+  }
 
   try {
     // ------------------- GET -------------------
@@ -76,8 +84,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // ✅ Pagination finale (après filtrage et tri)
       const paginatedData = data.slice(skip, skip + take);
 
+      const safePaginatedData = serializeBigInt(paginatedData)
+
       return res.status(200).json({
-        data: paginatedData,
+        data: safePaginatedData,
         meta: { total, page: pageNum, limit: take, totalPages: Math.ceil(total / take) },
       });
     }

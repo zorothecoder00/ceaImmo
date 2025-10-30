@@ -1,31 +1,62 @@
 import { prisma } from '@/lib/prisma'
 import { Statut, Categorie, Type } from '@prisma/client'
  
-export async function getAvailableProprietes(){
-	return await prisma.propriete.findMany({
-		where: { statut: Statut.DISPONIBLE },
-		orderBy: { createdAt:'desc' },
-		take: 3
-	})    
+export async function getAvailableProprietes(userId?: string) {
+  const proprietes = await prisma.propriete.findMany({
+    where: { statut: Statut.DISPONIBLE },
+    include: {
+      images: {
+        orderBy: { ordre: 'asc' },
+        take: 1  
+      },
+      favoris: userId ? {
+        where: { userId: parseInt(userId) }
+      } : false
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 3
+  })
+
+  return proprietes.map(prop => ({
+    ...prop,
+    isFavorite: userId ? prop.favoris.length > 0 : false
+  }))
 }
 
 // Filtrer par catégorie + budget
 export async function filtrageProprietes(
-	geolocalisation?: string,
-	categorie?: Categorie,   
-	minPrix?: number,
-	maxPrix?: number
-){
-	return await prisma.propriete.findMany({
-		where: {
-			statut: Statut.DISPONIBLE,
-			...(geolocalisation ? { geolocalisation } : {}),
-			...(categorie ? { categorie } : {}),
-			...(minPrix !== undefined && maxPrix !== undefined ? { prix: { gte: minPrix, lte: maxPrix } } : {}),
-		},
-		orderBy: { createdAt: 'desc'},
-		take: 3
-	})
+  userId?: string,
+  geolocalisation?: string,
+  categorie?: Categorie,   
+  minPrix?: number,
+  maxPrix?: number
+) {
+  const proprietes = await prisma.propriete.findMany({
+    where: {
+      statut: Statut.DISPONIBLE,
+      ...(geolocalisation ? { geolocalisation } : {}),
+      ...(categorie ? { categorie } : {}),
+      ...(minPrix !== undefined && maxPrix !== undefined ? { 
+        prix: { gte: minPrix, lte: maxPrix } 
+      } : {}),
+    },
+    include: {
+      images: {
+        orderBy: { ordre: 'asc' },
+        take: 1
+      },
+      favoris: userId ? {
+        where: { userId: parseInt(userId) }
+      } : false
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 3
+  })
+
+  return proprietes.map(prop => ({
+    ...prop,
+    isFavorite: userId ? prop.favoris.length > 0 : false
+  }))
 }
 
 // Récupérer les prochaines visites d'un utilisateur
@@ -40,8 +71,20 @@ export async function getMesProchainesVisites(userId: string){
         date: { gte: new Date() }, // visites à venir
       },
       include: {
-        propriete: true, // infos de la propriété visitée
-        agent: true,     // infos de l'agent si besoin
+        propriete: {
+          include: {
+            images: {
+              orderBy: { ordre: 'asc' },
+              take: 1
+            }
+          }
+        },
+        agent: { 
+         select:  { 
+          nom: true ,
+          prenom: true,
+         },
+        },
       },
       orderBy: {
         date: "asc", // les visites les plus proches en premier
@@ -57,7 +100,7 @@ export async function getMesProchainesVisites(userId: string){
       },
     }),
   ])
-
+  
   return { visites, total }
 }
 
@@ -71,7 +114,14 @@ export async function getMesFavoris(userId: string) {
         userId: parsedUserId,
       },
       include: {
-        propriete: true,
+        propriete: {
+          include: {
+            images: {
+              orderBy: { ordre: 'asc' },
+              take: 1
+            }
+          }
+        },
       },
       orderBy: { createdAt: 'desc' },
       take: 2,
@@ -85,4 +135,45 @@ export async function getMesFavoris(userId: string) {
   ])
 
   return { favoris, total }
+}
+
+// ✅ Toggle favori (ajouter ou retirer)
+export async function toggleFavori(userId: string, proprieteId: number) {
+  const parsedUserId = parseInt(userId) 
+  
+  try {
+    const existingFavori = await prisma.favori.findUnique({
+      where: {
+        userId_proprieteId: {
+          userId: parsedUserId,
+          proprieteId: proprieteId
+        }
+      }
+    })
+
+    if (existingFavori) {
+      // Retirer le favori
+      await prisma.favori.delete({
+        where: {
+          userId_proprieteId: {
+            userId: parsedUserId,
+            proprieteId: proprieteId
+          }
+        }
+      })
+      return { success: true, action: 'removed', isFavorite: false }
+    } else {
+      // Ajouter le favori
+      const favori = await prisma.favori.create({
+        data: {
+          userId: parsedUserId,
+          proprieteId: proprieteId
+        }
+      })
+      return { success: true, action: 'added', isFavorite: true, favori }
+    }
+  } catch (error) {
+    console.error('Erreur toggle favori:', error)
+    return { success: false, error: 'Erreur lors de la modification du favori' }
+  }
 }
