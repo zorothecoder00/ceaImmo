@@ -11,7 +11,7 @@ export async function getAvailableProprietes(userId?: string) {
       },
       favoris: userId ? {
         where: { userId: parseInt(userId) }
-      } : false
+      } : false   
     },
     orderBy: { createdAt: 'desc' },
     take: 3
@@ -29,7 +29,8 @@ export async function filtrageProprietes(
   geolocalisation?: string,
   categorie?: Categorie,   
   minPrix?: number,
-  maxPrix?: number
+  maxPrix?: number,
+  nombreChambres?: number
 ) {
   const proprietes = await prisma.propriete.findMany({
     where: {
@@ -39,6 +40,7 @@ export async function filtrageProprietes(
       ...(minPrix !== undefined && maxPrix !== undefined ? { 
         prix: { gte: minPrix, lte: maxPrix } 
       } : {}),
+      ...(nombreChambres !== undefined ? { nombreChambres } : {}),
     },
     include: {
       images: {
@@ -178,35 +180,70 @@ export async function toggleFavori(userId: string, proprieteId: number) {
   }
 }
 
+// 💾 Sauvegarder une recherche
 export async function sauvegarderRecherche(
   userId: string,
   data: {
-    titre?: string;
-    categorie?: Categorie;
-    minPrix?: number;
-    maxPrix?: number;
-    geolocalisation?: string;
-    nombreChambres?: number;
+    titre?: string
+    categorie?: Categorie
+    minPrix?: number
+    maxPrix?: number
+    geolocalisation?: string
+    nombreChambres?: number
   }
 ) {
   return prisma.recherche.create({
     data: {
       userId: Number(userId),
-      titre: data.titre ?? "Nouvelle recherche",
+      titre: data.titre ?? 'Nouvelle recherche',
       categorie: data.categorie,
       minPrix: data.minPrix,
       maxPrix: data.maxPrix,
       geolocalisation: data.geolocalisation,
-      nombreChambres: data.nombreChambres,
-    },
-  });
+      nombreChambres: data.nombreChambres
+    }
+  })
 }
+
+// 🔥 Nouvelle fonction : Recherches + Résultats associés
+export async function getRecherchesSauvegardeesEtResultats(userId: string) {
+  const recherches = await prisma.recherche.findMany({
+    where: { userId: Number(userId) },
+    orderBy: { createdAt: 'desc' }
+  })
+
+  // Pour chaque recherche, on applique filtrageProprietes()
+  const recherchesAvecResultats = await Promise.all(
+    recherches.map(async (r) => {
+      const resultats = await filtrageProprietes(
+        userId,
+        r.geolocalisation ?? undefined,
+        r.categorie ?? undefined,
+        r.minPrix !== null && r.minPrix !== undefined ? Number(r.minPrix) : undefined,
+        r.maxPrix !== null && r.maxPrix !== undefined ? Number(r.maxPrix) : undefined,
+        r.nombreChambres ?? undefined
+      )
+
+      return {
+        ...r,
+        resultats
+      }
+    })
+  )
+
+  return {
+    recherches: recherchesAvecResultats,
+    total: recherchesAvecResultats.length
+  }
+}
+
 
 
 export async function getRecherchesSauvegardees(userId: string) {
   const recherches = await prisma.recherche.findMany({
     where: { userId: Number(userId) },
     orderBy: { createdAt: "desc" },
+    take: 2
   });
 
   return { recherches, total: recherches.length };

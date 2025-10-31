@@ -5,9 +5,9 @@ import { Home, Search, Heart, Calendar, Briefcase, Settings, MapPin, Clock } fro
 import { VisiteStatut } from '@prisma/client'  
 import { toast } from 'react-hot-toast';
   
-interface Propriete {
-  id: number 
-  nom: string
+interface Propriete {  
+  id: number    
+  nom: string  
   prix: number
   surface: number 
   geolocalisation: string 

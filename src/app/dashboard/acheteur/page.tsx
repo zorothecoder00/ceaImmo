@@ -25,7 +25,7 @@ import {
   getMesProchainesVisites,
   getMesFavoris,
   toggleFavori,
-  getRecherchesSauvegardees
+  getRecherchesSauvegardeesEtResultats
 } from '@/lib/getDashboardAcheteur'
 import FavoriteButton from '@/components/FavoriteButton'
 import { Categorie, VisiteStatut, Statut } from '@prisma/client'
@@ -119,8 +119,8 @@ function StatsCard({
         </div>
         <div className={`p-3 rounded-lg ${colorClasses[color as keyof typeof colorClasses] ?? ""}`}>
           <Icon className="h-6 w-6" />
-        </div>
-      </div>
+        </div>  
+      </div>  
     </div>
   )
 }
@@ -134,10 +134,11 @@ function PropertyCard({ property, userId }: { property: Property, userId: string
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
       <div className="relative">   
-        <Image 
-          src={imageUrl} 
-          alt={property.nom}    
-          className="w-full h-48 object-cover"
+        <Image
+          src={imageUrl}
+          alt={property.nom}
+          fill
+          className="object-cover"
         />
         {/* ✅ Bouton favori interactif */}
         <FavoriteButton
@@ -283,7 +284,7 @@ export default async function AcheteurDashboard() {
   const { visites, total: totalVisites } = visitesData
   const { favoris, total: totalFavoris } = favorisData
 
-  const recherchesData = await getRecherchesSauvegardees(userId)
+  const recherchesData = await getRecherchesSauvegardeesEtResultats(userId)
   const { recherches, total: totalRecherches } = recherchesData
 
   return (
@@ -415,19 +416,40 @@ export default async function AcheteurDashboard() {
               </div>
 
               {recherches.length > 0 ? (
-                <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
-                  {recherches.map((r) => (
-                    <div key={r.id} className="flex items-center justify-between text-sm text-gray-700">
-                      <span>{r.geolocalisation || 'Lieu inconnu'} – {r.categorie || 'Type inconnu'}</span>
-                      <span>{r.minPrix ?? '∞'}€ à {r.maxPrix ?? '∞'}€</span>
+              <div className="space-y-4">
+                {recherches
+                  .slice(0, 2) // ✅ Limite à 2 recherches maximum
+                  .map((r) => (
+                  <div key={r.id} className="bg-white border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-semibold text-gray-900 text-sm">
+                        {r.titre || `${r.categorie || 'Type inconnu'} à ${r.geolocalisation || 'Lieu inconnu'}`}
+                      </h3>
+                      <span className="text-sm text-gray-500">
+                        {r.minPrix ? `${r.minPrix.toLocaleString()}€` : '∞'} - {r.maxPrix ? `${r.maxPrix.toLocaleString()}€` : '∞'}
+                      </span>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
-                  <p className="text-gray-500">Aucune recherche sauvegardée</p>
-                </div>
-              )}
+
+                    {r.resultats.length > 0 ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {r.resultats
+                        .slice(0, 2) // ✅ (Optionnel) limite aussi le nombre de résultats affichés
+                        .map((property) => (
+                          <PropertyCard key={property.id} property={property} userId={userId} />
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 text-sm">Aucun bien ne correspond à cette recherche</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
+                <p className="text-gray-500">Aucune recherche sauvegardée</p>
+              </div>
+            )}
+
             </div>
 
             {/* Upcoming Visits */}   
