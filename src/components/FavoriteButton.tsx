@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition } from 'react'  
 import { Heart } from 'lucide-react'
 
 interface FavoriteButtonProps {  

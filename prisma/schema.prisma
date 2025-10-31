@@ -124,6 +124,7 @@ model User {
   logs              Log[]
   notifications     Notification[]
   avis              Avis[]
+  recherches        Recherche[] // 👈 Ajoute cette ligne
 }     
 
 model Propriete {   
@@ -348,3 +349,27 @@ model Config {
   id        Int     @id @default(1)
   maintenance Boolean @default(false)  
 }    
+
+model Recherche {
+  id            Int        @id @default(autoincrement())
+  userId        Int
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  titre         String?    // ex: "Mes villas à Lomé"
+  categorie     Categorie? // ex: VILLA, MAISON...
+  minPrix       BigInt?
+  maxPrix       BigInt?
+  minSurface    BigInt?
+  maxSurface    BigInt?
+  localisation  String?    // ex: "Lomé", "Adidogomé"...
+  statut        Statut?    // DISPONIBLE, VENDU...
+  nombreChambres Int?      // ex: 3
+
+  // facultatif : pour trier ou filtrer plus tard
+  triPar        String?    // ex: "prix_asc", "surface_desc"
+  motsCles      String?    // ex: "vue sur mer, piscine"
+
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+}
+

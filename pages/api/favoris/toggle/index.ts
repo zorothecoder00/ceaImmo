@@ -1,5 +1,5 @@
-import type { NextApiRequest, NextApiResponse } from 'next'
-import { toggleFavori } from '@/lib/getDashboardAcheteur'
+import type { NextApiRequest, NextApiResponse } from 'next'  
+import { toggleFavori } from '@/lib/getDashboardAcheteur'  
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -7,7 +7,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const { userId, proprieteId } = req.body
+    const { userId, proprieteId } = req.body  
 
     if (!userId || !proprieteId) {
       return res.status(400).json({ success: false, error: 'Paramètres manquants' })
