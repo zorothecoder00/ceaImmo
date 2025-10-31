@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Filter, MapPin, Home, DollarSign, Maximize, Users, Star, Heart, Eye, X } from 'lucide-react';
+import { Search, Filter, MapPin, Home, Maximize, Users, Star, Heart, Eye, X } from 'lucide-react';
 import { Statut, VisiteStatut, Categorie, OffreStatut } from '@prisma/client'
 import toast from "react-hot-toast";
+import Image from 'next/image'
 
 interface Visite {
   id: number;
@@ -627,7 +628,7 @@ export default function RecherchesPage() {
                   {/* Image */}
                   <div className="relative h-48 bg-gray-200">
                     {propriete.images.length > 0 ? (
-                      <img
+                      <Image
                         src={propriete.images[0].url}
                         alt={propriete.nom}
                         className="w-full h-full object-cover"
@@ -808,7 +809,7 @@ export default function RecherchesPage() {
                   <div className="flex gap-4">
                     <div className="w-24 h-24 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
                       {selectedPropriete.images.length > 0 ? (
-                        <img
+                        <Image
                           src={selectedPropriete.images[0].url}
                           alt={selectedPropriete.nom}
                           className="w-full h-full object-cover"

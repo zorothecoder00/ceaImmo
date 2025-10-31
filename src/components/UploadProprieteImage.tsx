@@ -3,6 +3,7 @@
 import { UploadButton } from "@uploadthing/react";
 import type { OurFileRouter } from "@/app/api/uploadthing/core";
 import { X, Image as ImageIcon } from "lucide-react";
+import Image from 'next/image'
 
 interface PropertyImage {
   id: number;
@@ -57,7 +58,7 @@ export default function UploadProprieteImage({ images, setImages }: UploadPropri
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {images.map((image, index) => (
             <div key={image.id} className="relative group">
-              <img
+              <Image
                 src={image.url}
                 alt={`Image ${index + 1}`}
                 className="w-full h-32 object-cover rounded-lg border border-gray-200"

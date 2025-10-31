@@ -17,6 +17,7 @@ import {
   Square
 } from 'lucide-react'
 import Link from "next/link"
+import Image from 'next/image'
 
 // Types
 interface Property {
@@ -163,8 +164,7 @@ function PropertyCard({ property }: { property: Property }) {
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
       <div className="relative">
-        <img 
-          
+        <Image         
           src={property.images[0]} 
           alt={property.title}
           className="w-full h-48 object-cover"

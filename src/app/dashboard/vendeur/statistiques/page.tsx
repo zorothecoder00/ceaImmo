@@ -3,9 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Home, 
-  Plus, 
-  Search, 
-  Filter, 
+  Plus,  
   MoreVertical, 
   Eye, 
   Edit, 
@@ -13,7 +11,6 @@ import {
   TrendingUp, 
   Calendar, 
   MapPin, 
-  Users, 
   DollarSign,
   Star,
   Heart,
@@ -23,14 +20,14 @@ import {
   CheckCircle,
   Clock,
   AlertCircle,
-  Settings,
   Bell,
   Target,
   Activity,
   TrendingDown,
   Package
 } from 'lucide-react';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import Image from 'next/image'
 
 interface ProprieteImage {
   id: number;
@@ -308,11 +305,11 @@ const BienCard: React.FC<BienCardProps> = ({ bien, onEdit, onDelete, onView }) =
   const noteGlobale = bien.avis.length > 0 
     ? (bien.avis.reduce((sum, a) => sum + a.note, 0) / bien.avis.length).toFixed(1)
     : '—';
-
+ 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 group">
       <div className="relative">
-        <img 
+        <Image 
           src={bien.images[0]?.url || '/placeholder-property.jpg'} 
           alt={bien.nom}
           className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"

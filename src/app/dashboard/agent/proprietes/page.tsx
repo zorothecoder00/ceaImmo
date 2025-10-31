@@ -12,6 +12,7 @@ import {
   Clock,
   Star,
 } from "lucide-react";
+import Image from 'next/image'
 
 /**
  * Types frontend (mirrors minimalement ton schema Prisma + champs UI optionnels)
@@ -369,7 +370,7 @@ export default function AgentProprietesPage() {
                 {/* Image */}
                 <div className="md:w-1/3 lg:w-1/4">
                   <div className="relative h-48 md:h-full">
-                    <img
+                    <Image
                       src={propriete.images[0] ?? "/api/placeholder/400/300"}
                       alt={propriete.nom}
                       className="w-full h-full object-cover"
@@ -410,7 +411,7 @@ export default function AgentProprietesPage() {
                       {/* Propriétaire */}
                       {propriete.proprietaire && (
                         <div className="flex items-center mb-4 p-3 bg-gray-50 rounded-lg">
-                          <img
+                          <Image
                             src={propriete.proprietaire.photo ?? "/api/placeholder/50/50"}
                             alt=""
                             className="h-10 w-10 rounded-full mr-3"

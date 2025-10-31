@@ -7,17 +7,16 @@ import {
   Bell,
   User,  
   Eye,
-  Edit,
   Heart,
   MapPin,
   Bed,
-  Bath,
   Square,
   Search,
   Star,
   Phone,
   Mail,
 } from 'lucide-react'
+import Image from 'next/image'
 import { getAuthSession } from "@/lib/auth"
 import Link from "next/link"  
 import {
@@ -25,10 +24,12 @@ import {
   filtrageProprietes,
   getMesProchainesVisites,
   getMesFavoris,
-  toggleFavori
+  toggleFavori,
+  getRecherchesSauvegardees
 } from '@/lib/getDashboardAcheteur'
 import FavoriteButton from '@/components/FavoriteButton'
-import { Categorie, VisiteStatut } from '@prisma/client'
+import { Categorie, VisiteStatut, Statut } from '@prisma/client'
+import SearchForm from '@/components/SearchForm'
 
 // Types
 interface Image {
@@ -71,6 +72,20 @@ interface Visit {
     nom: string
   } | null
   statut: VisiteStatut
+}
+
+interface Recherche {
+  id: number
+  titre?: string
+  categorie?: Categorie
+  statut?: Statut
+  minPrix?: number
+  maxPrix?: number
+  minSurface?: number
+  maxSurface?: number
+  geolocalisation?: string
+  nombreChambres?: number
+  userId: number
 }
 
 // Components
@@ -119,7 +134,7 @@ function PropertyCard({ property, userId }: { property: Property, userId: string
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
       <div className="relative">   
-        <img 
+        <Image 
           src={imageUrl} 
           alt={property.nom}    
           className="w-full h-48 object-cover"
@@ -268,8 +283,8 @@ export default async function AcheteurDashboard() {
   const { visites, total: totalVisites } = visitesData
   const { favoris, total: totalFavoris } = favorisData
 
-  // Nombre de recherches actives (à implémenter si nécessaire)
-  const recherchesActives = 0
+  const recherchesData = await getRecherchesSauvegardees(userId)
+  const { recherches, total: totalRecherches } = recherchesData
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -360,7 +375,7 @@ export default async function AcheteurDashboard() {
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <StatsCard title="Biens favoris" value={totalFavoris} subtitle="sauvegardés" icon={Heart} color="green" />
-            <StatsCard title="Recherches" value={recherchesActives} subtitle="actives" icon={Search} color="blue" />
+            <StatsCard title="Recherches" value={totalRecherches} subtitle="actives" icon={Search} color="blue" />
             <StatsCard title="Visites" value={totalVisites} subtitle="planifiées" icon={Calendar} color="purple" />
             <StatsCard title="Alertes" value={0} subtitle="nouvelles" icon={Bell} color="orange" />
           </div>
@@ -368,34 +383,11 @@ export default async function AcheteurDashboard() {
           {/* Quick Search */}
           <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Recherche rapide</h2>
-            <div className="flex items-center space-x-4">
-              <div className="flex-1">
-                <input 
-                  type="text" 
-                  placeholder="Où souhaitez-vous habiter ?" 
-                  className="w-full border border-gray-300 rounded-md px-3 py-2"
-                />
-              </div>
-              <select className="border border-gray-300 rounded-md px-3 py-2">
-                <option>Type</option>
-                <option>Appartement</option>
-                <option>Maison</option>
-                <option>Villa</option>
-              </select>
-              <select className="border border-gray-300 rounded-md px-3 py-2">
-                <option>Budget</option>
-                <option>0-300k€</option>
-                <option>300k-500k€</option>
-                <option>500k€+</option>
-              </select>
-              <button className="bg-green-600 text-white px-6 py-2 rounded-md font-medium hover:bg-green-700">
-                Rechercher
-              </button>
-            </div>
+            <SearchForm />
           </div>
 
           {/* Recommended Properties */}
-          <div className="mb-8">
+          <div className="mb-8">    
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold text-gray-900">Recommandations pour vous</h2>
               <button className="text-green-600 text-sm font-medium">Voir tout</button>
@@ -415,16 +407,27 @@ export default async function AcheteurDashboard() {
             </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Saved Searches - À implémenter */}
+            {/* Saved Searches */}
             <div>
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-semibold text-gray-900">Mes recherches sauvegardées</h2>
-                <button className="text-green-600 text-sm font-medium">Voir tout</button>
+                <Link href="/dashboard/acheteur/recherches" className="text-green-600 text-sm font-medium">Voir tout</Link>
               </div>
 
-              <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
-                <p className="text-gray-500">Aucune recherche sauvegardée</p>
-              </div>
+              {recherches.length > 0 ? (
+                <div className="bg-white border border-gray-200 rounded-lg p-4 space-y-3">
+                  {recherches.map((r) => (
+                    <div key={r.id} className="flex items-center justify-between text-sm text-gray-700">
+                      <span>{r.geolocalisation || 'Lieu inconnu'} – {r.categorie || 'Type inconnu'}</span>
+                      <span>{r.minPrix ?? '∞'}€ à {r.maxPrix ?? '∞'}€</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
+                  <p className="text-gray-500">Aucune recherche sauvegardée</p>
+                </div>
+              )}
             </div>
 
             {/* Upcoming Visits */}   

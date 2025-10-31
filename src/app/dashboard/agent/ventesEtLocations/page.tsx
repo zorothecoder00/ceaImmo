@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Search, Filter, Eye, Calendar, Euro, User, MapPin, Clock, CheckCircle, XCircle, AlertCircle, TrendingUp, Home, Users } from 'lucide-react';
+import { Search, Eye, Calendar, Euro, User, MapPin, Clock, CheckCircle, XCircle, AlertCircle, TrendingUp } from 'lucide-react';
+import Image from 'next/image'
 
 interface UserType {
   nom: string;

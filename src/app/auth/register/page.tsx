@@ -91,7 +91,7 @@ const RegisterPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
-
+  
     setIsLoading(true); 
     
     // Simulate API call
@@ -104,6 +104,7 @@ const RegisterPage = () => {
       //  role: formData.role
       //});
       //alert('Inscription réussie ! Redirection vers le dashboard...');
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { confirmPassword,...payload } = formData
       const res = await fetch('/api/auth/register',{
         method: 'POST',

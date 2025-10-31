@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import { Home, Search, Heart, Calendar, Briefcase, Settings, MapPin, Clock, User } from 'lucide-react';
+import { Home, Search, Heart, Calendar, Briefcase, Settings, MapPin, Clock } from 'lucide-react';
 import { VisiteStatut } from '@prisma/client'  
 import { toast } from 'react-hot-toast';
   

@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react';
-import { User, Lock, Bell, Eye, Palette, Globe, Clock, Save, Package } from 'lucide-react';
+import { User, Lock, Bell, Eye, Palette, Clock, Save, Package } from 'lucide-react';
 
 interface Ad {   
   id: number;

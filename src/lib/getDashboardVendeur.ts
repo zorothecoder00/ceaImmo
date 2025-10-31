@@ -1,12 +1,12 @@
 import { prisma } from "@/lib/prisma"
-import { OffreStatut, Type } from "@prisma/client"
+import { OffreStatut } from "@prisma/client"
 
  
 export async function getMesProprietes(userId: string){
 
 	const parsedUserId = parseInt(userId)
 
-	return await prisma.propriete.findMany({
+	return await prisma.propriete.findMany({  
 		where: { proprietaireId: parsedUserId },
 		orderBy: { createdAt:'desc' },
 		take: 3

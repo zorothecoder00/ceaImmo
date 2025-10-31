@@ -3,7 +3,8 @@
 
 import { useState, useEffect } from 'react';
 import { Calendar, Clock, MapPin, User, Plus, Eye, Edit3, Trash2, Phone, Mail, Filter } from 'lucide-react';
-  
+import Image from 'next/image'
+
 interface Visite {
   id: number;
   dateArrivee: string;
@@ -396,7 +397,7 @@ export default function VisitesRendezVous() {
                           <div className="flex items-center gap-3 mb-3">
                             <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
                               {visite.user.photo ? (
-                                <img src={visite.user.photo} alt={`${visite.user.prenom} ${visite.user.nom}`} className="h-8 w-8 rounded-full" />
+                                <Image src={visite.user.photo} alt={`${visite.user.prenom} ${visite.user.nom}`} className="h-8 w-8 rounded-full" />
                               ) : (
                                 <User className="h-4 w-4 text-gray-600" />
                               )}

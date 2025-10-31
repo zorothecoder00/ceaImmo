@@ -33,6 +33,7 @@ import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from '@/components/ui/button' 
 import { Card } from '@/components/ui/card'
+import Image from 'next/image'
 
 // Types
 interface Property {
@@ -280,7 +281,7 @@ function PropertyCard({ property }: { property: Property }) {
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
       <div className="relative">
-        <img
+        <Image
           src={property.images[0]} 
           alt={property.title}
           className="w-full h-48 object-cover"
@@ -981,7 +982,7 @@ export default function VendeurDashboard() {
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
                           {images.map((img, index) => (
                             <div key={index} className="relative group">
-                              <img
+                              <Image
                                 src={img.url}
                                 alt={`Image ${index + 1}`}
                                 className="w-full h-32 object-cover rounded-lg"

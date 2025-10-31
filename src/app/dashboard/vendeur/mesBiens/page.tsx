@@ -15,7 +15,6 @@ import {
   MessageSquare,
   Camera,
   ExternalLink,
-  Filter,
   Grid3X3,
   List,
   CheckCircle,
@@ -27,9 +26,6 @@ import {
   Hotel,
   TreePine,
   HardHat,
-  Image,
-  Settings,
-  Upload,
   X,
   Loader2
 } from 'lucide-react';
@@ -39,6 +35,7 @@ import { Card } from '@/components/ui/card'
 import { Statut, Categorie } from '@prisma/client'
 import { toast } from 'react-hot-toast';
 import UploadProprieteImage from "@/components/UploadProprieteImage";
+import Image from 'next/image'
 
 // === Types ===
 
@@ -150,7 +147,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ bien, onEdit, onDelete, onV
       <div className="bg-white rounded-lg border border-gray-200 hover:shadow-md transition-all duration-200 overflow-hidden">
         <div className="flex">
           <div className="w-48 h-32 flex-shrink-0">
-            <img 
+            <Image 
               src={bien.images[0]?.url || '/placeholder.jpg'} 
               alt={bien.nom}
               className="w-full h-full object-cover"
@@ -240,7 +237,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ bien, onEdit, onDelete, onV
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 group">
       <div className="relative">
-        <img 
+        <Image 
           src={bien.images[0]?.url || '/placeholder.jpg'} 
           alt={bien.nom}
           className="w-full h-56 object-cover group-hover:scale-105 transition-transform duration-300"
@@ -821,7 +818,7 @@ export default function MesBiens() {
                 </div>
 
                 <div className="space-y-4">
-                  <img
+                  <Image
                     src={selectedBien.images[0]?.url || '/placeholder.jpg'}
                     alt={selectedBien.nom}
                     className="w-full h-64 object-cover rounded-lg"

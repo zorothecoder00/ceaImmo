@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import {
   Heart, MapPin, Bed, Bath, Square, Eye, Trash2, Filter, Send
 } from 'lucide-react'
-import { Statut, VisiteStatut, Categorie, OffreStatut } from '@prisma/client'
+import { Statut, Categorie, OffreStatut } from '@prisma/client'
 import toast from "react-hot-toast";
 
 // 🧩 Types corrigés
@@ -30,7 +30,7 @@ interface Property {
   nombreChambres: number;
   chambres?: string
   geolocalisation: string;
-  images: { url: string; ordre: number }[];
+  images: ProprieteImage[];
   visiteVirtuelle?: string;
   proprietaire?: {
     nom: string;
@@ -146,6 +146,7 @@ export default function FavorisPage() {
       setFavorites((prev) => prev.filter((p) => p.id !== id))
       toast.success("Propriété retirée des favoris.")
     } catch (err) {
+      console.error(" Erreur lors de la suppression", err)
       toast.error("Erreur lors de la suppression.")
     }
   }
@@ -223,6 +224,7 @@ export default function FavorisPage() {
       setShowOffreModal(false)
       setOffreForm({ montant: '', message: '' })
     } catch (err) {
+      console.error("Erreur lors de l’envoi de l’offre")
       toast.error("Erreur lors de l’envoi de l’offre.")
     }
   }
@@ -255,6 +257,7 @@ export default function FavorisPage() {
       setVisiteDate('')
       setSelectedProperty(null)
     } catch (err) {
+      console.error("Erreur lors de la demande de visite")
       toast.error("Erreur lors de la demande de visite.")
     }
   }

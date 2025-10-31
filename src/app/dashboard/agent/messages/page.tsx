@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from 'react';
 import { 
   PaperAirplaneIcon, 
   MagnifyingGlassIcon, 
-  EllipsisVerticalIcon,
   PaperClipIcon,
   FaceSmileIcon,
   PhoneIcon,
@@ -13,6 +12,7 @@ import {
   XMarkIcon,
   PlusIcon
 } from '@heroicons/react/24/outline';
+import Image from 'next/image'
 
 interface Message {
   id: number;
@@ -214,7 +214,7 @@ export default function MessagerieAgent() {
                 >
                   <div className="flex items-start space-x-3">
                     <div className="relative">
-                      <img
+                      <Image
                         src={conv.client.avatar}
                         alt={conv.client.name}
                         className="w-12 h-12 rounded-full"
@@ -266,7 +266,7 @@ export default function MessagerieAgent() {
                 <div className="p-4 border-b bg-white flex justify-between items-center">
                   <div className="flex items-center space-x-3">
                     <div className="relative">
-                      <img
+                      <Image
                         src={selectedChat.client.avatar}
                         alt={selectedChat.client.name}
                         className="w-10 h-10 rounded-full"
@@ -399,7 +399,7 @@ export default function MessagerieAgent() {
               <div className="space-y-6">
                 {/* Photo et nom */}
                 <div className="text-center">
-                  <img
+                  <Image
                     src={selectedChat.client.avatar}
                     alt={selectedChat.client.name}
                     className="w-16 h-16 rounded-full mx-auto mb-3"

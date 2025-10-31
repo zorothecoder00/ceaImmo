@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { Statut, Categorie, Type } from '@prisma/client'
+import { Statut, Categorie } from '@prisma/client'
  
 export async function getAvailableProprietes(userId?: string) {
   const proprietes = await prisma.propriete.findMany({
@@ -177,3 +177,38 @@ export async function toggleFavori(userId: string, proprieteId: number) {
     return { success: false, error: 'Erreur lors de la modification du favori' }
   }
 }
+
+export async function sauvegarderRecherche(
+  userId: string,
+  data: {
+    titre?: string;
+    categorie?: Categorie;
+    minPrix?: number;
+    maxPrix?: number;
+    geolocalisation?: string;
+    nombreChambres?: number;
+  }
+) {
+  return prisma.recherche.create({
+    data: {
+      userId: Number(userId),
+      titre: data.titre ?? "Nouvelle recherche",
+      categorie: data.categorie,
+      minPrix: data.minPrix,
+      maxPrix: data.maxPrix,
+      geolocalisation: data.geolocalisation,
+      nombreChambres: data.nombreChambres,
+    },
+  });
+}
+
+
+export async function getRecherchesSauvegardees(userId: string) {
+  const recherches = await prisma.recherche.findMany({
+    where: { userId: Number(userId) },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return { recherches, total: recherches.length };
+}
+

@@ -2,7 +2,8 @@
 'use client'
 
 import { useState, useEffect } from 'react';
-import { User, Phone, Mail, Calendar, MapPin, Eye, MessageCircle, UserPlus } from 'lucide-react';    
+import { User, Phone, Mail, Calendar, MapPin, Eye, MessageCircle, UserPlus } from 'lucide-react';
+import Image from 'next/image'    
 
 interface Client {
   id: number;
@@ -240,7 +241,7 @@ export default function MesClients() {
                   <div className="flex items-center gap-4">
                     <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
                       {client.photo ? (
-                        <img src={client.photo} alt={`${client.prenom} ${client.nom}`} className="h-12 w-12 rounded-full" />
+                        <Image src={client.photo} alt={`${client.prenom} ${client.nom}`} className="h-12 w-12 rounded-full" />
                       ) : (
                         <User className="h-6 w-6 text-blue-600" />
                       )}

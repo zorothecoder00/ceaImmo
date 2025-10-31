@@ -8,11 +8,8 @@ import {
   FileText, 
   Settings, 
   Bell,
-
   Eye,
-
   MapPin,
-
   TrendingUp,
   Euro,
   Star,
@@ -25,7 +22,6 @@ import {
   Activity,
   Briefcase,
   Target,
-
   Menu,
   X,
   Search,
@@ -39,6 +35,7 @@ import {
 import { useState } from 'react'
 import { Dispatch, SetStateAction } from 'react'
 import { ReactNode } from 'react'
+import Image from 'next/image'
 
 // Types
 interface Agent {
@@ -315,7 +312,7 @@ function Sidebar({ activeMenu, setActiveMenu, sidebarOpen, setSidebarOpen }: Sid
 
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
           <div className="flex items-center space-x-3 mb-4">
-            <img
+            <Image
               src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=40&h=40&fit=crop&crop=face"
               alt="Profile"
               className="w-10 h-10 rounded-full object-cover"
@@ -499,7 +496,7 @@ function AgentCard({ agent }: { agent: Agent }) {
     <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow">
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center space-x-3">
-          <img 
+          <Image 
             src={agent.avatar} 
             alt={agent.name}
             className="w-12 h-12 rounded-full object-cover"

@@ -56,6 +56,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 			}
 		})
 
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		const { password:_, ...userSafe } = newUser
 		return res.status(201).json({ data: userSafe })
 	}catch(error){

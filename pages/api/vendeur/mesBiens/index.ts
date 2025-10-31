@@ -55,9 +55,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       maxSurface,     
       minChambres,
       maxChambres,
-      latitude,
-      longitude,
-      radius, // rayon en km
       sortBy = "createdAt",
       order = "desc",
       page = "1",
@@ -232,3 +229,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   return res.status(405).json({ message: 'Méthode non autorisée' })
 }
+  
