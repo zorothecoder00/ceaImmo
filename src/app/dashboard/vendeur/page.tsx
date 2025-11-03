@@ -1,10 +1,10 @@
 // src/app/dashboard/vendeur/page.tsx
 'use client'
 
-import { useState } from 'react'
+import { useState } from 'react'    
 import {  
   Home, 
-  Building, 
+  Building,    
   Calendar, 
   Settings, 
   Bell,
@@ -27,56 +27,58 @@ import {
   Plus,
   Trash2,
   Loader2,
-  AlertCircle
+  AlertCircle  
 } from 'lucide-react'  
 import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from '@/components/ui/button' 
 import { Card } from '@/components/ui/card'
 import Image from 'next/image'
+import { Categorie, VisiteStatut, Statut } from '@prisma/client'
+import { getMesProprietes, getMesOffresRecus, getMesProchainesVisites } from '@/lib/getDashboardVendeur'
 
 // Types
 interface Property {
-  id: string
-  title: string
-  location: string  
-  price: number
-  bedrooms: number  
-  bathrooms: number
-  area: number
-  type: 'Appartement' | 'Maison' | 'Villa' | 'Studio'
-  status: 'En ligne' | 'Vendu' | 'Sous offre' | 'Retiré'
-  images: string[]
-  views: number
-  favorites: number
-  visits: number
-  offers: number
-  daysOnMarket: number
-  agent: string
+  id: number  
+  nom: string
+  geolocalisation: string  
+  prix: number|bigint
+  nombreChambres: number  
+  chambre?: string
+  surface: number | bigint
+  categorie: Categorie
+  images: PropertyImage[]
+  description: string | null
+  agent?: string
+  avis?: Avis[]
+  isFavorite?: boolean
+  nombreVu: number
 }
 
 interface Offer {
   id: string
-  buyerName: string
-  amount: number
-  originalPrice: number
-  status: 'En attente' | 'Acceptée' | 'Refusée' | 'Négociation'
-  date: string
-  propertyTitle: string
+  userId: number
+  montant: number
+  statut: OffreStatut
+  createdAt: Date
+  message?: string
+  proprieteId: Property | null
 }
 
 interface Visit {
-  id: string
-  buyerName: string
-  buyerPhone: string
-  date: string
-  time: string
-  propertyTitle: string
-  status: 'Planifiée' | 'Confirmée' | 'Terminée'
+  id: number
+  propriete: Property | null
+  date: Date
+  agent: {
+    prenom: string
+    nom: string
+  } | null
+  userId: number
+  statut: VisiteStatut
 }
 
 interface PropertyImage {
-  file?: File
+  id: number
   url: string
   ordre: number
 }
@@ -92,126 +94,14 @@ interface Chambre {
 interface FormData {
   nom: string
   description: string
-  categorie: string
+  categorie: Categorie
   prix: string
   surface: string
-  statut: string
+  statut: Statut
   geolocalisation: string
   nombreChambres: string
   visiteVirtuelle: string
 }
-
-// Mock data
-const myProperties: Property[] = [
-  {
-    id: '1',
-    title: 'Appartement Haussmannien',
-    location: '16 Boulevard Saint-Germain, Paris 5e',
-    price: 650000,
-    bedrooms: 3,
-    bathrooms: 2,
-    area: 85,
-    type: 'Appartement',
-    status: 'En ligne',
-    images: ['https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=300&fit=crop'],
-    views: 245,
-    favorites: 28,
-    visits: 12,
-    offers: 3,
-    daysOnMarket: 15,
-    agent: 'Sophie Martin'
-  },
-  {
-    id: '2',
-    title: 'Maison Familiale',
-    location: '8 Rue des Lilas, Vincennes',
-    price: 850000,
-    bedrooms: 5,
-    bathrooms: 3,
-    area: 150,
-    type: 'Maison',
-    status: 'Sous offre',
-    images: ['https://images.unsplash.com/photo-1613490493576-7fde63acd811?w=400&h=300&fit=crop'],
-    views: 180,
-    favorites: 35,
-    visits: 18,
-    offers: 2,
-    daysOnMarket: 8,
-    agent: 'Thomas Durand'
-  },
-  {
-    id: '3',
-    title: 'Studio Moderne',
-    location: '45 Rue de Belleville, Paris 20e',
-    price: 320000,
-    bedrooms: 1,
-    bathrooms: 1,
-    area: 32,
-    type: 'Studio',
-    status: 'Vendu',
-    images: ['https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400&h=300&fit=crop'],
-    views: 156,
-    favorites: 22,
-    visits: 8,
-    offers: 1,
-    daysOnMarket: 5,
-    agent: 'Marie Dubois'
-  }
-]
-
-const recentOffers: Offer[] = [
-  {
-    id: '1',
-    buyerName: 'M. et Mme Leroy',
-    amount: 620000,
-    originalPrice: 650000,
-    status: 'En attente',
-    date: '12 Mars 2024',
-    propertyTitle: 'Appartement Haussmannien'
-  },
-  {
-    id: '2',
-    buyerName: 'Famille Garcia',
-    amount: 800000,
-    originalPrice: 850000,
-    status: 'Négociation',
-    date: '10 Mars 2024',
-    propertyTitle: 'Maison Familiale'
-  },
-  {
-    id: '3',
-    buyerName: 'Mlle Chen',
-    amount: 320000,
-    originalPrice: 320000,
-    status: 'Acceptée',
-    date: '8 Mars 2024',
-    propertyTitle: 'Studio Moderne'
-  }
-]
-
-const upcomingVisits: Visit[] = [
-  {
-    id: '1',
-    buyerName: 'M. Dubois',
-    buyerPhone: '+33 6 12 34 56 78',
-    date: '15 Mars 2024',
-    time: '14:30',
-    propertyTitle: 'Appartement Haussmannien',
-    status: 'Confirmée'
-  },
-  {
-    id: '2',
-    buyerName: 'Mme Rodriguez',
-    buyerPhone: '+33 6 87 65 43 21',
-    date: '16 Mars 2024',
-    time: '10:00',
-    propertyTitle: 'Maison Familiale',
-    status: 'Planifiée'
-  }
-]
-
-const categories = ['TERRAIN', 'MAISON', 'APPARTEMENT', 'VILLA', 'COMMERCE', 'BUREAU', 'HOTEL']
-const statuts = ['DISPONIBLE', 'RESERVE', 'VENDU', 'LOUE']
 
 // Components
 function StatsCard({ 
@@ -270,75 +160,74 @@ function PropertyCard({ property }: { property: Property }) {
     }
   }
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'Vendu': return <CheckCircle className="h-4 w-4" />
-      case 'Sous offre': return <Clock className="h-4 w-4" />
-      default: return null
+  const getStatusIcon = (statut: Statut) => {
+    switch (statut) {
+      case Statut.DISPONIBLE: return 'bg-green-100 text-green-800'
+      case Statut.RESERVE: return 'bg-orange-100 text-orange-800'
+      case Statut.VENDU: return 'bg-blue-100 text-blue-800'
+      case Statut.EN_LOCATION: return 'bg-purple-100 text-purple-800'
+      case Statut.EN_NEGOCIATION: return 'bg-yellow-100 text-yellow-800'
+      default: return 'bg-gray-100 text-gray-800'
     }
   }
 
+  const getStatusLabel = (statut: Statut) => {
+    switch (statut) {
+      case Statut.DISPONIBLE: return 'Disponible'
+      case Statut.RESERVE: return 'Réservé'
+      case Statut.VENDU: return 'Vendu'
+      case Statut.EN_LOCATION: return 'En Location'
+      case Statut.EN_NEGOCIATION: return 'En Négociation'
+      default: return statut
+    }
+  }
+
+  const daysOnMarket = Math.floor((Date.now() - new Date(property.createdAt).getTime()) / (1000 * 60 * 60 * 24))
+  const mainImage = property.images[0]?.url || '/placeholder-property.jpg'
+
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-      <div className="relative">
+      <div className="relative h-48">
         <Image
-          src={property.images[0]} 
-          alt={property.title}
-          className="w-full h-48 object-cover"
+          src={mainImage} 
+          alt={property.nom}
+          fill
+          className="object-cover"
         />
-        <div className={`absolute top-3 left-3 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${getStatusColor(property.status)}`}>
-          {getStatusIcon(property.status)}
-          {property.status}
+        <div className={`absolute top-3 left-3 px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${getStatusColor(property.statut)}`}>
+          {getStatusIcon(property.statut)}
+          {getStatusLabel(property.statut)}
         </div>
         <div className="absolute top-3 right-3 bg-black bg-opacity-50 text-white px-2 py-1 rounded text-xs">
-          {property.daysOnMarket}j
+          {daysOnMarket}j
         </div>
       </div>
       
       <div className="p-4">
-        <h3 className="font-semibold text-gray-900 mb-2">{property.title}</h3>
+        <h3 className="font-semibold text-gray-900 mb-2">{property.nom}</h3>
         <div className="flex items-center text-gray-600 text-sm mb-3">
           <MapPin className="h-4 w-4 mr-1" />
-          {property.location}
+          {property.geolocalisation}
         </div>
         
         <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
           <div className="flex items-center">
             <Bed className="h-4 w-4 mr-1" />
-            {property.bedrooms}
-          </div>
-          <div className="flex items-center">
-            <Bath className="h-4 w-4 mr-1" />
-            {property.bathrooms}
+            {property.nombreChambres}
           </div>
           <div className="flex items-center">
             <Square className="h-4 w-4 mr-1" />
-            {property.area}m²
+            {property.surface.toString()}m²
           </div>
-        </div>
-
-        <div className="grid grid-cols-4 gap-2 text-xs text-gray-600 mb-4">
-          <div className="text-center">
-            <div className="font-semibold text-gray-900">{property.views}</div>
-            <div>Vues</div>
-          </div>
-          <div className="text-center">
-            <div className="font-semibold text-gray-900">{property.favorites}</div>
-            <div>Favoris</div>
-          </div>
-          <div className="text-center">
-            <div className="font-semibold text-gray-900">{property.visits}</div>
-            <div>Visites</div>
-          </div>
-          <div className="text-center">
-            <div className="font-semibold text-gray-900">{property.offers}</div>
-            <div>Offres</div>
+          <div className="flex items-center">
+            <Eye className="h-4 w-4 mr-1" />
+            {property.nombreVu}
           </div>
         </div>
         
         <div className="flex items-center justify-between">
           <span className="text-lg font-bold text-gray-900">
-            {property.price.toLocaleString('fr-FR')} €
+            {Number(property.prix).toLocaleString('fr-FR')} FCFA
           </span>
           <div className="flex items-center space-x-2">
             <button className="p-2 text-gray-400 hover:text-blue-600">
@@ -354,7 +243,7 @@ function PropertyCard({ property }: { property: Property }) {
         </div>
         
         <div className="mt-3 text-xs text-gray-500">
-          Agent: {property.agent}
+          {property.categorie}
         </div>
       </div>
     </div>
@@ -362,48 +251,62 @@ function PropertyCard({ property }: { property: Property }) {
 }
 
 function OfferCard({ offer }: { offer: Offer }) {
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'En attente': return 'bg-yellow-100 text-yellow-800'
-      case 'Acceptée': return 'bg-green-100 text-green-800'
-      case 'Refusée': return 'bg-red-100 text-red-800'
-      case 'Négociation': return 'bg-blue-100 text-blue-800'
+  const getStatusColor = (statut: OffreStatut) => {
+    switch (statut) {
+      case OffreStatut.EN_ATTENTE: return 'bg-yellow-100 text-yellow-800'
+      case OffreStatut.ACCEPTEE: return 'bg-green-100 text-green-800'
+      case OffreStatut.REFUSEE: return 'bg-red-100 text-red-800'
+      case OffreStatut.EXPIREE: return 'bg-gray-100 text-gray-800'
       default: return 'bg-gray-100 text-gray-800'
     }
   }
 
-  const discount = ((offer.originalPrice - offer.amount) / offer.originalPrice * 100).toFixed(1)
+  const getStatusLabel = (statut: OffreStatut) => {
+    switch (statut) {
+      case OffreStatut.EN_ATTENTE: return 'En attente'
+      case OffreStatut.ACCEPTEE: return 'Acceptée'
+      case OffreStatut.REFUSEE: return 'Refusée'
+      case OffreStatut.EXPIREE: return 'Expirée'
+      default: return statut
+    }
+  }
+  const discount = ((Number(offer.propriete.prix) - Number(offer.montant)) / Number(offer.propriete.prix) * 100).toFixed(1)
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-4">
       <div className="flex items-start justify-between mb-3">
         <div>
-          <h3 className="font-semibold text-gray-900">{offer.buyerName}</h3>
-          <p className="text-sm text-gray-600 mb-2">{offer.propertyTitle}</p>
+          <h3 className="font-semibold text-gray-900">
+            {offer.user.prenom} {offer.user.nom}
+          </h3>
+          <p className="text-sm text-gray-600 mb-2">{offer.propriete.nom}</p>
           <div className="flex items-center space-x-2">
             <span className="text-lg font-bold text-gray-900">
-              {offer.amount.toLocaleString('fr-FR')} €
+              {Number(offer.montant).toLocaleString('fr-FR')} FCFA
             </span>
             <span className="text-sm text-gray-500">
               (-{discount}%)
             </span>
           </div>
         </div>
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(offer.status)}`}>
-          {offer.status}
+        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(offer.statut)}`}>
+          {getStatusLabel(offer.statut)}
         </span>
       </div>
       
+      {offer.message && (
+        <p className="text-sm text-gray-600 mb-3 italic">"{offer.message}"</p>
+      )}
+      
       <div className="flex items-center justify-between">
-        <span className="text-sm text-gray-500">{offer.date}</span>
+        <span className="text-sm text-gray-500">
+          {new Date(offer.createdAt).toLocaleDateString('fr-FR')}
+        </span>
         <div className="flex items-center space-x-2">
-          {offer.status === 'En attente' && (
+          {offer.statut === 'EN_ATTENTE' && (
             <>
               <button className="bg-green-600 text-white px-3 py-1 rounded text-sm font-medium hover:bg-green-700">
                 Accepter
-              </button>
-              <button className="bg-gray-200 text-gray-700 px-3 py-1 rounded text-sm font-medium hover:bg-gray-300">
-                Négocier
               </button>
               <button className="bg-red-600 text-white px-3 py-1 rounded text-sm font-medium hover:bg-red-700">
                 Refuser
@@ -419,13 +322,25 @@ function OfferCard({ offer }: { offer: Offer }) {
   )
 }
 
+
 function VisitCard({ visit }: { visit: Visit }) {
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Confirmée': return 'bg-green-100 text-green-800'
-      case 'Planifiée': return 'bg-blue-100 text-blue-800'
-      case 'Terminée': return 'bg-gray-100 text-gray-800'
+  const getStatusColor = (statut: VisiteStatut) => {
+    switch (statut) {
+      case VisiteStatut.CONFIRMEE: return 'bg-green-100 text-green-800'
+      case VisiteStatut.DEMANDEE: return 'bg-blue-100 text-blue-800'
+      case VisiteStatut.ANNULEE: return 'bg-red-100 text-red-800'
+      case VisiteStatut.REPORTEE: return 'bg-yellow-100 text-yellow-800'
       default: return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const getStatusLabel = (statut: VisiteStatut) => {
+    switch (statut) {
+      case VisiteStatut.CONFIRMEE: return 'Confirmée'
+      case VisiteStatut.DEMANDEE: return 'Demandée'
+      case VisiteStatut.ANNULEE: return 'Annulée'
+      case VisiteStatut.REPORTEE: return 'Reportée'
+      default: return statut
     }
   }
 
@@ -433,20 +348,28 @@ function VisitCard({ visit }: { visit: Visit }) {
     <div className="bg-white border border-gray-200 rounded-lg p-4">
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <h3 className="font-semibold text-gray-900 mb-1">{visit.buyerName}</h3>
-          <p className="text-sm text-gray-600 mb-2">{visit.propertyTitle}</p>
+          <h3 className="font-semibold text-gray-900 mb-1">
+            {visit.user?.prenom} {visit.user?.nom}
+          </h3>
+          <p className="text-sm text-gray-600 mb-2">{visit.propriete?.nom}</p>
           <div className="flex items-center text-sm text-gray-600 mb-2">
             <Calendar className="h-4 w-4 mr-2" />
-            {visit.date} à {visit.time}
+            {new Date(visit.date).toLocaleDateString('fr-FR')} à {new Date(visit.date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
           </div>
           <div className="flex items-center text-sm text-gray-600">
-            <Phone className="h-4 w-4 mr-2" />
-            {visit.buyerPhone}
+            <User className="h-4 w-4 mr-2" />
+            {visit.user?.email}
           </div>
+          {visit.agent && (
+            <div className="flex items-center text-sm text-gray-600 mt-1">
+              <User className="h-4 w-4 mr-2" />
+              Agent: {visit.agent.prenom} {visit.agent.nom}
+            </div>
+          )}
         </div>
         <div className="flex flex-col items-end space-y-2">
-          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(visit.status)}`}>
-            {visit.status}
+          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(visit.statut)}`}>
+            {getStatusLabel(visit.statut)}
           </span>
           <div className="flex items-center space-x-2">
             <button className="p-1 text-gray-400 hover:text-green-600">
@@ -1140,7 +1063,7 @@ export default function VendeurDashboard() {
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </div>  
   )
 }
   

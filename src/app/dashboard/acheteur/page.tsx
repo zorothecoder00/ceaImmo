@@ -3,7 +3,7 @@ import {
   Home, 
   Calendar,  
   FileText, 
-  Settings, 
+  Settings,    
   Bell,
   User,  
   Eye,
@@ -36,7 +36,7 @@ interface Image {
   id: number
   url: string
   ordre: number
-}
+}  
 
 interface Property {
   id: number
@@ -52,6 +52,7 @@ interface Property {
   agent?: string
   avis?: Avis[]
   isFavorite?: boolean
+  vu?: boolean
 }
 
 interface Favoris {
@@ -71,6 +72,7 @@ interface Visit {
     prenom: string
     nom: string
   } | null
+  userId: number
   statut: VisiteStatut
 }
 

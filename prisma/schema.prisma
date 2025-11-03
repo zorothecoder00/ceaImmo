@@ -32,7 +32,7 @@ enum Mode {
   CARTEBANCAIRE
   WESTERNUNION 
   PAYPAL
-  STRIPE  
+  STRIPE     
 }
   
 enum Systeme {         
@@ -125,6 +125,7 @@ model User {
   notifications     Notification[]
   avis              Avis[]
   recherches        Recherche[] // 👈 Ajoute cette ligne
+  vus               Vu[]
 }     
 
 model Propriete {   
@@ -147,6 +148,9 @@ model Propriete {
   proprietaireId    Int?
   proprietaire      User?           @relation("UserPropriete", fields: [proprietaireId], references: [id], onDelete: Cascade)
 
+  // 🆕 Compteur total des vues
+  nombreVu          Int             @default(0)
+  
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
   visites           Visite[]
@@ -155,6 +159,7 @@ model Propriete {
   favoris           Favori[]
   chambres          Chambre[]       @relation("ProprieteChambre")
   avis              Avis[]
+  vus               Vu[]
 
 }  
 
@@ -372,5 +377,22 @@ model Recherche {
   createdAt      DateTime            @default(now())
   updatedAt      DateTime            @updatedAt
 } 
+
+model Vu {
+  id             Int        @id @default(autoincrement())
+  
+  // 🧍 Utilisateur ayant consulté la propriété
+  userId  Int?
+  user    User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // 🏠 Propriété consultée
+  proprieteId    Int
+  propriete      Propriete  @relation(fields: [proprieteId], references: [id], onDelete: Cascade)
+  
+  // 📅 Date de la consultation
+  dateVu DateTime @default(now())
+
+  @@unique([userId, proprieteId]) // ✅ Évite les doublons (un utilisateur ne compte qu'une fois par propriété)
+}
 
   

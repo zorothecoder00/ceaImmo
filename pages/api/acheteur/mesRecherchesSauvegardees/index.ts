@@ -4,7 +4,7 @@ import { sauvegarderRecherche, getRecherchesSauvegardees } from "@/lib/getDashbo
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // 🔒 Vérification de session utilisateur
-  const session = await getAuthSession(req, res);
+  const session = await getAuthSession(req, res);  
    
   if (!session?.user) {
     return res.status(401).json({ error: "Non authentifié" });
