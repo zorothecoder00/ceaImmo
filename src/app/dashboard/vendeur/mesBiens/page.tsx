@@ -54,11 +54,6 @@ interface PropertyImage {
   ordre: number;
 }
 
-interface UploadProprieteImageProps {
-  images: PropertyImage[];
-  setImages: React.Dispatch<React.SetStateAction<PropertyImage[]>>;
-}
-
 interface Bien {
   id: number;
   nom: string;
@@ -640,6 +635,12 @@ export default function MesBiens() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {isLoading && (
+        <div className="flex justify-center items-center py-10">
+          <Loader2 className="animate-spin text-indigo-600 w-6 h-6" />
+        </div>
+      )}
+
       {/* En-tête personnelle */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">

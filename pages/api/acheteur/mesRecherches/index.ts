@@ -152,7 +152,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(200).json({  
       data: safeData,
       meta: {
-        total: totalFiltre,
+        totalAvantFiltre: total,
+        totalApresFiltre: totalFiltre,
         page: pageNum,
         limit: take,
         totalPages: Math.ceil(totalFiltre / take),

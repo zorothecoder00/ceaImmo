@@ -390,6 +390,7 @@ export default function RecherchesPage() {
   };
 
   return (
+    <>
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
@@ -942,5 +943,27 @@ export default function RecherchesPage() {
         </div>
       )}
     </div>  
+    {meta.totalPages > 1 && (
+    <div className="flex justify-center items-center mt-6 space-x-2">
+      <button
+        onClick={() => handlePageChange(Number(meta.page) - 1)}
+        disabled={meta.page <= 1}
+        className="px-4 py-2 bg-gray-200 rounded-lg disabled:opacity-50"
+      >
+        Précédent
+      </button>
+      <span>
+        Page {meta.page} / {meta.totalPages}
+      </span>
+      <button
+        onClick={() => handlePageChange(Number(meta.page) + 1)}
+        disabled={meta.page >= meta.totalPages}
+        className="px-4 py-2 bg-gray-200 rounded-lg disabled:opacity-50"
+      >
+        Suivant
+      </button>
+    </div>
+  )}
+  </>
   );
 }

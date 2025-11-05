@@ -52,6 +52,7 @@ interface Visite {
   proprieteId: number;
   date: string;
   statut: string;
+  propriete?: Property
 }
 
 interface Offre {
@@ -59,6 +60,7 @@ interface Offre {
   montant: number;
   message?: string;
   statut: OffreStatut;
+  propriete?: Property
 }
 
 export default function FavorisPage() {
@@ -151,26 +153,20 @@ export default function FavorisPage() {
     }
   }
 
-  // 🔹 Ouvrir la modale de visite
-  const openVisiteModal = (propriete: Property) => {
-    const visiteExistante = mesVisites.find(v => v.proprieteId === propriete.id);
+  const closeModal = () => {
+    setShowOffreModal(false)
+    setSelectedProperty(null)
+  }
 
-    if (visiteExistante) {
-      toast.error(
-        `Vous avez déjà demandé une visite pour cette propriété le ${new Date(
-          visiteExistante.date
-        ).toLocaleDateString('fr-FR')} (statut : ${visiteExistante.statut}).`
-      );
-      return;
-    }
+  const closeVisiteModal = () => {
+    setShowVisiteModal(false)
+    setSelectedProperty(null)
+  }
 
-    setSelectedProperty(propriete);
-    setShowVisiteModal(true);
-  };
+  // ------------------ OFFRES ------------------
+  const handleFaireOffre = (property: Property) => {
 
-  // 🔹 Ouvrir la modale d'offre
-  const openOffreModal = (propriete: Property) => {
-    const offreExistante = mesOffres.find(o => o.proprieteId === propriete.id);
+    const offreExistante = mesOffres.find(o => o.propriete?.id === property.id);
 
     if (offreExistante) {
       toast(`Vous avez déjà fait une offre pour cette propriété (statut : ${offreExistante.statut}).`, {
@@ -186,22 +182,6 @@ export default function FavorisPage() {
       setOffreForm({ montant: '', message: '' });
     }
 
-    setSelectedProperty(propriete);
-    setShowOffreModal(true);
-  };
-
-  const closeModal = () => {
-    setShowOffreModal(false)
-    setSelectedProperty(null)
-  }
-
-  const closeVisiteModal = () => {
-    setShowVisiteModal(false)
-    setSelectedProperty(null)
-  }
-
-  // ------------------ OFFRES ------------------
-  const handleFaireOffre = (property: Property) => {
     setSelectedProperty(property)
     setShowOffreModal(true)
   }
@@ -224,13 +204,25 @@ export default function FavorisPage() {
       setShowOffreModal(false)
       setOffreForm({ montant: '', message: '' })
     } catch (err) {
-      console.error("Erreur lors de l’envoi de l’offre")
+      console.error("Erreur lors de l’envoi de l’offre", err)
       toast.error("Erreur lors de l’envoi de l’offre.")
     }
   }
 
   // ------------------ VISITES ------------------
   const handleDemandeVisite = (property: Property) => {
+
+    const visiteExistante = mesVisites.find(v => v.propriete?.id === property.id);
+
+    if (visiteExistante) {
+      toast.error(
+        `Vous avez déjà demandé une visite pour cette propriété le ${new Date(
+          visiteExistante.date
+        ).toLocaleDateString('fr-FR')} (statut : ${visiteExistante.statut}).`
+      );
+      return;
+    }
+
     setSelectedProperty(property)
     setShowVisiteModal(true)
   }
@@ -257,7 +249,7 @@ export default function FavorisPage() {
       setVisiteDate('')
       setSelectedProperty(null)
     } catch (err) {
-      console.error("Erreur lors de la demande de visite")
+      console.error("Erreur lors de la demande de visite", err)
       toast.error("Erreur lors de la demande de visite.")
     }
   }

@@ -1,39 +1,50 @@
 'use client'
 
-import { useState, ChangeEvent } from 'react'
+import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'   
 import { 
   Home, Building, Calendar, Settings, Bell, User, Eye, 
-  TrendingUp, Euro, X, Upload, Plus, Trash2, Loader2,   
-  AlertCircle, MapPin, Bed, CheckCircle 
+  TrendingUp, Euro, X, Plus, Trash2, Loader2,    
+  AlertCircle, MapPin, Bed, CheckCircle   
 } from 'lucide-react'
 import Link from 'next/link'
-import Image from 'next/image'
-import { Button } from '@/components/ui/button'
+import { Button } from '@/components/ui/button'  
 import { Card } from '@/components/ui/card'
 import { Categorie, Statut, OffreStatut, VisiteStatut } from '@prisma/client'
 import UploadProprieteImage from '@/components/UploadProprieteImage'
-import StatCard from '@/components/StatCard';
+import StatCards from '@/components/StatCard';
 import PropertyCard from '@/components/PropertyCard';
+import OfferCard from '@/components/OfferCard'   
+import VisitCard from '@/components/VisitCard';
+
 
 interface RecentProperty {
   id: number
   nom: string
   description?: string | null
+  categorie: Categorie
+  prix: number
+  surface: number
+  statut: Statut
+  nombreChambres: number
+  geolocalisation: string
+  createdAt: string
   images?: PropertyImage[]
 }
+
 
 interface Offre {
   id: number
   propriete: RecentProperty
-  user: { prenom: string; nom: string }
+  user: { id: number; prenom: string; nom: string } // ajouter l'id
   montant: number | bigint
   statut: OffreStatut
+  createdAt?: string
 }
-
+ 
 interface Visite {
-  id: number
-  propriete: RecentProperty | null
+  id: number   
+  propriete: RecentProperty | null  
   date: string | Date
   statut: VisiteStatut
 }
@@ -225,7 +236,7 @@ export default function VendeurDashboardClient({
               <a href="#" className="text-gray-600 hover:text-gray-900">Offres</a>
               <a href="#" className="text-gray-600 hover:text-gray-900">Visites</a>
             </div>
-          </div>
+          </div>  
 
           <div className="flex items-center space-x-4">
             <Link
@@ -306,11 +317,11 @@ export default function VendeurDashboardClient({
 
         {/* 🔹 Statistiques globales */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-          <StatCard title="Propriétés actives" value={stats.activeProperties} icon={Home} color="green" />
-          <StatCard title="Réservées" value={stats.reservedProperties} icon={TrendingUp} color="orange" />
-          <StatCard title="Vendues" value={stats.soldProperties} icon={Euro} color="blue" />
-          <StatCard title="Total vues" value={stats.totalViews} icon={Eye} color="purple" />
-          <StatCard title="Offres en attente" value={stats.pendingOffers} icon={Calendar} color="yellow" />
+          <StatCards title="Propriétés actives" value={stats.activeProperties} icon={Home} color="green" />
+          <StatCards title="Réservées" value={stats.reservedProperties} icon={TrendingUp} color="orange" />
+          <StatCards title="Vendues" value={stats.soldProperties} icon={Euro} color="blue" />
+          <StatCards title="Total vues" value={stats.totalViews} icon={Eye} color="purple" />
+          <StatCards title="Offres en attente" value={stats.pendingOffers} icon={Calendar} color="yellow" />
         </div>  
       
         {/* 🔹 Biens récents */}
@@ -327,10 +338,17 @@ export default function VendeurDashboardClient({
                     id: p.id,
                     nom: p.nom,
                     description: p.description ?? undefined,
-                    images: p.images?.map((img: PropertyImage) => ({
+                    categorie: p.categorie,
+                    prix: p.prix,
+                    surface: p.surface,
+                    statut: p.statut,
+                    nombreChambres: p.nombreChambres,
+                    geolocalisation: p.geolocalisation,
+                    createdAt: p.createdAt,
+                    images: p.images?.map((img) => ({
                       id: img.id,
-                      url: img.url, // ou img.path selon ton API
-                      ordre: img.ordre || 0,
+                      url: img.url,
+                      ordre: img.ordre,
                     })) || [],
                   }}
                 />
@@ -338,8 +356,8 @@ export default function VendeurDashboardClient({
 
             </div>
           )}
-        </section>
-
+        </section>  
+   
         {/* 🔹 Offres récentes */}
         <section>
           <h2 className="text-xl font-semibold mb-4 text-gray-800">Offres récentes</h2>
@@ -348,63 +366,20 @@ export default function VendeurDashboardClient({
           ) : (
             <div className="grid md:grid-cols-3 gap-6">
               {offresRecentes.map((offer) => (
-                <Card key={offer.id} className="p-4">
-                  <h3 className="font-semibold">{offer.propriete.nom}</h3>
-                  <p className="text-gray-600 text-sm">
-                    De {offer.user.prenom} {offer.user.nom}
-                  </p>
-                  <p className="font-bold mt-2">{Number(offer.montant).toLocaleString()} FCFA</p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Statut :{" "}
-                    <span
-                      className={
-                        offer.statut === OffreStatut.EN_ATTENTE
-                          ? "text-yellow-600"
-                          : offer.statut === OffreStatut.ACCEPTEE
-                          ? "text-green-600"
-                          : "text-red-600"
-                      }
-                    >
-                      {offer.statut}
-                    </span>
-                  </p>
-                </Card>
-              ))}
-            </div>
-          )}
-        </section>  
-  
-        {/* 🔹 Visites à venir */}
-        <section>
-          <h2 className="text-xl font-semibold mb-4 text-gray-800">Prochaines visites</h2>
-          {prochainesVisites.length === 0 ? (
-            <p className="text-gray-500">Aucune visite prévue.</p>
-          ) : (
-            <div className="grid md:grid-cols-2 gap-6">
-              {prochainesVisites.map((v) => (  
-                <Card key={v.id} className="p-4">
-                  <div className="flex justify-between">
-                    <div>
-                      <h3 className="font-semibold">{v.propriete?.nom}</h3>
-                      <p className="text-sm text-gray-600">{new Date(v.date).toLocaleString("fr-FR")}</p>
-                    </div>
-                    <span
-                      className={`px-2 py-1 text-xs rounded-full ${
-                        v.statut === VisiteStatut.CONFIRMEE
-                          ? "bg-green-100 text-green-700"
-                          : v.statut === VisiteStatut.DEMANDEE
-                          ? "bg-blue-100 text-blue-700"
-                          : "bg-gray-100 text-gray-700"
-                      }`}
-                    >
-                      {v.statut}
-                    </span>
-                  </div>
-                </Card>
+                <OfferCard key={offer.id} offer={{ ...offer, montant: Number(offer.montant), createdAt: offer.createdAt ?? new Date().toISOString() }} />
               ))}
             </div>
           )}
         </section>
+  
+        {/* 🔹 Visites à venir */}
+        <div className="grid md:grid-cols-2 gap-6">
+          {prochainesVisites.map((v) => (
+            <VisitCard key={v.id} visit={{ ...v, date: typeof v.date === 'string' ? v.date : v.date.toISOString(), propriete: v.propriete ?? undefined }} />
+
+          ))}
+        </div>
+
       </main>
     </div>
     {/* Modal */}
@@ -483,12 +458,13 @@ export default function VendeurDashboardClient({
                         </label>
                         <select
                           value={formData.categorie}
-                          onChange={(e) => setFormData({
-                            ...formData,
-                            categorie: e.target.value as Categorie
-                          })}
+                          onChange={(e) => setFormData({ ...formData, categorie: e.target.value as Categorie })}
                         >
+                          {categories.map(cat => (
+                            <option key={cat} value={cat}>{cat}</option>
+                          ))}
                         </select>
+
                       </div>
 
                       <div>
@@ -523,11 +499,11 @@ export default function VendeurDashboardClient({
                         </label>
                         <select
                           value={formData.statut}
-                          onChange={(e) => setFormData({
-                            ...formData,
-                            statut: e.target.value as Statut
-                          })}
+                          onChange={(e) => setFormData({ ...formData, statut: e.target.value as Statut })}
                         >
+                          {statuts.map(st => (
+                            <option key={st} value={st}>{st}</option>
+                          ))}
                         </select>
                       </div>
 
@@ -721,7 +697,7 @@ export default function VendeurDashboardClient({
                       </Button>
                     )}
                   </div>
-                </div>
+                </div>  
               </div>
             </motion.div>
           </motion.div>

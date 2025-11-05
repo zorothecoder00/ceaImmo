@@ -21,10 +21,8 @@ import { getAuthSession } from "@/lib/auth"
 import Link from "next/link"  
 import {
   getAvailableProprietes,
-  filtrageProprietes,
   getMesProchainesVisites,
   getMesFavoris,
-  toggleFavori,
   getRecherchesSauvegardeesEtResultats
 } from '@/lib/getDashboardAcheteur'
 import FavoriteButton from '@/components/FavoriteButton'
@@ -53,10 +51,6 @@ interface Property {
   avis?: Avis[]
   isFavorite?: boolean
   vu?: boolean
-}
-
-interface Favoris {
-  id: number
 }
 
 interface Avis {

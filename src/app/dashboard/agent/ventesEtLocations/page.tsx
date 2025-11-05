@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { Search, Eye, Calendar, Euro, User, MapPin, Clock, CheckCircle, XCircle, AlertCircle, TrendingUp } from 'lucide-react';
-import Image from 'next/image'
 
 interface UserType {
   nom: string;
