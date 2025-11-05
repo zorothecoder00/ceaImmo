@@ -1,20 +1,20 @@
 // src/app/dashboard/vendeur/page.tsx
-'use client'
 
-import { useState } from 'react'    
+import { useState } from 'react' 
+import { getAuthSession } from "@/lib/auth";   
 import {  
   Home, 
-  Building,    
+  Building,      
   Calendar, 
   Settings, 
   Bell,
   User,
-  Eye,
+  Eye,     
   Edit,
   MapPin,
   Bed,
   Bath,
-  Square,
+  Square,   
   TrendingUp,
   Euro,
   Camera,
@@ -34,8 +34,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from '@/components/ui/button' 
 import { Card } from '@/components/ui/card'
 import Image from 'next/image'
-import { Categorie, VisiteStatut, Statut } from '@prisma/client'
+import { Categorie, VisiteStatut, Statut, OffreStatut } from '@prisma/client'
 import { getMesProprietes, getMesOffresRecus, getMesProchainesVisites } from '@/lib/getDashboardVendeur'
+import DashboardVendeurClient from '@/components/DashboardVendeur'
 
 // Types
 interface Property {
@@ -48,34 +49,59 @@ interface Property {
   surface: number | bigint
   categorie: Categorie
   images: PropertyImage[]
-  description: string | null
+  description?: string
   agent?: string
   avis?: Avis[]
   isFavorite?: boolean
   nombreVu: number
+  createdAt: Date           // ✅ ajouté
+  statut: Statut            // ✅ ajouté
+}
+
+interface Avis {
+  id: number
+  utilisateur: {
+    id: number
+    nom: string
+    prenom: string
+  }
+  note: number
+  commentaire: string
+  createdAt: Date
 }
 
 interface Offer {
   id: string
-  userId: number
-  montant: number
+  montant: number | bigint
   statut: OffreStatut
   createdAt: Date
   message?: string
-  proprieteId: Property | null
+  propriete: Property      // ✅ lien complet
+  user: {
+    id: number
+    prenom: string
+    nom: string
+  }
 }
 
 interface Visit {
   id: number
   propriete: Property | null
-  date: Date
-  agent: {
+  date: string | Date
+  agent?: {
     prenom: string
     nom: string
+    email?: string | null
+  } | null
+  user?: {
+    prenom: string
+    nom: string
+    email?: string | null
   } | null
   userId: number
   statut: VisiteStatut
 }
+
 
 interface PropertyImage {
   id: number
@@ -88,12 +114,12 @@ interface Chambre {
   description: string
   prixParNuit: string
   capacite: string
-  disponible: boolean
+  disponible: boolean  
 }
 
 interface FormData {
   nom: string
-  description: string
+  description?: string
   categorie: Categorie
   prix: string
   surface: string
@@ -150,12 +176,13 @@ function StatsCard({
 }
 
 function PropertyCard({ property }: { property: Property }) {
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'En ligne': return 'bg-green-100 text-green-800'
-      case 'Sous offre': return 'bg-orange-100 text-orange-800'
-      case 'Vendu': return 'bg-blue-100 text-blue-800'
-      case 'Retiré': return 'bg-gray-100 text-gray-800'
+  const getStatusColor = (statut: string) => {  
+    switch (statut) {
+      case Statut.DISPONIBLE: return 'bg-green-100 text-green-800'
+      case Statut.RESERVE: return 'bg-orange-100 text-orange-800'
+      case Statut.VENDU: return 'bg-blue-100 text-blue-800'
+      case Statut.EN_LOCATION: return 'bg-purple-100 text-purple-800'
+      case Statut.EN_NEGOCIATION: return 'bg-yellow-100 text-yellow-800'
       default: return 'bg-gray-100 text-gray-800'
     }
   }
@@ -295,7 +322,7 @@ function OfferCard({ offer }: { offer: Offer }) {
       </div>
       
       {offer.message && (
-        <p className="text-sm text-gray-600 mb-3 italic">"{offer.message}"</p>
+        <p className="text-sm text-gray-600 mb-3 italic">&quot;{offer.message}&quot;</p>
       )}
       
       <div className="flex items-center justify-between">
@@ -386,684 +413,42 @@ function VisitCard({ visit }: { visit: Visit }) {
 }
 
 // Main Dashboard Component
-export default function VendeurDashboard() {
-  const [showModal, setShowModal] = useState(false)
-  const [formData, setFormData] = useState<FormData>({
-    nom: '',
-    description: '',
-    categorie: 'TERRAIN',
-    prix: '',
-    surface: '',
-    statut: 'DISPONIBLE',
-    geolocalisation: '',
-    nombreChambres: '1',
-    visiteVirtuelle: ''
-  })
-  const [currentStep, setCurrentStep] = useState(1)
-  const [images, setImages] = useState<PropertyImage[]>([])
-  const [chambres, setChambres] = useState<Chambre[]>([])
-  const [isSubmitting, setIsSubmitting] = useState(false)
-
-  const activeProperties = myProperties.filter(p => p.status === 'En ligne' || p.status === 'Sous offre').length
-  const soldProperties = myProperties.filter(p => p.status === 'Vendu').length
-  const totalViews = myProperties.reduce((sum, p) => sum + p.views, 0)
-  const pendingOffers = recentOffers.filter(o => o.status === 'En attente').length
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files
-    if (files) {
-      const newImages: PropertyImage[] = Array.from(files).map((file, index) => ({
-        file,
-        url: URL.createObjectURL(file),
-        ordre: images.length + index
-      }))
-      setImages([...images, ...newImages])
-    }
+export default async function VendeurDashboard() { 
+  const session = await getAuthSession()
+  if (!session || !session?.user) {
+    return (
+      <div className="p-10 text-center text-gray-600">
+        Vous devez être connecté pour accéder à ce tableau de bord.
+      </div>
+    )
   }
 
-  const removeImage = (index: number) => {
-    setImages(images.filter((_, i) => i !== index))
-  }
+  const userId = session?.user?.id.toString()
 
-  const addChambre = () => {
-    setChambres([...chambres, {
-      nom: '',
-      description: '',
-      prixParNuit: '',
-      capacite: '2',
-      disponible: true
-    }])
-  }
+  
+  // 🔹 Appels serveurs
+  const [proprietesData, offresData, visitesData] = await Promise.all([
+    getMesProprietes(userId),
+    getMesOffresRecus(userId),
+    getMesProchainesVisites(userId),
+  ])
 
-  const removeChambre = (index: number) => {
-    setChambres(chambres.filter((_, i) => i !== index))
-  }
-
-  const updateChambre = (index: number, field: string, value: string | boolean) => {
-    const updated = [...chambres]
-    updated[index] = { ...updated[index], [field]: value }
-    setChambres(updated)
-  }
-
-  const handleSubmit = async () => {
-    setIsSubmitting(true)
-    
-    // Simulation d'upload
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    
-    const newBien = {
-      id: Date.now(),
-      nom: formData.nom,
-      description: formData.description,
-      categorie: formData.categorie,
-      prix: parseInt(formData.prix),
-      surface: parseInt(formData.surface),
-      statut: formData.statut,
-      geolocalisation: formData.geolocalisation,
-      chambres: chambres,
-      nombreChambres: parseInt(formData.nombreChambres),
-      images: images.map((img, index) => ({
-        id: Date.now() + index,
-        url: img.url,
-        ordre: img.ordre
-      })),
-      visiteVirtuelle: formData.visiteVirtuelle,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    }
-    
-    console.log('Nouveau bien créé:', newBien)
-    
-    setIsSubmitting(false)
-    setShowModal(false)
-    
-    // Réinitialiser le formulaire
-    setFormData({
-      nom: '',
-      description: '',
-      categorie: 'TERRAIN',
-      prix: '',
-      surface: '',
-      statut: 'DISPONIBLE',
-      geolocalisation: '',
-      nombreChambres: '1',
-      visiteVirtuelle: ''
-    })
-    setImages([])
-    setChambres([])
-    setCurrentStep(1)
-  }
-
-  const isStepValid = () => {
-    if (currentStep === 1) {
-      return formData.nom && formData.categorie && formData.prix && formData.surface && formData.geolocalisation
-    }
-    if (currentStep === 2) {
-      return images.length > 0
-    }
-    return true
-  }
-
-  const handleAddNew = () => {
-    setShowModal(true)
-  }
+  const { recentProperties, stats } = proprietesData
+  const { offresRecentes, totalOffresEnAttente } = offresData
+  const prochainesVisites = visitesData
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
-      <nav className="bg-white border-b border-gray-200">
-        <div className="px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <h1 className="text-xl font-bold text-gray-900">CEA IMMO</h1>
-              <div className="hidden md:flex items-center space-x-6">
-                <a href="#" className="text-gray-600 hover:text-gray-900">Accueil</a>
-                <a href="#" className="text-gray-600 hover:text-gray-900">Mes biens</a>
-                <a href="#" className="text-gray-600 hover:text-gray-900">Offres</a>
-                <a href="#" className="text-gray-600 hover:text-gray-900">Visites</a>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              <Link href="/dashboard/vendeur/notifications" className="p-2 text-gray-400 hover:text-gray-600 relative transition-colors">
-                <Bell className="h-5 w-5" />
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                  {pendingOffers}
-                </span>
-              </Link>
-              <button className="flex items-center space-x-2 text-gray-700">
-                <User className="h-5 w-5" />
-                <span className="text-sm">Jean Moreau</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      <div className="flex">
-        {/* Sidebar */}
-        <aside className="w-64 bg-white border-r border-gray-200 min-h-screen">
-          <div className="p-6">
-            <div className="flex items-center space-x-3 mb-6">
-              <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center">
-                <User className="h-5 w-5 text-white" />
-              </div>
-              <div>
-                <p className="font-semibold text-gray-900">Jean Moreau</p>
-                <p className="text-sm text-gray-600">Vendeur</p>
-              </div>
-            </div>
-
-            <button 
-              onClick={handleAddNew}
-              className="w-full bg-orange-600 text-white rounded-lg py-2 px-4 text-sm font-medium mb-6 hover:bg-orange-700 transition-colors">
-              + Ajouter un bien
-            </button>
-
-            <nav className="space-y-2">
-              <a href="#" className="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 rounded-lg p-2">
-                <Home className="h-5 w-5" />
-                <span>Tableau de bord</span>
-              </a>
-              <a href="/dashboard/vendeur/mesBiens" className="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 rounded-lg p-2">
-                <Building className="h-5 w-5" />
-                <span>Mes biens</span>
-              </a>
-              <a href="/dashboard/vendeur/offres" className="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 rounded-lg p-2">
-                <Euro className="h-5 w-5" />
-                <span>Offres reçues</span>
-              </a>
-              <a href="/dashboard/vendeur/visites" className="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 rounded-lg p-2">
-                <Calendar className="h-5 w-5" />
-                <span>Visites</span>
-              </a>
-              <a href="/dashboard/vendeur/statistiques" className="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 rounded-lg p-2">
-                <TrendingUp className="h-5 w-5" />
-                <span>Statistiques</span>
-              </a>
-              <a href="/dashboard/vendeur/parametres" className="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 rounded-lg p-2">
-                <Settings className="h-5 w-5" />
-                <span>Paramètres</span>
-              </a>
-            </nav>
-          </div>
-        </aside>  
-
-        {/* Main Content */}
-        <main className="flex-1 p-6">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Bonjour Jean !</h1>
-            <p className="text-gray-600">Suivez les performances de vos biens et gérez vos ventes</p>
-          </div>
-
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <StatsCard
-              title="Biens actifs"
-              value={activeProperties}
-              subtitle="en ligne"
-              icon={Building}
-              color="orange"
-              trend="+2 cette semaine"
-            />
-            <StatsCard
-              title="Biens vendus"
-              value={soldProperties}
-              subtitle="ce mois"
-              icon={CheckCircle}
-              color="green"
-            />
-            <StatsCard
-              title="Vues totales"
-              value={totalViews}
-              subtitle="sur tous vos biens"
-              icon={Eye}
-              color="blue"
-              trend="+15%"
-            />
-            <StatsCard
-              title="Offres en attente"
-              value={pendingOffers}
-              subtitle="à traiter"
-              icon={Euro}
-              color="purple"
-            />
-          </div>
-
-          {/* My Properties */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">Mes biens</h2>
-              <div className="flex items-center space-x-4">
-                <select className="border border-gray-300 rounded-md px-3 py-1 text-sm">
-                  <option>Tous les statuts</option>
-                  <option>En ligne</option>
-                  <option>Sous offre</option>
-                  <option>Vendu</option>
-                </select>
-                <button className="text-orange-600 text-sm font-medium">Voir tout</button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {myProperties.map((property) => (
-                <PropertyCard key={property.id} property={property} />
-              ))}
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Recent Offers */}
-            <div>
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-gray-900">Offres récentes</h2>
-                <button className="text-orange-600 text-sm font-medium">Voir tout</button>
-              </div>
-
-              <div className="space-y-4">
-                {recentOffers.map((offer) => (
-                  <OfferCard key={offer.id} offer={offer} />
-                ))}
-              </div>
-            </div>
-
-            {/* Upcoming Visits */}
-            <div>
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-gray-900">Prochaines visites</h2>
-                <button className="text-orange-600 text-sm font-medium">Voir tout</button>
-              </div>
-
-              <div className="space-y-4">
-                {upcomingVisits.map((visit) => (
-                  <VisitCard key={visit.id} visit={visit} />
-                ))}
-              </div>
-            </div>
-          </div>
-        </main>
-      </div>
-
-    {/* Modal d'ajout */}
-      <AnimatePresence>
-        {showModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto"
-            onClick={() => setShowModal(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden my-8"
-            >
-              {/* Header */}
-              <div className="bg-gradient-to-r from-orange-500 to-orange-600 p-6 text-white">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-2xl font-bold">Ajouter une propriété</h2>
-                    <p className="text-orange-100 text-sm mt-1">
-                      Étape {currentStep} sur 3
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => setShowModal(false)}
-                    className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-                  >
-                    <X size={24} />
-                  </button>
-                </div>
-
-                {/* Progress bar */}
-                <div className="mt-6 flex gap-2">
-                  {[1, 2, 3].map(step => (
-                    <div
-                      key={step}
-                      className={`h-1 flex-1 rounded-full transition-all ${
-                        step <= currentStep ? 'bg-white' : 'bg-white/30'
-                      }`}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Content */}
-              <div className="p-6 overflow-y-auto max-h-[calc(90vh-250px)]">
-                {/* Étape 1: Informations principales */}
-                {currentStep === 1 && (
-                  <motion.div
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="space-y-6"
-                  >
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Nom de la propriété *
-                        </label>
-                        <input
-                          type="text"
-                          value={formData.nom}
-                          onChange={(e) => setFormData({...formData, nom: e.target.value})}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                          placeholder="Villa Moderne Lomé"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Catégorie *
-                        </label>
-                        <select
-                          value={formData.categorie}
-                          onChange={(e) => setFormData({...formData, categorie: e.target.value})}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
-                        >
-                          <option value="">Sélectionner...</option>
-                          {categories.map(cat => (
-                            <option key={cat} value={cat}>{cat}</option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Prix (FCFA) *
-                        </label>
-                        <input
-                          type="number"
-                          value={formData.prix}
-                          onChange={(e) => setFormData({...formData, prix: e.target.value})}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
-                          placeholder="150000000"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Surface (m²) *
-                        </label>
-                        <input
-                          type="number"
-                          value={formData.surface}
-                          onChange={(e) => setFormData({...formData, surface: e.target.value})}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
-                          placeholder="350"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Statut
-                        </label>
-                        <select
-                          value={formData.statut}
-                          onChange={(e) => setFormData({...formData, statut: e.target.value})}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
-                        >
-                          {statuts.map(statut => (
-                            <option key={statut} value={statut}>{statut.replace('_', ' ')}</option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Nombre de chambres *
-                        </label>
-                        <input
-                          type="number"
-                          value={formData.nombreChambres}
-                          onChange={(e) => setFormData({...formData, nombreChambres: e.target.value})}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
-                          min="1"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Géolocalisation *
-                      </label>
-                      <div className="relative">
-                        <MapPin size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                        <input
-                          type="text"
-                          value={formData.geolocalisation}
-                          onChange={(e) => setFormData({...formData, geolocalisation: e.target.value})}
-                          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
-                          placeholder="Lomé, Bè"
-                        />
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Description
-                      </label>
-                      <textarea
-                        value={formData.description}
-                        onChange={(e) => setFormData({...formData, description: e.target.value})}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 h-24 resize-none"
-                        placeholder="Décrivez votre propriété..."
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Lien visite virtuelle (optionnel)
-                      </label>
-                      <input
-                        type="url"
-                        value={formData.visiteVirtuelle}
-                        onChange={(e) => setFormData({...formData, visiteVirtuelle: e.target.value})}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
-                        placeholder="https://youtube.com/..."
-                      />
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* Étape 2: Images */}
-                {currentStep === 2 && (
-                  <motion.div
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="space-y-6"
-                  >
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-4">
-                        Photos de la propriété *
-                      </label>
-                      
-                      <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-orange-400 transition-colors">
-                        <input
-                          type="file"
-                          multiple
-                          accept="image/*"
-                          onChange={handleImageUpload}
-                          className="hidden"
-                          id="image-upload"
-                        />
-                        <label htmlFor="image-upload" className="cursor-pointer">
-                          <Upload className="mx-auto w-12 h-12 text-gray-400 mb-4" />
-                          <p className="text-gray-600 font-medium mb-2">
-                            Cliquez pour ajouter des photos
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            PNG, JPG jusqu&apos;à 10MB
-                          </p>
-                        </label>
-                      </div>
-
-                      {images.length > 0 && (
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-                          {images.map((img, index) => (
-                            <div key={index} className="relative group">
-                              <Image
-                                src={img.url}
-                                alt={`Image ${index + 1}`}
-                                className="w-full h-32 object-cover rounded-lg"
-                              />
-                              <button
-                                onClick={() => removeImage(index)}
-                                className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                              >
-                                <X size={16} />
-                              </button>
-                              <div className="absolute bottom-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
-                                #{index + 1}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </motion.div>
-                )}
-
-                {/* Étape 3: Chambres (optionnel) */}
-                {currentStep === 3 && (
-                  <motion.div
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="space-y-6"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="text-lg font-semibold text-gray-900">
-                          Chambres (Optionnel)
-                        </h3>
-                        <p className="text-sm text-gray-500">
-                          Pour les hôtels et locations de courte durée
-                        </p>
-                      </div>
-                      <Button
-                        onClick={addChambre}
-                        size="sm"
-                        className="bg-orange-500 hover:bg-orange-600"
-                      >
-                        <Plus size={16} className="mr-1" /> Ajouter
-                      </Button>
-                    </div>
-
-                    {chambres.length === 0 ? (
-                      <div className="text-center py-12 bg-gray-50 rounded-xl">
-                        <Bed className="mx-auto w-12 h-12 text-gray-300 mb-3" />
-                        <p className="text-gray-500">Aucune chambre ajoutée</p>
-                        <p className="text-sm text-gray-400 mt-1">
-                          Vous pouvez passer cette étape si non applicable
-                        </p>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {chambres.map((chambre, index) => (
-                          <Card key={index} className="p-4">
-                            <div className="flex items-start justify-between mb-4">
-                              <h4 className="font-medium text-gray-900">Chambre {index + 1}</h4>
-                              <button
-                                onClick={() => removeChambre(index)}
-                                className="text-red-500 hover:text-red-600"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </div>
-                            
-                            <div className="grid grid-cols-2 gap-3">
-                              <input
-                                type="text"
-                                value={chambre.nom}
-                                onChange={(e) => updateChambre(index, 'nom', e.target.value)}
-                                placeholder="Nom de la chambre"
-                                className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                              />
-                              <input
-                                type="number"
-                                value={chambre.capacite}
-                                onChange={(e) => updateChambre(index, 'capacite', e.target.value)}
-                                placeholder="Capacité"
-                                className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
-                              />
-                              <input
-                                type="number"
-                                value={chambre.prixParNuit}
-                                onChange={(e) => updateChambre(index, 'prixParNuit', e.target.value)}
-                                placeholder="Prix/nuit (FCFA)"
-                                className="px-3 py-2 border border-gray-300 rounded-lg text-sm col-span-2"
-                              />
-                              <textarea
-                                value={chambre.description}
-                                onChange={(e) => updateChambre(index, 'description', e.target.value)}
-                                placeholder="Description"
-                                className="px-3 py-2 border border-gray-300 rounded-lg text-sm col-span-2 h-20 resize-none"
-                              />
-                            </div>
-                          </Card>
-                        ))}
-                      </div>
-                    )}
-                  </motion.div>
-                )}
-              </div>
-
-              {/* Footer */}
-              <div className="border-t border-gray-200 p-6 bg-gray-50">
-                <div className="flex items-center justify-between">
-                  <Button
-                    variant="outline"
-                    onClick={() => currentStep > 1 ? setCurrentStep(currentStep - 1) : setShowModal(false)}
-                  >
-                    {currentStep === 1 ? 'Annuler' : 'Précédent'}
-                  </Button>
-
-                  <div className="flex gap-2">
-                    {!isStepValid() && currentStep !== 3 && (
-                      <div className="flex items-center gap-2 text-sm text-amber-600 mr-4">
-                        <AlertCircle size={16} />
-                        Veuillez remplir tous les champs requis
-                      </div>
-                    )}
-                    
-                    {currentStep < 3 ? (
-                      <Button
-                        onClick={() => setCurrentStep(currentStep + 1)}
-                        disabled={!isStepValid()}
-                        className="bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300"
-                      >
-                        Suivant
-                      </Button>
-                    ) : (
-                      <Button
-                        onClick={handleSubmit}
-                        disabled={isSubmitting}
-                        className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700"
-                      >
-                        {isSubmitting ? (
-                          <>
-                            <Loader2 className="mr-2 animate-spin" size={16} />
-                            Enregistrement...
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle className="mr-2" size={16} />
-                            Enregistrer
-                          </>
-                        )}
-                      </Button>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>  
+    <DashboardVendeurClient
+      user={{
+        id: session.user.id.toString(),
+        prenom: session.user.prenom || 'Utilisateur',
+        nom: session.user.nom || ''
+      }}
+      stats={stats}
+      recentProperties={recentProperties}
+      offresRecentes={offresRecentes}
+      prochainesVisites={prochainesVisites}
+    />
   )
 }
   

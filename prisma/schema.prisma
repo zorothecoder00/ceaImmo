@@ -2,7 +2,7 @@
 
 datasource db {  
   provider = "postgresql" // ou "mysql", selon ta base
-  url      = env("DATABASE_URL")     
+  url      = env("DATABASE_URL")       
 }     
     
 generator client {  
@@ -116,7 +116,7 @@ model User {
   reservationsAgent Reservation[]   @relation("AgentReservation")
   messagesEnvoyes   Message[]       @relation("MessagesEnvoyes")
   messagesRecus     Message[]       @relation("MessagesRecus")
-  transactions      Transaction[]   @relation("UserTransaction")
+  transactions      Transaction[]   @relation("UserTransaction")   
   transactionsAgent Transaction[]   @relation("AgentTransaction")
   offres            Offre[]         @relation("AcheteurOffre")
   offresAgent       Offre[]         @relation("AgentOffre")

@@ -1,16 +1,54 @@
 import { prisma } from "@/lib/prisma"
-import { OffreStatut } from "@prisma/client"
+import { OffreStatut, Statut } from "@prisma/client"
 
  
-export async function getMesProprietes(userId: string){
+export async function getMesProprietes(userId: string) {
+  const parsedUserId = parseInt(userId)
 
-	const parsedUserId = parseInt(userId)
+  const myProperties = await prisma.propriete.findMany({
+    where: { proprietaireId: parsedUserId },
+    include: {
+      offres: true, // pour compter les offres liées
+    },
+    orderBy: { createdAt: "desc" },
+  })
 
-	return await prisma.propriete.findMany({  
-		where: { proprietaireId: parsedUserId },
-		orderBy: { createdAt:'desc' },
-		take: 3
-	})
+  // 🧮 Calcul des statistiques
+  const activeProperties = myProperties.filter(
+    (p) => p.statut === Statut.DISPONIBLE || p.statut === Statut.EN_NEGOCIATION
+  ).length
+
+  const reservedProperties = myProperties.filter(
+    (p) => p.statut === Statut.RESERVE
+  ).length
+
+  const soldProperties = myProperties.filter(
+    (p) => p.statut === Statut.VENDU   
+  ).length
+
+  const totalViews = myProperties.reduce((sum, p) => sum + (p.nombreVu || 0), 0)
+
+  // Nombre d’offres en attente sur mes propriétés
+  const pendingOffers = myProperties.reduce((sum, p) => {
+    const pending = p.offres.filter(
+      (o) => o.statut === OffreStatut.EN_ATTENTE
+    ).length
+    return sum + pending
+  }, 0)
+
+  // Retourne aussi les 3 plus récentes propriétés
+  const recentProperties = myProperties.slice(0, 3)
+
+  return {
+    recentProperties,
+    stats: {
+      activeProperties,
+      reservedProperties,
+      soldProperties,
+      totalViews,
+      pendingOffers,
+    },
+  }
 }
 
 export async function getMesOffresRecus(userId: string)
@@ -41,7 +79,7 @@ export async function getMesOffresRecus(userId: string)
 			},
 		})
 	])
-
+   
 	return { offresRecentes, totalOffresEnAttente}
 }
 
