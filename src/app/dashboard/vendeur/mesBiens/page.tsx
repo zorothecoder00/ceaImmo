@@ -60,7 +60,7 @@ interface Bien {
   description: string;
   categorie: Categorie; // ✅
   prix: number;
-  surface: number;
+  surface: number;   
   statut: Statut
   chambres?: Chambre[];
   nombreChambres: number;
@@ -822,8 +822,10 @@ export default function MesBiens() {
                 <div className="space-y-4">
                   <Image
                     src={selectedBien.images[0]?.url || '/placeholder.jpg'}
-                    alt={selectedBien.nom}
-                    className="w-full h-64 object-cover rounded-lg"
+                    alt={selectedBien.nom}                
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    
                   />
 
                   <div>
