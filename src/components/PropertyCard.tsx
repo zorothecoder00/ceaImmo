@@ -6,12 +6,12 @@ import { Statut } from '@prisma/client'
 
 export interface PropertyImage {
   id: number;
-  url: string;
+  url: string;   
   ordre: number;
 }
-
+  
 export interface Property {
-  id: number;
+  id: number;  
   nom: string;
   description?: string;
   images?: PropertyImage[];
@@ -61,14 +61,14 @@ export default function PropertyCard({ property }: PropertyCardProps) {
         return "En Négociation";
       default:
         return statut;
-    }
+    }  
   };
 
   const daysOnMarket = Math.floor(
     (Date.now() - new Date(property.createdAt).getTime()) / (1000 * 60 * 60 * 24)
   );
 
-  const mainImage = property.images?.[0]?.url || "/placeholder-property.jpg";
+  const mainImage = property.images?.[0]?.url || "/villapiscine.webp";
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
@@ -93,7 +93,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
           <div className="flex items-center text-gray-600 text-sm mb-3">
             <MapPin className="h-4 w-4 mr-1" />
             {property.geolocalisation}
-          </div>
+          </div>   
         )}
 
         <div className="flex items-center justify-between text-sm text-gray-600 mb-3">

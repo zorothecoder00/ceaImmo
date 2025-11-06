@@ -1,11 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState } from 'react'    
 import { motion, AnimatePresence } from 'framer-motion'   
 import { 
   Home, Building, Calendar, Settings, Bell, User, Eye, 
   TrendingUp, Euro, X, Plus, Trash2, Loader2,    
-  AlertCircle, MapPin, Bed, CheckCircle   
+  AlertCircle, MapPin, Bed, CheckCircle      
 } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'  
@@ -17,6 +17,12 @@ import PropertyCard from '@/components/PropertyCard';
 import OfferCard from '@/components/OfferCard'   
 import VisitCard from '@/components/VisitCard';
 
+export interface User {
+  id: number;
+  prenom: string;
+  nom: string;
+  email?: string;
+}
 
 interface RecentProperty {
   id: number
@@ -39,14 +45,16 @@ interface Offre {
   user: { id: number; prenom: string; nom: string } // ajouter l'id
   montant: number | bigint
   statut: OffreStatut
-  createdAt?: string
+  createdAt?: string  
 }
  
-interface Visite {
+interface Visite {  
   id: number   
   propriete: RecentProperty | null  
   date: string | Date
   statut: VisiteStatut
+  user?: User | null // ✅ accepte undefined ou null
+  agent?: User | null // ✅ accepte undefined ou null
 }
 
 interface Chambre {
@@ -62,7 +70,7 @@ interface FormDataProps {
   description?: string
   categorie: Categorie
   prix: string
-  surface: string
+  surface: string      
   statut: Statut
   geolocalisation: string
   nombreChambres: string
@@ -222,7 +230,7 @@ export default function VendeurDashboardClient({
   const statuts = Object.values(Statut)
 
 
-  return (
+  return (  
     <div className="min-h-screen bg-gray-50">
     {/* Navigation */}
     <nav className="bg-white border-b border-gray-200">
@@ -322,15 +330,38 @@ export default function VendeurDashboardClient({
           <StatCards title="Vendues" value={stats.soldProperties} icon={Euro} color="blue" />
           <StatCards title="Total vues" value={stats.totalViews} icon={Eye} color="purple" />
           <StatCards title="Offres en attente" value={stats.pendingOffers} icon={Calendar} color="yellow" />
-        </div>  
+        </div>   
       
         {/* 🔹 Biens récents */}
-        <section>
-          <h2 className="text-xl font-semibold mb-4 text-gray-800">Mes dernières propriétés</h2>
+        <section className="mt-10 bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
+              <Building className="text-orange-500" size={20} />
+              Mes dernières propriétés
+            </h2>
+            <Link
+              href="/dashboard/vendeur/mesBiens"
+              className="text-sm text-orange-600 hover:text-orange-700 font-medium"
+            >
+              Voir tout →
+            </Link>
+          </div>
+
           {recentProperties.length === 0 ? (
-            <p className="text-gray-500">Aucune propriété enregistrée.</p>
+            <div className="text-center py-12 bg-gray-50 rounded-xl">
+              <Home className="mx-auto w-10 h-10 text-gray-300 mb-3" />
+              <p className="text-gray-500">Aucune propriété enregistrée.</p>
+              <p className="text-sm text-gray-400 mt-1">
+                Cliquez sur “+ Ajouter un bien” pour commencer.
+              </p>
+            </div>
           ) : (
-            <div className="grid md:grid-cols-3 gap-6">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"
+            >
               {recentProperties.map((p) => (
                 <PropertyCard
                   key={p.id}
@@ -353,33 +384,74 @@ export default function VendeurDashboardClient({
                   }}
                 />
               ))}
-
-            </div>
-          )}
-        </section>  
-   
-        {/* 🔹 Offres récentes */}
-        <section>
-          <h2 className="text-xl font-semibold mb-4 text-gray-800">Offres récentes</h2>
-          {offresRecentes.length === 0 ? (
-            <p className="text-gray-500">Aucune offre reçue.</p>
-          ) : (
-            <div className="grid md:grid-cols-3 gap-6">
-              {offresRecentes.map((offer) => (
-                <OfferCard key={offer.id} offer={{ ...offer, montant: Number(offer.montant), createdAt: offer.createdAt ?? new Date().toISOString() }} />
-              ))}
-            </div>
+            </motion.div>
           )}
         </section>
-  
-        {/* 🔹 Visites à venir */}
-        <div className="grid md:grid-cols-2 gap-6">
-          {prochainesVisites.map((v) => (
-            <VisitCard key={v.id} visit={{ ...v, date: typeof v.date === 'string' ? v.date : v.date.toISOString(), propriete: v.propriete ?? undefined }} />
+ 
+   
+        {/* 🔹 Offres récentes + Visites à venir côte à côte */}
+        <section className="mt-10">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* 🟠 Colonne 1 : Offres récentes */}
+            <div>
+              <h2 className="text-xl font-semibold mb-4 text-gray-800 flex items-center gap-2">
+                <Euro className="text-orange-500" size={20} /> Offres récentes
+              </h2>
+              {offresRecentes.length === 0 ? (
+                <p className="text-gray-500">Aucune offre reçue.</p>
+              ) : (
+                <div className="grid sm:grid-cols-2 gap-6">
+                  {offresRecentes.map((offer) => (
+                    <OfferCard
+                      key={offer.id}
+                      offer={{
+                        ...offer,
+                        montant: Number(offer.montant),
+                        createdAt: offer.createdAt ?? new Date().toISOString(),
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
 
-          ))}
-        </div>
-
+            {/* 🟢 Colonne 2 : Prochaines visites */}
+            <div>
+              <h2 className="text-xl font-semibold mb-4 text-gray-800 flex items-center gap-2">
+                <Calendar className="text-green-600" size={20} /> Prochaines visites
+              </h2>
+              {prochainesVisites.length === 0 ? (
+                <p className="text-gray-500">Aucune visite planifiée pour le moment.</p>
+              ) : (
+                <div className="grid sm:grid-cols-2 gap-6">
+                  {prochainesVisites.map((v) => (
+                    <VisitCard
+                      key={v.id}
+                      visit={{
+                        id: v.id,
+                        date:
+                          typeof v.date === "string"
+                            ? v.date
+                            : v.date.toISOString(),
+                        statut: v.statut,
+                        propriete: v.propriete
+                          ? { id: v.propriete.id, nom: v.propriete.nom }
+                          : undefined,
+                        user: v.user
+                          ? { id: v.user.id, prenom: v.user.prenom, nom: v.user.nom }
+                          : undefined,
+                        agent: v.agent
+                          ? { id: v.agent.id, prenom: v.agent.prenom, nom: v.agent.nom }
+                          : undefined,
+                      }}
+                    />
+                  ))}  
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+   
       </main>
     </div>
     {/* Modal */}

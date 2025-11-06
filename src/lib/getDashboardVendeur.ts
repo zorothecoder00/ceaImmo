@@ -9,6 +9,7 @@ export async function getMesProprietes(userId: string) {
     where: { proprietaireId: parsedUserId },
     include: {
       offres: true, // pour compter les offres liées
+      images: { orderBy: { ordre: 'asc' } },
     },
     orderBy: { createdAt: "desc" },
   })

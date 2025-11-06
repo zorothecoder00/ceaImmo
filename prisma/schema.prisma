@@ -126,7 +126,7 @@ model User {
   avis              Avis[]
   recherches        Recherche[] // 👈 Ajoute cette ligne
   vus               Vu[]
-}     
+}        
 
 model Propriete {   
   id                Int             @id @default(autoincrement())

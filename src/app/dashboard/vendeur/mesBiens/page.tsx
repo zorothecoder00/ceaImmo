@@ -143,7 +143,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ bien, onEdit, onDelete, onV
         <div className="flex">
           <div className="w-48 h-32 flex-shrink-0">
             <Image 
-              src={bien.images[0]?.url || '/placeholder.jpg'} 
+              src={bien.images[0]?.url || '/villapiscine.webp'} 
               alt={bien.nom}
               className="w-full h-full object-cover"
             />
@@ -233,9 +233,10 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ bien, onEdit, onDelete, onV
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 group">
       <div className="relative">
         <Image 
-          src={bien.images[0]?.url || '/placeholder.jpg'} 
+          src={bien.images[0]?.url || '/villapiscine.webp'} 
           alt={bien.nom}
-          className="w-full h-56 object-cover group-hover:scale-105 transition-transform duration-300"
+          fill
+          className="object-cover group-hover:scale-105 transition-transform duration-300"
         />
         
         <div className="absolute top-4 left-4">

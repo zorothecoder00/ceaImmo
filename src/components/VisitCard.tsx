@@ -30,7 +30,7 @@ interface VisitCardProps {
   visit: Visit;
 }
 
-export default function VisitCard({ visit }: VisitCardProps) {
+export default function VisitCard({ visit }: VisitCardProps) {  
   const getStatusColor = (statut: VisiteStatut) => {
     switch (statut) {
       case VisiteStatut.CONFIRMEE: return 'bg-green-100 text-green-800';
@@ -49,7 +49,7 @@ export default function VisitCard({ visit }: VisitCardProps) {
       case VisiteStatut.REPORTEE: return 'Reportée';
       default: return statut;
     }
-  };
+  };  
 
   const visitDate = new Date(visit.date);
 
