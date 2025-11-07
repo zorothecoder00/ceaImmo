@@ -28,6 +28,7 @@ import {
 import FavoriteButton from '@/components/FavoriteButton'
 import { Categorie, VisiteStatut, Statut } from '@prisma/client'
 import SearchForm from '@/components/SearchForm'
+import SearchModal from '@/components/RechercheModal'
 
 // Types
 interface Image {
@@ -311,10 +312,10 @@ export default async function AcheteurDashboard() {
               </button>
             </div>
           </div>
-        </div>
-      </nav>
+        </div>  
+      </nav>  
 
-      <div className="flex">
+      <div className="flex">  
         {/* Sidebar */}
         <aside className="w-64 bg-white border-r border-gray-200 min-h-screen">
           <div className="p-6">
@@ -328,9 +329,9 @@ export default async function AcheteurDashboard() {
               </div>
             </div>
 
-            <button className="w-full bg-green-600 text-white rounded-lg py-2 px-4 text-sm font-medium mb-6">
-              + Nouvelle recherche
-            </button>
+            <div className="w-full mb-6">
+              <SearchModal />
+            </div>
 
             <nav className="space-y-2">
               <a href="#" className="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 rounded-lg p-2">

@@ -11,14 +11,14 @@ export async function getAvailableProprietes(userId?: string) {
       },
       favoris: userId ? {
         where: { userId: parseInt(userId) }
-      } : false   
+      } : false       
     },
     orderBy: { createdAt: 'desc' },
     take: 3
   })
 
   return proprietes.map(prop => ({
-    ...prop,
+    ...prop,  
     isFavorite: userId ? prop.favoris.length > 0 : false
   }))
 }
@@ -26,6 +26,7 @@ export async function getAvailableProprietes(userId?: string) {
 // Filtrer par catégorie + budget
 export async function filtrageProprietes(
   userId?: string,
+  nom?: string,
   geolocalisation?: string,
   categorie?: Categorie,   
   minPrix?: number,
@@ -35,6 +36,7 @@ export async function filtrageProprietes(
   const proprietes = await prisma.propriete.findMany({
     where: {
       statut: Statut.DISPONIBLE,
+      ...(nom ? { nom }: {}),
       ...(geolocalisation ? { geolocalisation } : {}),
       ...(categorie ? { categorie } : {}),
       ...(minPrix !== undefined && maxPrix !== undefined ? { 
@@ -217,6 +219,7 @@ export async function getRecherchesSauvegardeesEtResultats(userId: string) {
     recherches.map(async (r) => {
       const resultats = await filtrageProprietes(
         userId,
+        r.titre ?? undefined,
         r.geolocalisation ?? undefined,
         r.categorie ?? undefined,
         r.minPrix !== null && r.minPrix !== undefined ? Number(r.minPrix) : undefined,
@@ -236,8 +239,6 @@ export async function getRecherchesSauvegardeesEtResultats(userId: string) {
     total: recherchesAvecResultats.length
   }
 }
-
-
 
 export async function getRecherchesSauvegardees(userId: string) {
   const recherches = await prisma.recherche.findMany({

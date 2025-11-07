@@ -42,7 +42,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         where: { id: proprieteId },
         include: {
           images: { orderBy: { ordre: "asc" } },
-          chambres: true,
+          chambres: true,     
           avis: { include: { user: true } },
           offres: true,
           reservations: true,

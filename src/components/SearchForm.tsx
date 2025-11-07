@@ -1,17 +1,53 @@
 'use client'
 
 import { useState } from 'react'
+import { Categorie, Statut } from '@prisma/client'
+import toast from "react-hot-toast";
+
+interface SearchFilters {
+  titre?: string;
+  categorie?: Categorie;    
+  statut?: Statut;
+  geolocalisation?: string;
+  nombreChambres?: number;
+  minPrix?: number | null;
+  maxPrix?: number | null;
+  minSurface?: number | null;
+  maxSurface?: number | null;
+  triPar?: string;
+  motsCles?: string;
+}
+
+interface ResultatPropriete {
+  id: string;
+  nom?: string;
+  categorie?: Categorie;
+  geolocalisation?: string;
+  statut?: Statut;
+  prix?: number;
+}
 
 export default function SearchForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [geolocalisation, setGeolocalisation] = useState('')
-  const [categorie, setCategorie] = useState('')
-  const [statut, setStatut] = useState('DISPONIBLE')  
+  const [categorie, setCategorie] = useState<Categorie | "">("") 
+  const [statut, setStatut] = useState<Statut | "DISPONIBLE">("DISPONIBLE")  
   const [nombreChambres, setNombreChambres] = useState('')
   const [budget, setBudget] = useState('')
   const [surface, setSurface] = useState('')
-  const [titre, setTitre] = useState('')
-  
+  const [nom, setNom] = useState('')
+  const [resultats, setResultats] = useState<ResultatPropriete[]>([]);
+
+  const handlePreview = async (filters: SearchFilters) => {
+    const res = await fetch("/api/acheteur/mesRecherchesSauvegardees?preview=true", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(filters),   
+    });
+    const data = await res.json();
+    setResultats(data.resultats); // afficher les résultats en direct
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -29,7 +65,7 @@ export default function SearchForm() {
       const [minSurface, maxSurface] =
         surface === '0-100m²' ? [0, 100] :
         surface === '100-200m²' ? [100, 200] :
-        surface === '200m²+' ? [200, null] :
+        surface === '200m²+' ? [200, null] :      
         [null, null]  
 
       // Appel API pour sauvegarder la recherche
@@ -37,7 +73,7 @@ export default function SearchForm() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          titre: titre || `Recherche ${categorie || ''} ${geolocalisation || ''}`.trim(),
+          titre: nom || `Recherche ${categorie || ''} ${geolocalisation || ''}`.trim(),
           categorie: categorie || null,
           statut: statut || null,
           geolocalisation: geolocalisation || null,
@@ -52,8 +88,8 @@ export default function SearchForm() {
       })
 
       if (response.ok) {
-        alert('✅ Recherche sauvegardée avec succès !')
-        setTitre('')
+        toast.success('✅ Recherche sauvegardée avec succès !')
+        setNom('')
         setCategorie('')
         setStatut('DISPONIBLE')
         setGeolocalisation('')
@@ -62,113 +98,143 @@ export default function SearchForm() {
         setNombreChambres('')
       } else {
         const err = await response.json()
-        alert(`❌ Erreur : ${err.error || 'Impossible de sauvegarder la recherche'}`)
+        toast.error(`❌ Erreur : ${err.error || 'Impossible de sauvegarder la recherche'}`)
       }
     } catch (error) {
       console.error('Erreur lors de la sauvegarde:', error)
-      alert('❌ Erreur de connexion. Veuillez réessayer.')
+      toast.error('❌ Erreur de connexion. Veuillez réessayer.')
     } finally {
       setIsLoading(false)
     } 
   }
 
   return (
-    <form 
-      onSubmit={handleSubmit} 
-      className="flex flex-wrap items-center gap-3 bg-white shadow p-4 rounded-lg">
-      {/* Titre facultatif */}
-      <input
-        type="text"
-        placeholder="Titre de la recherche (facultatif)"
-        className="border border-gray-300 rounded-md px-3 py-2 flex-1"
-        value={titre}
-        onChange={(e) => setTitre(e.target.value)}
-        disabled={isLoading}
-      />
+    <>
+      <form 
+        onSubmit={handleSubmit} 
+        className="flex flex-wrap items-center gap-3 bg-white shadow p-4 rounded-lg">
+        {/* Titre facultatif */}
+        <input
+          type="text"
+          placeholder="Titre de la recherche (facultatif)"
+          className="border border-gray-300 rounded-md px-3 py-2 flex-1"
+          value={nom}
+          onChange={(e) => setNom(e.target.value)}
+          disabled={isLoading}
+        />
 
-      {/* Localisation */}
-      <input
-        type="text"
-        placeholder="Localisation (ex: Lomé, Adidogomé...)"
-        className="border border-gray-300 rounded-md px-3 py-2 flex-1"
-        value={geolocalisation}
-        onChange={(e) => setGeolocalisation(e.target.value)}
-        disabled={isLoading}
-      />
+        {/* Localisation */}
+        <input
+          type="text"
+          placeholder="Localisation (ex: Lomé, Adidogomé...)"
+          className="border border-gray-300 rounded-md px-3 py-2 flex-1"
+          value={geolocalisation}
+          onChange={(e) => setGeolocalisation(e.target.value)}
+          disabled={isLoading}
+        />
 
-      {/* Catégorie */}
-      <select
-        className="border border-gray-300 rounded-md px-3 py-2"
-        value={categorie}
-        onChange={(e) => setCategorie(e.target.value)}
-        disabled={isLoading}
-      >
-        <option value="">Catégorie</option>
-        <option value="VILLA">Villa</option>
-        <option value="MAISON">Maison</option>
-        <option value="APPARTEMENT">Appartement</option>
-        <option value="HOTEL">Hôtel</option>
-        <option value="TERRAIN">Terrain</option>
-        <option value="CHANTIER">Chantier</option>
-      </select>
+        {/* Catégorie */}
+        <select
+          className="border border-gray-300 rounded-md px-3 py-2"
+          value={categorie}
+          onChange={(e) => setCategorie(e.target.value as Categorie)}
+          disabled={isLoading}
+        >
+          <option value="">Catégorie</option>
+          <option value="VILLA">Villa</option>
+          <option value="MAISON">Maison</option>
+          <option value="APPARTEMENT">Appartement</option>
+          <option value="HOTEL">Hôtel</option>
+          <option value="TERRAIN">Terrain</option>
+          <option value="CHANTIER">Chantier</option>
+        </select>
 
-      {/* Statut */}
-      <select
-        className="border border-gray-300 rounded-md px-3 py-2"
-        value={statut}
-        onChange={(e) => setStatut(e.target.value)}
-        disabled={isLoading}
-      >
-        <option value="DISPONIBLE">Disponible</option>
-        <option value="VENDU">Vendu</option>
-        <option value="RESERVE">Réservé</option>
-        <option value="EN_LOCATION">En location</option>
-        <option value="EN_NEGOCIATION">En négociation</option>
-      </select>
+        {/* Statut */}
+        <select
+          className="border border-gray-300 rounded-md px-3 py-2"
+          value={statut}
+          onChange={(e) => setStatut(e.target.value as Statut)}
+          disabled={isLoading}
+        >
+          <option value="DISPONIBLE">Disponible</option>
+          <option value="VENDU">Vendu</option>
+          <option value="RESERVE">Réservé</option>
+          <option value="EN_LOCATION">En location</option>
+          <option value="EN_NEGOCIATION">En négociation</option>
+        </select>
 
-      {/* Budget */}
-      <select
-        className="border border-gray-300 rounded-md px-3 py-2"
-        value={budget}
-        onChange={(e) => setBudget(e.target.value)}
-        disabled={isLoading}
-      >
-        <option value="">Budget</option>
-        <option value="0-300k€">0-300k€</option>
-        <option value="300k-500k€">300k-500k€</option>
-        <option value="500k€+">500k€+</option>
-      </select>  
+        {/* Budget */}
+        <select
+          className="border border-gray-300 rounded-md px-3 py-2"
+          value={budget}
+          onChange={(e) => setBudget(e.target.value)}
+          disabled={isLoading}
+        >
+          <option value="">Budget</option>
+          <option value="0-300k€">0-300k€</option>
+          <option value="300k-500k€">300k-500k€</option>
+          <option value="500k€+">500k€+</option>
+        </select>  
 
-      {/* Surface */}
-      <select
-        className="border border-gray-300 rounded-md px-3 py-2"
-        value={surface}
-        onChange={(e) => setSurface(e.target.value)}
-        disabled={isLoading}
-      >
-        <option value="">Surface</option>
-        <option value="0-100m²">0-100m²</option>
-        <option value="100-200m²">100-200m²</option>
-        <option value="200m²+">200m²+</option>
-      </select>
+        {/* Surface */}
+        <select
+          className="border border-gray-300 rounded-md px-3 py-2"
+          value={surface}
+          onChange={(e) => setSurface(e.target.value)}
+          disabled={isLoading}
+        >
+          <option value="">Surface</option>
+          <option value="0-100m²">0-100m²</option>
+          <option value="100-200m²">100-200m²</option>
+          <option value="200m²+">200m²+</option>
+        </select>
 
-      {/* Chambres */}
-      <input
-        type="number"
-        placeholder="Chambres"
-        className="border border-gray-300 rounded-md px-3 py-2 w-24"
-        value={nombreChambres}
-        onChange={(e) => setNombreChambres(e.target.value)}
-        disabled={isLoading}
-      />
+        {/* Chambres */}
+        <input
+          type="number"
+          placeholder="Chambres"
+          className="border border-gray-300 rounded-md px-3 py-2 w-24"
+          value={nombreChambres}
+          onChange={(e) => setNombreChambres(e.target.value)}
+          disabled={isLoading}
+        />
 
-      <button
-        type="submit"
-        className="bg-green-600 text-white px-6 py-2 rounded-md font-medium hover:bg-green-700 transition"
-        disabled={isLoading}
-      >
-        {isLoading ? 'Sauvegarde...' : 'Sauvegarder'}
-      </button>
-    </form>
-  )
+        <button
+          type="submit"
+          className="bg-green-600 text-white px-6 py-2 rounded-md font-medium hover:bg-green-700 transition"
+          disabled={isLoading}  
+        >
+          {isLoading ? 'Sauvegarde...' : 'Sauvegarder'}
+        </button>
+        <button
+          type="button"
+          onClick={() => handlePreview({
+            titre: nom, // <-- ici
+            categorie: categorie || undefined,
+            statut: statut || undefined,
+            geolocalisation: geolocalisation || undefined,
+            nombreChambres: nombreChambres ? Number(nombreChambres) : undefined,
+            minPrix: budget === '0-300k€' ? 0 : budget === '300k-500k€' ? 300000 : 500000,
+            maxPrix: budget === '0-300k€' ? 300000 : budget === '300k-500k€' ? 500000 : null,
+            minSurface: surface === '0-100m²' ? 0 : surface === '100-200m²' ? 100 : 200,
+            maxSurface: surface === '0-100m²' ? 100 : surface === '100-200m²' ? 200 : null
+          })}
+          className="bg-blue-600 text-white px-6 py-2 rounded-md font-medium hover:bg-blue-700 transition"
+          disabled={isLoading}
+        >
+          Aperçu
+        </button>
+      </form>
+      {resultats?.length > 0 && (
+      <div className="mt-4">
+        <h3 className="font-medium mb-2">Résultats en aperçu :</h3>
+        <ul className="space-y-2">
+          {resultats.map((r, index: number) => (
+            <li key={index} className="border p-2 rounded">{r.nom || r.categorie}</li>
+          ))}
+        </ul>
+      </div>
+      )}
+    </>
+  )  
 }

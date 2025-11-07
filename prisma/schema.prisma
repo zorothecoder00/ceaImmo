@@ -4,8 +4,8 @@ datasource db {
   provider = "postgresql" // ou "mysql", selon ta base
   url      = env("DATABASE_URL")       
 }     
-    
-generator client {  
+      
+generator client {    
   provider = "prisma-client-js"   
 }      
 

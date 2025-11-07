@@ -17,7 +17,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     // Query params
-    const {
+    const {  
       search = "",
       categorie,
       statut,
