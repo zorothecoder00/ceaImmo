@@ -7,7 +7,7 @@ datasource db {
       
 generator client {    
   provider = "prisma-client-js"   
-}      
+}         
 
 enum Role {    
   ADMIN    
@@ -122,7 +122,7 @@ model User {
   offresAgent       Offre[]         @relation("AgentOffre")
   favoris           Favori[]
   logs              Log[]
-  notifications     Notification[]
+  notifications     Notification[]  
   avis              Avis[]
   recherches        Recherche[] // 👈 Ajoute cette ligne
   vus               Vu[]
@@ -137,7 +137,7 @@ model Propriete {
   surface           BigInt// ✅ permet des valeurs énormes       
   statut            Statut     
   
-  images            ProprieteImage[]// 🖼️ Images multiples (Cloudinary URLs)
+  images            ProprieteImage[]// 🖼️ Images multiples (UploadThing URLs)
 
   visiteVirtuelle   String?// 🎥 Lien unique ou optionnel vers la visite virtuelle (YouTube, Matterport, etc.)  
 

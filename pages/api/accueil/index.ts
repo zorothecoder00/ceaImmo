@@ -6,6 +6,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === "GET") {
     try {
 
+
+      function serializeBigInt<T>(obj: T): T {  
+        return JSON.parse(
+          JSON.stringify(obj, (_, value) =>
+            typeof value === "bigint" ? value.toString() : value
+          )
+        );
+      }
+
       // `search` doit être un JSON string, ex:
       // ?search={"nom":"villa","geolocalisation":"Lomé","categorie":"VILLA","prixMin":100,"prixMax":500}
 
@@ -66,10 +75,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             orderBy: { ordre: "asc" },
           },
           geolocalisation: true,
-        },
+        },   
       });
 
-      return res.status(200).json({ data: proprietes });
+      const safeProprietes = serializeBigInt(proprietes)
+
+      return res.status(200).json({ data: safeProprietes });
     } catch (error) {
       console.error("Erreur serveur", error);
       return res.status(500).json({ message: "Erreur serveur", error });

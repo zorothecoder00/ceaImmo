@@ -1,6 +1,6 @@
 'use client';  
 
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Home, MapPin, Building, User } from 'lucide-react';
 import Image from 'next/image'
 // 👉 Swiper
@@ -9,43 +9,101 @@ import { Pagination, Autoplay } from "swiper/modules";
 import 'swiper/css';
 import 'swiper/css/pagination';  
 import 'swiper/css/autoplay';
+import Link from "next/link"
+import { Role, Categorie } from '@prisma/client'
+import { useSession } from 'next-auth/react'; // 👈 Pour détecter la session utilisateur
+import { useRouter } from 'next/navigation';  // 👈 Pour les redirections dynamiques
 
-interface Property {  
+interface PropertyImage {
   id: number;
-  title: string;
-  price: string;
-  image: string;
-  type: 'villa' | 'maison';
+  url: string;
+}
+
+interface Property {
+  id: number;
+  nom: string;
+  prix: number;
+  categorie: Categorie;
+  visiteVirtuelle?: string | null;
+  images: PropertyImage[];
+  geolocalisation: string;
+}
+
+interface PropertyFilters {
+  nom?: string;
+  geolocalisation?: string;
+  categorie?: string;
+  prixMin?: string | number;
+  prixMax?: string | number;
 }
 
 export default function HomePage()
 {
+  const { data: session } = useSession(); // 👈 récupération de la session
+  const router = useRouter();
+
+  const [properties, setProperties] = useState<Property[]>([]);
   const [searchKeyword, setSearchKeyword] = useState('');
   const [location, setLocation] = useState('');
   const [propertyType, setPropertyType] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  // Données d'exemple pour les propriétés
-  const properties: Property[] = [
-    {  
-      id: 1,
-      title: 'Villa avec piscine',
-      price: '100 000 000 FCFA',
-      image: '/villapiscine.webp',
-      type: 'villa'
-    },
-    {
-      id: 2,
-      title: 'Maison de famille',
-      price: '35 000 000 FCFA',
-      image: '/maisonfamille.jpeg',
-      type: 'maison'
+  // 🧩 Charger les propriétés initiales
+  useEffect(() => {
+    fetchProperties({});
+  }, []);
+
+  // 🔎 Fonction de recherche dynamique
+  const fetchProperties = async (filters: PropertyFilters) => {
+    try {
+      setLoading(true);
+      const searchParam = encodeURIComponent(JSON.stringify(filters));
+      const res = await fetch(`/api/accueil?search=${searchParam}`);
+      const data = await res.json();
+      setProperties(data.data || []);
+    } catch (error) {
+      console.error('Erreur de chargement des propriétés', error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
+  // 🔍 Gérer la recherche
   const handleSearch = () => {
-    console.log('Recherche avec:', { searchKeyword, location, propertyType, minPrice, maxPrice })
+    const filters: PropertyFilters = {
+      nom: searchKeyword || undefined,
+      geolocalisation: location || undefined,
+      categorie: propertyType || undefined,
+      prixMin: minPrice || undefined,
+      prixMax: maxPrice || undefined,
+    };
+    fetchProperties(filters);
+  };
+
+  // 🔗 Redirection "Voir tout"
+  const handleVoirTout = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!session) {
+      router.push('/auth/login');
+    } else if (session.user?.role === Role.ACHETEUR) {
+      router.push('/dashboard/acheteur/recherches');
+    } else {
+      router.push('/dashboard');
+    }
+  };
+
+  // 🔗 Redirection "Détails"
+  const handleDetails = (id: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!session) {
+      router.push('/auth/login');
+    } else if (session.user?.role === Role.ACHETEUR) {
+      router.push(`/dashboard/acheteur/recherches/${id}`);
+    } else {
+      router.push('/dashboard');
+    }
   };
 
   return (
@@ -148,34 +206,61 @@ export default function HomePage()
               >
                 Rechercher
               </button>
-            </div>
+            </div>   
             
           </div>
         </div>  
 
+        {/* Loader pendant le chargement */}
+        {loading && (
+          <div className="flex justify-center items-center py-8">
+            <div className="w-6 h-6 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            <p className="ml-3 text-gray-500">Chargement des propriétés...</p>
+          </div>
+        )}
+
         {/* Visite virtuelle */}
         <section className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">Visite virtuelle</h2>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">Visite virtuelle</h2>
+            {/* 👉 Bouton Voir tout */}
+            <Link
+              href=""
+              onClick={handleVoirTout}
+              className="text-blue-600 font-medium hover:underline"
+            >
+              Voir tout
+            </Link>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {properties.map((property) => (
               <div key={property.id} className="bg-white rounded-lg shadow-lg overflow-hidden">
                 <div className="relative h-48 w-full">
-                  <Image                    
-                    src={property.image} 
-                    alt={property.title}
+                  <Image
+                    src={property.images?.[0]?.url || "/villapiscine.webp"}
+                    alt={property.nom}
                     fill
-                    sizes="(max-width: 768px) 100vw, 50vw" // 👈 obligatoire avec fill
+                    sizes="(max-width: 768px) 100vw, 50vw"
                     className="object-cover"
                   />
-                  <div className="absolute bottom-4 right-4">
+                  <div className="absolute bottom-4 right-4 flex gap-2">
                     <button className="bg-blue-600 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-700">
                       Visite virtuelle
                     </button>
+                    {/* 👉 Bouton Détails */}
+                    <Link
+                      href=""
+                      onClick={(e) => handleDetails(property.id, e)}
+                      className="bg-gray-800 text-white px-3 py-1 rounded-md text-sm hover:bg-gray-900"
+                    >
+                      Détails
+                    </Link>
                   </div>
                 </div>
                 <div className="p-4">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{property.title}</h3>
-                  <p className="text-xl font-bold text-blue-600">{property.price}</p>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{property.nom}</h3>
+                  <p className="text-xl font-bold text-blue-600">{property.prix}</p>
                 </div>
               </div>
             ))}

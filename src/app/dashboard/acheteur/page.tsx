@@ -373,7 +373,7 @@ export default async function AcheteurDashboard() {
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <StatsCard title="Biens favoris" value={totalFavoris} subtitle="sauvegardés" icon={Heart} color="green" />
-            <StatsCard title="Recherches" value={totalRecherches} subtitle="actives" icon={Search} color="blue" />
+            <StatsCard title="Recherches" value={totalRecherches} subtitle="actives" icon={Search} color="blue" />  
             <StatsCard title="Visites" value={totalVisites} subtitle="planifiées" icon={Calendar} color="purple" />
             <StatsCard title="Alertes" value={0} subtitle="nouvelles" icon={Bell} color="orange" />
           </div>
