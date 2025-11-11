@@ -120,10 +120,10 @@ export default function HomePage()
 
             {/* Navigation */}
             <nav className="hidden md:flex space-x-8">
-              <a href="#" className="text-blue-600 font-medium">Accueil</a>
-              <a href="proprietes" className="text-gray-700 hover:text-blue-600">Biens</a>
-              <a href="/reservationsHotel" className="text-gray-700 hover:text-blue-600">Réservation hôtel</a>
-              <a href="/auth/login" className="text-gray-700 hover:text-blue-600">Connexion</a>
+              <Link href="#" className="text-blue-600 font-medium">Accueil</Link>
+              <Link href="proprietes" className="text-gray-700 hover:text-blue-600">Biens</Link>
+              <Link href="/reservationsHotel" className="text-gray-700 hover:text-blue-600">Réservation hôtel</Link>
+              <Link href="/auth/login" className="text-gray-700 hover:text-blue-600">Connexion</Link>
             </nav>  
           </div>
         </div>
@@ -147,17 +147,13 @@ export default function HomePage()
 
             {/* Localisation */}
             <div>
-              <select
+              <input
+                type="text"
+                placeholder="Localisation (ville, quartier...)"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Localisation</option>
-                <option value="dakar">Dakar</option>
-                <option value="thies">Thiès</option>
-                <option value="saint-louis">Saint-Louis</option>
-                <option value="kaolack">Kaolack</option>
-              </select>
+              />
             </div>    
 
             {/* Type de bien */}  
@@ -168,12 +164,11 @@ export default function HomePage()
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Type de bien</option>
-                <option value="villa">Villa</option>
-                <option value="maison">Maison</option>
-                <option value="appartement">Appartement</option>
-                <option value="terrain">Terrain</option>
-                <option value="hotel">Hôtel</option>
-                <option value="chantier">Chantier</option>
+                {Object.values(Categorie).map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat.charAt(0) + cat.slice(1).toLowerCase()}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -211,60 +206,74 @@ export default function HomePage()
           </div>
         </div>  
 
-        {/* Loader pendant le chargement */}
-        {loading && (
-          <div className="flex justify-center items-center py-8">
-            <div className="w-6 h-6 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-            <p className="ml-3 text-gray-500">Chargement des propriétés...</p>
-          </div>
-        )}
-
-        {/* Visite virtuelle */}
-        <section className="mb-8">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Visite virtuelle</h2>
-            {/* 👉 Bouton Voir tout */}
-            <Link
-              href=""
-              onClick={handleVoirTout}
-              className="text-blue-600 font-medium hover:underline"
-            >
-              Voir tout
-            </Link>
+        {/* Propriétés / Visites virtuelles */}
+        <section className="mb-12">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold text-gray-900">
+              {properties.some(p => p.visiteVirtuelle) ? 'Visites virtuelles' : 'Propriétés'}
+            </h2>
+            {properties.length > 0 && (
+              <button
+                onClick={handleVoirTout}
+                className="text-blue-600 font-medium hover:underline"
+              >
+                Voir tout
+              </button>
+            )}
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {properties.map((property) => (
-              <div key={property.id} className="bg-white rounded-lg shadow-lg overflow-hidden">
-                <div className="relative h-48 w-full">
-                  <Image
-                    src={property.images?.[0]?.url || "/villapiscine.webp"}
-                    alt={property.nom}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 50vw"
-                    className="object-cover"
-                  />
-                  <div className="absolute bottom-4 right-4 flex gap-2">
-                    <button className="bg-blue-600 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-700">
-                      Visite virtuelle
-                    </button>
-                    {/* 👉 Bouton Détails */}
-                    <Link
-                      href=""
-                      onClick={(e) => handleDetails(property.id, e)}
-                      className="bg-gray-800 text-white px-3 py-1 rounded-md text-sm hover:bg-gray-900"
-                    >
-                      Détails
-                    </Link>
+          {loading ? (
+            <p className="w-6 h-6 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto">
+              Chargement des propriétés...
+            </p>
+          ) : properties.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-500 text-lg">Aucun résultat trouvé.</p>
+              <button
+                onClick={handleVoirTout}
+                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Voir toutes les propriétés
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {properties.map((property) => (
+                <div key={property.id} className="bg-white rounded-lg shadow-lg overflow-hidden">
+                  <div className="relative h-48 w-full">
+                    <Image
+                      src={property.images?.[0]?.url || "/villapiscine.webp"}
+                      alt={property.nom}
+                      fill
+                      sizes="(max-width: 768px) 100vw, 50vw"
+                      className="object-cover"
+                    />
+                    <div className="absolute bottom-4 right-4 flex gap-2">
+                      {property.visiteVirtuelle && (
+                        <button className="bg-blue-600 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-700">
+                          Visite virtuelle
+                        </button>
+                      )}
+                      <button
+                        onClick={(e) => handleDetails(property.id, e)}
+                        className="bg-gray-800 text-white px-3 py-1 rounded-md text-sm hover:bg-gray-900"
+                      >
+                        Détails
+                      </button>
+                    </div>
+                  </div>
+                  <div className="p-4">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      {property.nom}
+                    </h3>
+                    <p className="text-xl font-bold text-blue-600">
+                      {property.prix.toLocaleString()} FCFA
+                    </p>
                   </div>
                 </div>
-                <div className="p-4">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">{property.nom}</h3>
-                  <p className="text-xl font-bold text-blue-600">{property.prix}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* Témoignages */}

@@ -1,129 +1,57 @@
 'use client'
 
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Filter, MapPin, Home, Bed, Bath, Square, Eye, Grid, List, ArrowUpDown } from 'lucide-react';
 import Link from "next/link"; // 👈 ajoute cet import
+import { Categorie } from '@prisma/client'
 
-// 1. On définit le type d'une propriété
-interface Propriete {
+interface Propriete {    
   id: number   
-  titre: string
+  nom: string
   prix: number
-  localisation: string
+  geolocalisation: string
   surface: number
-  pieces: number
-  chambres: number
-  sallesBains: number
-  image: string
-  visiteVirtuelle: boolean
-  type: string
-  nouveau: boolean
+  nombreChambres: number
+  images: { url: string }[]
+  visiteVirtuelle?: string | null
+  categorie: Categorie
+  nouveau?: boolean
 }
 
-// 2. On définit les props du composant PropertyCard
+// 2. Props du composant PropertyCard
 interface PropertyCardProps {
   propriete: Propriete
 }
 
 const ProprietesPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
-  const [viewMode, setViewMode] = useState('grid');
-  const [sortBy, setSortBy] = useState('recent');
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [sortBy, setSortBy] = useState<'recent' | 'prix_asc' | 'prix_desc' | 'surface_asc' | 'surface_desc'>('recent');
   const [showFilters, setShowFilters] = useState(true);
-  
-  // Données d'exemple
-  const proprietes = [
-    {
-      id: 1,
-      titre: "Villa moderne avec piscine",
-      prix: 850000,
-      localisation: "Cannes, Alpes-Maritimes",
-      surface: 180,
-      pieces: 5,
-      chambres: 4,
-      sallesBains: 3,
-      image: "/api/placeholder/300/200",
-      visiteVirtuelle: true,
-      type: "Villa",
-      nouveau: true
-    },
-    {
-      id: 2,
-      titre: "Appartement centre-ville lumineux",
-      prix: 320000,
-      localisation: "Nice, Alpes-Maritimes",
-      surface: 75,
-      pieces: 3,
-      chambres: 2,
-      sallesBains: 1,
-      image: "/api/placeholder/300/200",
-      visiteVirtuelle: false,
-      type: "Appartement",
-      nouveau: false
-    },
-    {
-      id: 3,
-      titre: "Maison de charme avec jardin",
-      prix: 485000,
-      localisation: "Antibes, Alpes-Maritimes",
-      surface: 120,
-      pieces: 4,
-      chambres: 3,
-      sallesBains: 2,
-      image: "/api/placeholder/300/200",
-      visiteVirtuelle: true,
-      type: "Maison",
-      nouveau: false
-    },
-    {
-      id: 4,
-      titre: "Penthouse vue mer exceptionnelle",
-      prix: 1200000,
-      localisation: "Monaco",
-      surface: 140,
-      pieces: 4,
-      chambres: 3,
-      sallesBains: 2,
-      image: "/api/placeholder/300/200",
-      visiteVirtuelle: true,
-      type: "Appartement",
-      nouveau: true
-    },
-    {
-      id: 5,
-      titre: "Studio cozy proche plage",
-      prix: 180000,
-      localisation: "Juan-les-Pins, Alpes-Maritimes",
-      surface: 35,
-      pieces: 1,
-      chambres: 1,
-      sallesBains: 1,
-      image: "/api/placeholder/300/200",
-      visiteVirtuelle: false,
-      type: "Studio",
-      nouveau: false
-    },
-    {
-      id: 6,
-      titre: "Château rénové avec domaine",
-      prix: 2500000,
-      localisation: "Grasse, Alpes-Maritimes",
-      surface: 350,
-      pieces: 8,
-      chambres: 6,
-      sallesBains: 4,
-      image: "/api/placeholder/300/200",
-      visiteVirtuelle: true,
-      type: "Château",
-      nouveau: false
-    }
-  ];
-
+  const [proprietes, setProprietes] = useState<Propriete[]>([]);
+  const [totalPages, setTotalPages] = useState(1);
   const itemsPerPage = 6;
-  const totalPages = Math.ceil(proprietes.length / itemsPerPage);
+  
+  useEffect(() => {
+    const fetchProprietes = async () => {
+      try {
+        const res = await fetch(`/api/proprietes?take=${itemsPerPage}&skip=${(currentPage - 1) * itemsPerPage}&orderBy=${sortBy === 'recent' ? 'createdAt' : sortBy.includes('prix') ? 'prix': 'surface'}&order=${sortBy.endsWith('asc') ? 'asc' : 'desc'}`);
+        const data = await res.json();
+        setProprietes(data.data ?? []); // <- sécuriser si data.data est undefined
+        setTotalPages(Math.ceil((data.total ?? 0) / itemsPerPage));
+      } catch (error) {
+        console.error("Erreur lors du fetch des propriétés :", error);
+        setProprietes([]);
+        setTotalPages(1);
+      }
+    };
+
+    fetchProprietes();
+  }, [currentPage, sortBy]);
+
 
   const formatPrice = (price: number) => {
-    return price.toLocaleString('fr-FR') + ' €';
+    return Number(price).toLocaleString('fr-FR') + ' €';
   };
 
   const PropertyCard = ({ propriete }: PropertyCardProps) => (
@@ -143,15 +71,15 @@ const ProprietesPage = () => {
           </div>
         )}
       </div>
-      
+        
       <div className="p-6">
         <h3 className="font-bold text-lg text-gray-900 mb-2 line-clamp-2">
-          {propriete.titre}
+          {propriete.nom}
         </h3>
         
         <div className="flex items-center text-gray-600 mb-3">
           <MapPin className="w-4 h-4 mr-2 text-blue-500" />
-          <span className="text-sm">{propriete.localisation}</span>
+          <span className="text-sm">{propriete.geolocalisation}</span>
         </div>
         
         <div className="flex justify-between items-center mb-4">
@@ -164,18 +92,12 @@ const ProprietesPage = () => {
         </div>
         
         <div className="flex items-center gap-4 text-gray-600 text-sm mb-4">
-          <div className="flex items-center">
-            <Square className="w-4 h-4 mr-1" />
-            {propriete.pieces} pièces
-          </div>
+          
           <div className="flex items-center">
             <Bed className="w-4 h-4 mr-1" />
-            {propriete.chambres} ch.
+            {propriete.nombreChambres} ch.
           </div>
-          <div className="flex items-center">
-            <Bath className="w-4 h-4 mr-1" />
-            {propriete.sallesBains} sdb
-          </div>
+          
         </div>
         
         <button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-xl font-medium hover:from-blue-700 hover:to-purple-700 transition-all duration-300">
@@ -293,23 +215,6 @@ const ProprietesPage = () => {
                 </div>
               </div>
               
-              {/* Nombre de pièces */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nombre de pièces
-                </label>
-                <div className="grid grid-cols-4 gap-2">
-                  {[1, 2, 3, 4].map((num) => (
-                    <button
-                      key={num}
-                      className="p-2 border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-500 text-center"
-                    >
-                      {num}+
-                    </button>
-                  ))}
-                </div>
-              </div>
-              
               {/* Options */}
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -343,7 +248,7 @@ const ProprietesPage = () => {
             <div className="bg-white rounded-2xl shadow-lg p-4 mb-6">
               <div className="flex items-center justify-between">
                 <div className="text-gray-600">
-                  <span className="font-medium">{proprietes.length}</span> biens trouvés
+                  <span className="font-medium">{proprietes?.length ?? 0}</span> biens trouvés
                 </div>
                 
                 <div className="flex items-center gap-4">
@@ -352,14 +257,16 @@ const ProprietesPage = () => {
                     <ArrowUpDown className="w-4 h-4 text-gray-500" />
                     <select 
                       value={sortBy}
-                      onChange={(e) => setSortBy(e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                        setSortBy(e.target.value as 'recent' | 'prix_asc' | 'prix_desc' | 'surface_asc' | 'surface_desc')
+                      }
                       className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="recent">Plus récents</option>
-                      <option value="price-asc">Prix croissant</option>
-                      <option value="price-desc">Prix décroissant</option>
-                      <option value="surface-asc">Surface croissante</option>
-                      <option value="surface-desc">Surface décroissante</option>
+                      <option value="prix_asc">Prix croissant</option>
+                      <option value="prix_desc">Prix décroissant</option>
+                      <option value="surface_asc">Surface croissante</option>
+                      <option value="surface_desc">Surface décroissante</option>
                     </select>
                   </div>
                   
@@ -386,11 +293,13 @@ const ProprietesPage = () => {
             <div className={`grid gap-6 mb-8 ${
               viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3' : 'grid-cols-1'
             }`}>
-              {proprietes
-                .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
-                .map((propriete) => (
-                  <PropertyCard key={propriete.id} propriete={propriete} />
-                ))
+              {proprietes?.length
+                ? proprietes
+                    .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                    .map((propriete) => (
+                      <PropertyCard key={propriete.id} propriete={propriete} />
+                    ))
+                : <div className="col-span-full text-center text-gray-500">Aucune propriété trouvée</div>
               }
             </div>
             
