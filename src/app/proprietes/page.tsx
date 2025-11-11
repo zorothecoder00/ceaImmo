@@ -28,27 +28,65 @@ const ProprietesPage = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState<'recent' | 'prix_asc' | 'prix_desc' | 'surface_asc' | 'surface_desc'>('recent');
   const [showFilters, setShowFilters] = useState(true);
+  const [categorie, setCategorie] = useState<Categorie | ''>(''); // ✅ ajouté
+  const [localisation, setLocalisation] = useState(''); // ✅ ajouté
+  const [prixMin, setPrixMin] = useState('');
+  const [prixMax, setPrixMax] = useState('');
+  const [surfaceMin, setSurfaceMin] = useState('');
+  const [surfaceMax, setSurfaceMax] = useState('');
+  const [chambresMin, setChambresMin] = useState('');
+  const [chambresMax, setChambresMax] = useState('');
   const [proprietes, setProprietes] = useState<Propriete[]>([]);
   const [totalPages, setTotalPages] = useState(1);
   const itemsPerPage = 6;
   
+  // ✅ Définition de la fonction en dehors du useEffect
+  const fetchProprietes = async () => {
+    try {
+      const queryParams = new URLSearchParams({
+        take: itemsPerPage.toString(),
+        skip: ((currentPage - 1) * itemsPerPage).toString(),
+        orderBy: sortBy === 'recent' ? 'createdAt' : sortBy.includes('prix') ? 'prix' : 'surface',
+        order: sortBy.endsWith('asc') ? 'asc' : 'desc',
+        categorie: categorie || '',
+        geolocalisation: localisation || '',
+        prixMin: prixMin?.toString() || '',
+        prixMax: prixMax?.toString() || '',
+        surfaceMin: surfaceMin?.toString() || '',
+        surfaceMax: surfaceMax?.toString() || '',
+        chambresMin: chambresMin || '',
+        chambresMax: chambresMax || '',
+      });
+
+      const res = await fetch(`/api/proprietes?${queryParams}`);
+      const data = await res.json();
+      setProprietes(data.data ?? []);
+      setTotalPages(Math.ceil((data.total ?? 0) / itemsPerPage));
+    } catch (error) {
+      console.error("Erreur lors du fetch des propriétés :", error);
+      setProprietes([]);
+      setTotalPages(1);
+    }
+  };
+
+  // ✅ Appel automatique au montage ou quand les dépendances changent
   useEffect(() => {
-    const fetchProprietes = async () => {
-      try {
-        const res = await fetch(`/api/proprietes?take=${itemsPerPage}&skip=${(currentPage - 1) * itemsPerPage}&orderBy=${sortBy === 'recent' ? 'createdAt' : sortBy.includes('prix') ? 'prix': 'surface'}&order=${sortBy.endsWith('asc') ? 'asc' : 'desc'}`);
-        const data = await res.json();
-        setProprietes(data.data ?? []); // <- sécuriser si data.data est undefined
-        setTotalPages(Math.ceil((data.total ?? 0) / itemsPerPage));
-      } catch (error) {
-        console.error("Erreur lors du fetch des propriétés :", error);
-        setProprietes([]);
-        setTotalPages(1);
-      }
-    };
-
     fetchProprietes();
-  }, [currentPage, sortBy]);
+  }, [currentPage, sortBy, categorie, localisation]);
 
+  // ✅ Fonction pour réinitialiser les filtres
+  const resetProprietes = () => {
+    setCategorie('');
+    setLocalisation('');
+    setPrixMin('');
+    setPrixMax('');
+    setSurfaceMin('');
+    setSurfaceMax('');
+    setChambresMin('');
+    setChambresMax('');
+    setCurrentPage(1);
+    fetchProprietes();
+  };
 
   const formatPrice = (price: number) => {
     return Number(price).toLocaleString('fr-FR') + ' €';
@@ -152,13 +190,16 @@ const ProprietesPage = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Type de bien
                 </label>
-                <select className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500">
-                  <option>Tous les types</option>
-                  <option>Appartement</option>
-                  <option>Maison</option>
-                  <option>Villa</option>
-                  <option>Studio</option>
-                  <option>Château</option>
+                <select
+                  className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+                   onChange={(e) => setCategorie(e.target.value as Categorie)} // ← si tu veux filtrer
+                >
+                  <option value="">Tous les types</option>
+                  {Object.values(Categorie).map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat.charAt(0).toUpperCase() + cat.slice(1).toLowerCase()}
+                    </option>
+                  ))}
                 </select>
               </div>
               
@@ -167,14 +208,84 @@ const ProprietesPage = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Localisation
                 </label>
-                <select className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500">
-                  <option>Toutes les villes</option>
-                  <option>Nice</option>
-                  <option>Cannes</option>
-                  <option>Monaco</option>
-                  <option>Antibes</option>
-                  <option>Grasse</option>
-                </select>
+                <input
+                  type="text"
+                  placeholder="Entrez une ville, un quartier ou un code postal..."
+                  className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  onChange={(e) => setLocalisation(e.target.value)} // ← pour gérer la recherche
+                />              
+              </div>
+
+              {/* Prix min / max */}
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Prix min</label>
+                  <input
+                    type="number"
+                    value={prixMin}
+                    onChange={(e) => setPrixMin(e.target.value)}
+                    placeholder="0"
+                    className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Prix max</label>
+                  <input
+                    type="number"
+                    value={prixMax}
+                    onChange={(e) => setPrixMax(e.target.value)}
+                    placeholder="5000000"
+                    className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* Surface min / max */}
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Surface min (m²)</label>
+                  <input
+                    type="number"
+                    value={surfaceMin}
+                    onChange={(e) => setSurfaceMin(e.target.value)}
+                    placeholder="0"
+                    className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Surface max (m²)</label>
+                  <input
+                    type="number"
+                    value={surfaceMax}
+                    onChange={(e) => setSurfaceMax(e.target.value)}
+                    placeholder="500"
+                    className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* Chambres min / max */}
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Chambres min</label>
+                  <input
+                    type="number"
+                    value={chambresMin}
+                    onChange={(e) => setChambresMin(e.target.value)}
+                    placeholder="1"
+                    className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Chambres max</label>
+                  <input
+                    type="number"
+                    value={chambresMax}
+                    onChange={(e) => setChambresMax(e.target.value)}
+                    placeholder="10"
+                    className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
               </div>
               
               {/* Prix */}
@@ -236,9 +347,19 @@ const ProprietesPage = () => {
                 </div>
               </div>
               
-              <button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-xl font-medium hover:from-blue-700 hover:to-purple-700 transition-all duration-300">
+              <button 
+                onClick={fetchProprietes}
+                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-xl font-medium hover:from-blue-700 hover:to-purple-700 transition-all duration-300">
                 Appliquer les filtres
               </button>
+
+              <button
+                onClick={resetProprietes}
+                className="w-full mt-2 bg-gray-200 hover:bg-gray-300 text-gray-700 py-3 rounded-xl font-medium transition-all duration-300"
+              >
+                Réinitialiser les filtres
+              </button>
+
             </div>
           </div>
           
@@ -326,7 +447,7 @@ const ProprietesPage = () => {
                       }`}
                     >
                       {page}
-                    </button>
+                    </button>  
                   ))}
                   
                   <button

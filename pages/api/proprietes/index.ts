@@ -9,6 +9,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(405).json({ error: "Méthode non autorisée" });
     }
 
+    function serializeBigInt<T>(obj: T): T {  
+      return JSON.parse(
+        JSON.stringify(obj, (_, value) =>
+          typeof value === "bigint" ? value.toString() : value
+        )
+      );
+    }
+
     const {
       categorie,
       prixMin,
@@ -90,12 +98,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         where: filters,
         orderBy: { [safeOrderBy]: safeOrder },
         skip: skipNumber,
-        take: takeNumber,
+        take: takeNumber,     
       }),
       prisma.propriete.count({ where: filters }),
     ]);
 
-    return res.status(200).json({ total, data: proprietes });
+    const safeProprietes = serializeBigInt(proprietes)
+
+    return res.status(200).json({ total, data:  safeProprietes });
   } catch (error) {
     console.error("Erreur API proprietes:", error);
     return res.status(500).json({ error: "Erreur interne du serveur" });
