@@ -160,6 +160,7 @@ model Propriete {
   chambres          Chambre[]       @relation("ProprieteChambre")
   avis              Avis[]
   vus               Vu[]
+  hotel             Hotel?          @relation("ProprieteHotel")
 
 }  
 
@@ -174,6 +175,42 @@ model ProprieteImage {
   createdAt         DateTime         @default(now())
 }
 
+model Hotel {
+  id                 Int            @id @default(autoincrement())
+  proprieteId        Int            @unique
+  propriete          Propriete      @relation("ProprieteHotel", fields: [proprieteId], references: [id], onDelete: Cascade)
+
+  // Spécifiques aux hôtels
+  nombreVoyageursMax Int?           // capacité totale du lieu (optionnel si tu utilises Chambre[])
+  nombreEtoiles      Int?           // ex: 3,4,5
+  nombreChambresTotal Int?          // résumé rapide (peut être dérivé de Chambre[])
+  disponibilites     Disponibilite[] // plages où l'hôtel est disponible (ou fermé)
+  prixParNuitParDefaut BigInt?      // override si tu veux
+  politiqueAnnulation String?       // texte court
+
+  chambres           Chambre[]
+
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+}
+
+model Disponibilite {
+  id           Int       @id @default(autoincrement())
+  hotelId      Int
+  hotel        Hotel     @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  startDate    DateTime
+  endDate      DateTime
+  disponible   Boolean   @default(true) // true = période disponible, false = fermé/non-disponible
+
+  // optionnel: capacité restreinte pour cette plage
+  capaciteDisponibilite Int? 
+
+  createdAt    DateTime  @default(now())
+
+  @@index([hotelId, startDate, endDate])   
+}
+
 model Chambre {
   id                Int              @id @default(autoincrement())
   nom               String
@@ -184,6 +221,10 @@ model Chambre {
   disponible        Boolean          @default(true)
   proprieteId       Int
   propriete         Propriete        @relation("ProprieteChambre", fields: [proprieteId], references: [id], onDelete: Cascade)
+
+  // si tu veux lier explicitement à Hotel (pratique pour hôtels multi-chambres par propriété)
+  hotelId           Int?             // facultatif
+  hotel             Hotel?           @relation(fields: [hotelId], references: [id], onDelete: Cascade)
 
   reservations      Reservation[]    @relation("ChambreReservation")
 
@@ -220,12 +261,12 @@ model Visite {
 
   createdAt    DateTime             @default(now())
   updatedAt    DateTime             @updatedAt
-}
+}      
 
 model Reservation {
   id             Int                @id @default(autoincrement())
   dateArrivee    DateTime
-  dateDepart     DateTime    
+  dateDepart     DateTime       
   nombreVoyageurs Int
   type           Type
   statut         ReservationStatut  @default(DEMANDEE)

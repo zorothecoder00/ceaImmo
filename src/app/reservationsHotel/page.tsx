@@ -8,7 +8,7 @@ import {
   Search,   
   Star, 
   Wifi, 
-  Car, 
+  Car,    
   Coffee, 
   Utensils,
   Dumbbell,
@@ -24,7 +24,10 @@ import {
   Lock,
   Eye
 } from 'lucide-react';  
+import { useSession } from 'next-auth/react';
+import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Mode, ReservationStatut, Type } from '@prisma/client'
 
 // 1. On définit le type des avis et galerie
 interface Avis {
@@ -61,132 +64,113 @@ interface Hotel {
   avis: Avis[]
 }
 
+interface SearchParams {
+  localisation: string;
+  dateArrivee: string;
+  dateDepart: string;
+  nombrePersonnes: number;
+}
+
+type Step = 'search' | 'results' | 'hotel' | 'payment';
+
+interface PaymentData {
+  nom: string;
+  email: string;
+  telephone: string;
+  carteNumero: string;
+  carteExpiration: string;
+  carteCvv: string;
+  modePaiement: Mode; // 👈 lié à l’enum Mode de Prisma
+}
+
 const ReservationHotel = () => {
-  const [currentStep, setCurrentStep] = useState('search'); // search, results, hotel, payment
+  const router = useRouter();
+  const { data: session } = useSession();
+
+  const [currentStep, setCurrentStep] = useState<Step>('search'); // search, results, hotel, payment
+  const [hotels, setHotels] = useState<Hotel[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [selectedHotel, setSelectedHotel] = useState<Hotel | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [searchParams, setSearchParams] = useState({
+  const [searchParams, setSearchParams] = useState<SearchParams>({
     localisation: '',
     dateArrivee: '',
     dateDepart: '',
-    nombrePersonnes: 2
+    nombrePersonnes: 2,
   });
-  const [paymentData, setPaymentData] = useState({
+  const [paymentData, setPaymentData] = useState<PaymentData>({
     nom: '',
     email: '',
     telephone: '',
     carteNumero: '',
     carteExpiration: '',
-    carteCvv: ''
+    carteCvv: '',
+    modePaiement: Mode.CARTEBANCAIRE, // 💳 valeur par défaut
   });
 
-  // Données d'exemple des hôtels
-  const hotels = [
-    {
-      id: 1,
-      nom: "Grand Hôtel Martinez",
-      localisation: "Cannes, Croisette",
-      prix: 450,
-      etoiles: 5,
-      note: 4.8,
-      nombreAvis: 1245,
-      disponible: true,
-      image: "/api/placeholder/400/250",
-      description: "Hôtel de luxe situé sur la célèbre Croisette avec vue imprenable sur la Méditerranée. Service d'exception et prestations haut de gamme.",
-      equipements: [
-        { icon: Wifi, nom: "WiFi gratuit" },
-        { icon: Car, nom: "Parking privé" },
-        { icon: Waves, nom: "Plage privée" },
-        { icon: Dumbbell, nom: "Salle de sport" },
-        { icon: Utensils, nom: "Restaurant gastronomique" },
-        { icon: AirVent, nom: "Climatisation" },
-        { icon: Tv, nom: "TV satellite" },
-        { icon: Coffee, nom: "Room service 24h" }
-      ],
-      galerie: [
-        { url: "/api/placeholder/600/400", titre: "Façade principale" },
-        { url: "/api/placeholder/600/400", titre: "Chambre luxe vue mer" },
-        { url: "/api/placeholder/600/400", titre: "Restaurant Le Relais" },
-        { url: "/api/placeholder/600/400", titre: "Plage privée" },
-        { url: "/api/placeholder/600/400", titre: "Suite présidentielle" }
-      ],
-      avis: [
-        { nom: "Marie L.", note: 5, commentaire: "Séjour exceptionnel ! Service impeccable et vue magnifique.", date: "15 mars 2024" },
-        { nom: "Jean D.", note: 4, commentaire: "Très bel hôtel, petit-déjeuner délicieux. Rapport qualité-prix correct pour le standing.", date: "10 mars 2024" }
-      ]
-    },
-    {
-      id: 2,
-      nom: "Boutique Hôtel Villa Victoria",
-      localisation: "Nice, Vieux-Nice",
-      prix: 180,
-      etoiles: 4,
-      note: 4.5,
-      nombreAvis: 687,
-      disponible: true,
-      image: "/api/placeholder/400/250",
-      description: "Charmant hôtel boutique au cœur du Vieux-Nice, alliant charme provençal et confort moderne.",
-      equipements: [
-        { icon: Wifi, nom: "WiFi gratuit" },
-        { icon: AirVent, nom: "Climatisation" },
-        { icon: Coffee, nom: "Petit-déjeuner" },
-        { icon: Tv, nom: "TV écran plat" }
-      ],
-      galerie: [
-        { url: "/api/placeholder/600/400", titre: "Hall d'accueil" },
-        { url: "/api/placeholder/600/400", titre: "Chambre standard" },
-        { url: "/api/placeholder/600/400", titre: "Terrasse" }
-      ],
-      avis: [
-        { nom: "Sophie M.", note: 5, commentaire: "Parfait pour découvrir Nice à pied ! Personnel très accueillant.", date: "18 mars 2024" }
-      ]
-    },
-    {
-      id: 3,
-      nom: "Hôtel Monaco Bay",
-      localisation: "Monaco, Monte-Carlo",
-      prix: 680,
-      etoiles: 5,
-      note: 4.9,
-      nombreAvis: 892,
-      disponible: false,
-      image: "/api/placeholder/400/250",
-      description: "Hôtel de prestige face au Casino de Monte-Carlo, symbole d'élégance et de raffinement monégasque.",
-      equipements: [
-        { icon: Wifi, nom: "WiFi gratuit" },
-        { icon: Car, nom: "Voiturier" },
-        { icon: Dumbbell, nom: "Spa & Fitness" },
-        { icon: Utensils, nom: "Restaurant étoilé" },
-        { icon: Coffee, nom: "Concierge 24h" }
-      ],
-      galerie: [
-        { url: "/api/placeholder/600/400", titre: "Vue sur le Casino" },
-        { url: "/api/placeholder/600/400", titre: "Suite royale" },
-        { url: "/api/placeholder/600/400", titre: "Restaurant Le Joël" }
-      ],
-      avis: [
-        { nom: "Pierre R.", note: 5, commentaire: "Expérience inoubliable ! Luxe absolu et service parfait.", date: "20 mars 2024" }
-      ]
-    }
-  ];
+  const handleSearch = async () => {
+  setLoading(true);
+  setError(null);
+  try {
+    const res = await fetch('/api/reservationsHotel', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include', // 🔑 pour envoyer la session
+      body: JSON.stringify({
+        destination: searchParams.localisation,
+        dateArrivee: searchParams.dateArrivee,
+        dateDepart: searchParams.dateDepart,
+        nombreVoyageurs: searchParams.nombrePersonnes,
+      }),
+    });
 
-  const handleSearch = () => {
+    if (!res.ok) {
+      const data = await res.json();
+      setError(data.message || data.error || 'Aucun hôtel trouvé.');
+      setHotels([]);
+      setCurrentStep('results');
+      return;
+    }
+
+    const data = await res.json();
+    const hotelsTrouves = data.hotel ? [data.hotel] : data.hotels || [];
+    setHotels(hotelsTrouves);
     setCurrentStep('results');
+  } catch (err) {
+    console.error(err);
+    setError('Erreur lors de la recherche.');
+  } finally {
+    setLoading(false);
+  }
+};
+
+  const handleReservation = () => {
+    if (!session) {
+      router.push('/auth/login'); // 🔐 redirection si non connecté
+      return;
+    }
+    setCurrentStep('payment');
+  };
+
+  const handlePayment = async () => {
+    if (!session) {
+      router.push('/auth/login');
+      return;
+    }
+
+    try {
+      // Simuler un paiement réel ou appel API vers ton backend Stripe / autre
+      alert('Réservation confirmée ! Merci pour votre confiance.');
+      setCurrentStep('search');
+    } catch (error) {
+      console.error('Erreur paiement:', error);
+    }
   };
 
   const handleHotelSelect = (hotel: Hotel) => {
     setSelectedHotel(hotel);
     setCurrentStep('hotel');
-  };
-
-  const handleReservation = () => {
-    setCurrentStep('payment');
-  };
-
-  const handlePayment = () => {
-    // Simulation du traitement du paiement
-    alert('Réservation confirmée ! Merci pour votre confiance.');
-    setCurrentStep('search');
   };
 
   const renderStars = (nombre: number) => {

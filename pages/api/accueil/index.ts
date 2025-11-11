@@ -6,7 +6,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (req.method === "GET") {
     try {
 
-
       function serializeBigInt<T>(obj: T): T {  
         return JSON.parse(
           JSON.stringify(obj, (_, value) =>
