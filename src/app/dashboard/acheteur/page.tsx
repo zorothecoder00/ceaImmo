@@ -353,7 +353,7 @@ export default async function AcheteurDashboard() {
               </a>
               <a href="/dashboard/acheteur/reservationsHotel" className="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 rounded-lg p-2">
                 <ConciergeBell className="h-5 w-5" />
-                <span>Réservations d'Hôtel</span>   
+                <span>Réservations d&apos;Hôtel</span>   
               </a>
               <a href="/dashboard/acheteur/offres" className="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 rounded-lg p-2">
                 <FileText className="h-5 w-5" />
