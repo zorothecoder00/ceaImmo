@@ -7,11 +7,14 @@ import { getAuthSession } from "@/lib/auth";
 // Type pour une chambre avec ses réservations
 type ChambreDisponible = {
   id: number;
-  nom: string;
+  nom: string;  
   capacite: number;
   disponible: boolean;
   proprieteId: number;
-  reservations: { dateArrivee: Date; dateDepart: Date }[];
+  reservations: { 
+    dateArrivee: Date; 
+    dateDepart: Date 
+  }[];
 };
 
 // Type pour un hôtel avec ses chambres

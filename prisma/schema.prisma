@@ -2,11 +2,11 @@
 
 datasource db {  
   provider = "postgresql" // ou "mysql", selon ta base
-  url      = env("DATABASE_URL")       
+  url      = env("DATABASE_URL")             
 }     
       
 generator client {    
-  provider = "prisma-client-js"   
+  provider = "prisma-client-js"      
 }         
 
 enum Role {    
@@ -172,7 +172,7 @@ model ProprieteImage {
   proprieteId       Int
   propriete         Propriete       @relation(fields: [proprieteId], references: [id], onDelete: Cascade)
 
-  createdAt         DateTime         @default(now())
+  createdAt         DateTime         @default(now())  
 }
 
 model Hotel {
@@ -420,18 +420,18 @@ model Recherche {
 } 
 
 model Vu {
-  id             Int        @id @default(autoincrement())
+  id             Int                 @id @default(autoincrement())
   
   // 🧍 Utilisateur ayant consulté la propriété
-  userId  Int?
-  user    User?      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         Int?
+  user           User?               @relation(fields: [userId], references: [id], onDelete: Cascade)
   
   // 🏠 Propriété consultée
   proprieteId    Int
-  propriete      Propriete  @relation(fields: [proprieteId], references: [id], onDelete: Cascade)
+  propriete      Propriete           @relation(fields: [proprieteId], references: [id], onDelete: Cascade)
   
   // 📅 Date de la consultation
-  dateVu DateTime @default(now())
+  dateVu         DateTime   @default(now())
 
   @@unique([userId, proprieteId]) // ✅ Évite les doublons (un utilisateur ne compte qu'une fois par propriété)
 }

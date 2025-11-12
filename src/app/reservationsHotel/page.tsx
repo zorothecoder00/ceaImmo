@@ -9,10 +9,10 @@ import {
   Star, 
   Wifi, 
   Car,    
-  Coffee, 
+  Coffee,             
   Utensils,
   Dumbbell,
-  Waves,
+  Waves,   
   AirVent,
   Tv,
   User,
@@ -38,8 +38,8 @@ interface Avis {
 }
 
 interface GalerieItem {
+  id: number
   url: string
-  titre: string
 }
 
 interface Equipement {
@@ -51,9 +51,8 @@ interface Equipement {
 interface Hotel {
   id: number
   nom: string
-  localisation: string
+  geolocalisation: string
   prix: number
-  etoiles: number
   note: number
   nombreAvis: number
   disponible: boolean
@@ -65,10 +64,16 @@ interface Hotel {
 }
 
 interface SearchParams {
-  localisation: string;
+  destination: string;
   dateArrivee: string;
-  dateDepart: string;
-  nombrePersonnes: number;
+  dateDepart: string;   
+  nombreVoyageurs: number;
+}
+
+interface SearchFormProps {
+  searchParams: SearchParams
+  setSearchParams: React.Dispatch<React.SetStateAction<SearchParams>>
+  handleSearch: () => void
 }
 
 type Step = 'search' | 'results' | 'hotel' | 'payment';
@@ -83,6 +88,97 @@ interface PaymentData {
   modePaiement: Mode; // 👈 lié à l’enum Mode de Prisma
 }
 
+// ✅ Déplace ton composant SearchForm ici
+const SearchForm: React.FC<SearchFormProps & { isSearching: boolean }> = ({ searchParams, setSearchParams, handleSearch, isSearching }) => (
+  <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-blue-800 flex items-center justify-center p-4">
+    <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-4xl">
+      <div className="text-center mb-8">
+        <Link
+          href="/"
+          className="inline-block mb-4 text-blue-600 hover:text-blue-800 font-medium"
+        >
+          Accueil
+        </Link>
+        <h1 className="text-4xl font-bold text-gray-900 mb-4">Réservez votre hôtel</h1>
+        <p className="text-xl text-gray-600">Trouvez l&apos;hébergement parfait pour votre séjour</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">Destination</label>
+          <div className="relative">
+            <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <input
+              type="text"
+              value={searchParams.destination}
+              onChange={(e) => setSearchParams({ ...searchParams, destination: e.target.value })}
+              placeholder="Où souhaitez-vous aller ?"
+              className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">Arrivée</label>
+          <div className="relative">
+            <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <input
+              type="date"
+              value={searchParams.dateArrivee}
+              onChange={(e) => setSearchParams({ ...searchParams, dateArrivee: e.target.value })}
+              className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">Départ</label>
+          <div className="relative">
+            <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <input
+              type="date"
+              value={searchParams.dateDepart}
+              onChange={(e) => setSearchParams({ ...searchParams, dateDepart: e.target.value })}
+              className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+          </div>
+        </div>
+
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">Voyageurs</label>
+          <div className="relative">
+            <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+            <select
+              value={searchParams.nombreVoyageurs}
+              onChange={(e) => setSearchParams({ ...searchParams, nombreVoyageurs: parseInt(e.target.value) })}
+              className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
+            >
+              {Array.from({ length: 10 }, (_, i) => (
+                <option key={i + 1} value={i + 1}>
+                  {i + 1} {i + 1 === 1 ? 'personne' : 'personnes'}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <button
+        onClick={handleSearch}
+        disabled={isSearching}
+        className={`w-full py-4 rounded-xl font-semibold text-lg flex items-center justify-center gap-3 transition-all duration-300
+          ${isSearching 
+            ? 'bg-gray-400 cursor-not-allowed text-gray-200' 
+            : 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700'
+          }`}
+      >
+        <Search className="w-5 h-5" />
+        {isSearching ? 'Recherche en cours...' : 'Rechercher des hôtels'}
+      </button>
+    </div>
+  </div>
+)
+
 const ReservationHotel = () => {
   const router = useRouter();
   const { data: session } = useSession();
@@ -90,14 +186,15 @@ const ReservationHotel = () => {
   const [currentStep, setCurrentStep] = useState<Step>('search'); // search, results, hotel, payment
   const [hotels, setHotels] = useState<Hotel[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedHotel, setSelectedHotel] = useState<Hotel | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [searchParams, setSearchParams] = useState<SearchParams>({
-    localisation: '',
+    destination: '',
     dateArrivee: '',
     dateDepart: '',
-    nombrePersonnes: 2,
+    nombreVoyageurs: 2,
   });
   const [paymentData, setPaymentData] = useState<PaymentData>({
     nom: '',
@@ -110,40 +207,60 @@ const ReservationHotel = () => {
   });
 
   const handleSearch = async () => {
-  setLoading(true);
-  setError(null);
-  try {
-    const res = await fetch('/api/reservationsHotel', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include', // 🔑 pour envoyer la session
-      body: JSON.stringify({
-        destination: searchParams.localisation,
-        dateArrivee: searchParams.dateArrivee,
-        dateDepart: searchParams.dateDepart,
-        nombreVoyageurs: searchParams.nombrePersonnes,
-      }),
-    });
+    setLoading(true);
+    setIsSearching(true)
+    setError(null);
+    try {
+      const res = await fetch('/api/reservationsHotel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // 🔑 pour envoyer la session
+        body: JSON.stringify(searchParams),
+      });
 
-    if (!res.ok) {
+      // Si la session est invalide ou inexistante
+      if (res.status === 401) {
+        router.push('/auth/login'); // ou '/auth/register'
+        return;
+      }
+
       const data = await res.json();
-      setError(data.message || data.error || 'Aucun hôtel trouvé.');
-      setHotels([]);
-      setCurrentStep('results');
-      return;
-    }
 
-    const data = await res.json();
-    const hotelsTrouves = data.hotel ? [data.hotel] : data.hotels || [];
-    setHotels(hotelsTrouves);
-    setCurrentStep('results');
-  } catch (err) {
-    console.error(err);
-    setError('Erreur lors de la recherche.');
-  } finally {
-    setLoading(false);
-  }
-};
+      if (!res.ok) {
+        
+        setError(data.message || data.error || 'Aucun hôtel trouvé.');
+        setHotels([]);
+        setCurrentStep('results');
+        return;
+      }
+
+      const hotelsTrouves = data.hotels ? data.hotels : data.hotel ? [data.hotel] : [];
+      setHotels(hotelsTrouves);
+      setCurrentStep('results');
+    } catch (err) {
+      console.error('Erreur lors de la recherche.', err);
+      setError('Erreur lors de la recherche.');
+    } finally {
+      setLoading(false);
+      setIsSearching(false)
+    }
+  };
+
+  const handleHotelSelect = async (hotelId: number) => {
+    try {
+      const res = await fetch(`/api/reservationsHotel/${hotelId}`, { method: 'GET' });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setError(data.error || 'Impossible de récupérer les détails de l’hôtel.');
+        return;
+      }
+      setSelectedHotel(data.data);
+      setCurrentStep('hotel');
+    } catch (err) {
+      console.error('Erreur serveur.', err);
+      setError('Erreur serveur.');
+    }
+  };
 
   const handleReservation = () => {
     if (!session) {
@@ -168,11 +285,6 @@ const ReservationHotel = () => {
     }
   };
 
-  const handleHotelSelect = (hotel: Hotel) => {
-    setSelectedHotel(hotel);
-    setCurrentStep('hotel');
-  };
-
   const renderStars = (nombre: number) => {
     return Array.from({ length: 5 }, (_, i) => (
       <Star
@@ -181,95 +293,14 @@ const ReservationHotel = () => {
       />
     ));
   };
-
+      
   const formatPrice = (price: number) => {
     return price.toLocaleString('fr-FR') + ' €';
   };
 
-  // Composant de recherche
-  const SearchForm = () => (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-blue-800 flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-4xl">
-        <div className="text-center mb-8">
-          <Link 
-            href="/" 
-            className="inline-block mb-4 text-blue-600 hover:text-blue-800 font-medium"
-          >
-            Accueil
-          </Link>
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Réservez votre hôtel</h1>
-          <p className="text-xl text-gray-600">Trouvez l&apos;hébergement parfait pour votre séjour</p>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">Destination</label>
-            <div className="relative">
-              <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                value={searchParams.localisation}
-                onChange={(e) => setSearchParams({...searchParams, localisation: e.target.value})}
-                placeholder="Où souhaitez-vous aller ?"
-                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">Arrivée</label>
-            <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="date"
-                value={searchParams.dateArrivee}
-                onChange={(e) => setSearchParams({...searchParams, dateArrivee: e.target.value})}
-                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">Départ</label>
-            <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="date"
-                value={searchParams.dateDepart}
-                onChange={(e) => setSearchParams({...searchParams, dateDepart: e.target.value})}
-                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">Voyageurs</label>
-            <div className="relative">
-              <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <select
-                value={searchParams.nombrePersonnes}
-                onChange={(e) => setSearchParams({...searchParams, nombrePersonnes: parseInt(e.target.value)})}
-                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
-              >
-                <option value={1}>1 personne</option>
-                <option value={2}>2 personnes</option>
-                <option value={3}>3 personnes</option>
-                <option value={4}>4 personnes</option>
-              </select>
-            </div>
-          </div>
-        </div>
-        
-        <button
-          onClick={handleSearch}
-          className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 rounded-xl font-semibold text-lg hover:from-blue-700 hover:to-purple-700 transition-all duration-300 flex items-center justify-center gap-3"
-        >
-          <Search className="w-5 h-5" />
-          Rechercher des hôtels
-        </button>
-      </div>
-    </div>
-  );
+  // ✅ Rendu conditionnel selon l’étape
+  if (currentStep === 'search')
+    return <SearchForm {...{ searchParams, setSearchParams, handleSearch, isSearching }} />;
 
   // Composant des résultats
   const ResultsList = () => (
@@ -284,10 +315,10 @@ const ReservationHotel = () => {
             Modifier la recherche
           </button>
           <div className="flex items-center gap-4 text-gray-600">
-            <span><MapPin className="w-4 h-4 inline mr-1" />{searchParams.localisation || "Côte d'Azur"}</span>
+            <span><MapPin className="w-4 h-4 inline mr-1" />{searchParams.destination || "Côte d'Azur"}</span>
             <span><Calendar className="w-4 h-4 inline mr-1" />{searchParams.dateArrivee || "Date d'arrivée"}</span>
             <span><Calendar className="w-4 h-4 inline mr-1" />{searchParams.dateDepart || "Date de départ"}</span>
-            <span><Users className="w-4 h-4 inline mr-1" />{searchParams.nombrePersonnes} voyageur{searchParams.nombrePersonnes > 1 ? 's' : ''}</span>
+            <span><Users className="w-4 h-4 inline mr-1" />{searchParams.nombreVoyageurs} voyageur{searchParams.nombreVoyageurs > 1 ? 's' : ''}</span>
           </div>
         </div>
         
@@ -317,13 +348,13 @@ const ReservationHotel = () => {
                     </div>
                     
                     <div className="flex items-center gap-2 mb-3">
-                      <div className="flex">{renderStars(hotel.etoiles)}</div>
-                      <span className="text-sm text-gray-600">({hotel.etoiles} étoiles)</span>
+                      <div className="flex">{renderStars(hotel.note)}</div>
+                      <span className="text-sm text-gray-600">({hotel.note} étoiles)</span>
                     </div>
                     
                     <div className="flex items-center text-gray-600 mb-3">
                       <MapPin className="w-4 h-4 mr-2" />
-                      <span>{hotel.localisation}</span>
+                      <span>{hotel.geolocalisation}</span>
                     </div>
                     
                     <p className="text-gray-700 mb-4 line-clamp-2">{hotel.description}</p>
@@ -349,7 +380,7 @@ const ReservationHotel = () => {
                   
                   <div className="flex gap-3">
                     <button
-                      onClick={() => handleHotelSelect(hotel)}
+                      onClick={() => handleHotelSelect(hotel.id)}
                       className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 rounded-xl font-medium hover:from-blue-700 hover:to-purple-700 transition-all"
                     >
                       Voir les détails
@@ -396,43 +427,75 @@ const ReservationHotel = () => {
               {/* Galerie photos */}
               <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
                 <div className="relative h-96">
-                  <div className="w-full h-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
-                    <div className="text-center">
-                      <Eye className="w-16 h-16 text-blue-500 mx-auto mb-4" />
-                      <p className="text-lg font-medium text-gray-700">
-                        {selectedHotel?.galerie[currentImageIndex]?.titre || "Photo de l'hôtel"}
-                      </p>
+                  {selectedHotel.galerie?.length > 0 ? (
+                    <img
+                      src={selectedHotel.galerie[currentImageIndex]?.url}
+                      alt={`Photo ${currentImageIndex + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
+                      <div className="text-center">
+                        <Eye className="w-16 h-16 text-blue-500 mx-auto mb-4" />
+                        <p className="text-lg font-medium text-gray-700">
+                          Aucune image disponible
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Flèches de navigation */}
+                  {selectedHotel.galerie?.length > 1 && (
+                    <>
+                      <button
+                        onClick={() =>
+                          setCurrentImageIndex((prev) =>
+                            prev > 0 ? prev - 1 : selectedHotel.galerie.length - 1
+                          )
+                        }
+                        className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg hover:bg-white"
+                      >
+                        <ChevronLeft className="w-5 h-5" />
+                      </button>
+
+                      <button
+                        onClick={() =>
+                          setCurrentImageIndex((prev) =>
+                            prev < selectedHotel.galerie.length - 1 ? prev + 1 : 0
+                          )
+                        }
+                        className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg hover:bg-white"
+                      >
+                        <ChevronRight className="w-5 h-5" />
+                      </button>
+                    </>
+                  )}
+                </div>
+
+                {/* Miniatures */}
+                {selectedHotel.galerie?.length > 1 && (
+                  <div className="p-4">
+                    <div className="flex gap-2 overflow-x-auto">
+                      {selectedHotel.galerie.map((img, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setCurrentImageIndex(index)}
+                          className={`flex-shrink-0 w-20 h-16 rounded-lg overflow-hidden border-2 ${
+                            currentImageIndex === index
+                              ? 'border-blue-500'
+                              : 'border-transparent'
+                          }`}
+                        >
+                          <img
+                            src={img.url}
+                            alt={`Miniature ${index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </button>
+                      ))}
                     </div>
                   </div>
-                  
-                  <button 
-                    onClick={() => setCurrentImageIndex(Math.max(0, currentImageIndex - 1))}
-                    className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg"
-                  >
-                    <ChevronLeft className="w-5 h-5" />
-                  </button>
-                  
-                  <button 
-                    onClick={() => setCurrentImageIndex(Math.min(selectedHotel?.galerie.length - 1, currentImageIndex + 1))}
-                    className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg"
-                  >
-                    <ChevronRight className="w-5 h-5" />
-                  </button>
-                </div>
-                
-                <div className="p-4">
-                  <div className="flex gap-2 overflow-x-auto">
-                    {selectedHotel?.galerie.map((img, index) => (
-                      <button
-                        key={index}
-                        onClick={() => setCurrentImageIndex(index)}
-                        className={`flex-shrink-0 w-20 h-16 bg-gray-200 rounded-lg ${
-                          currentImageIndex === index ? 'ring-2 ring-blue-500' : ''
-                        }`}
-                      />
-                    ))}
-                  </div>
-                </div>
+                )}
               </div>
               
               {/* Description */}
@@ -461,7 +524,7 @@ const ReservationHotel = () => {
               <div className="bg-white rounded-2xl shadow-lg p-6">
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">Avis clients</h2>
                 <div className="space-y-4">
-                  {selectedHotel?.avis.map((avis, index) => (
+                  {selectedHotel?.avis?.map((avis, index) => (
                     <div key={index} className="border-b border-gray-200 pb-4 last:border-b-0">
                       <div className="flex items-start gap-3">
                         <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center">
@@ -490,13 +553,13 @@ const ReservationHotel = () => {
                 <h1 className="text-2xl font-bold text-gray-900 mb-2">{selectedHotel?.nom}</h1>
                 
                 <div className="flex items-center gap-2 mb-4">
-                  <div className="flex">{renderStars(selectedHotel?.etoiles)}</div>
-                  <span className="text-sm text-gray-600">({selectedHotel?.etoiles} étoiles)</span>
+                  <div className="flex">{renderStars(selectedHotel?.note)}</div>
+                  <span className="text-sm text-gray-600">({selectedHotel?.note} étoiles)</span>
                 </div>
                 
                 <div className="flex items-center text-gray-600 mb-6">
                   <MapPin className="w-5 h-5 mr-2" />
-                  <span>{selectedHotel?.localisation}</span>
+                  <span>{selectedHotel?.geolocalisation}</span>
                 </div>
                 
                 <div className="text-3xl font-bold text-blue-600 mb-2">
@@ -515,7 +578,7 @@ const ReservationHotel = () => {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Voyageurs</span>
-                    <span className="font-medium">{searchParams.nombrePersonnes} personne{searchParams.nombrePersonnes > 1 ? 's' : ''}</span>
+                    <span className="font-medium">{searchParams.nombreVoyageurs} personne{searchParams.nombreVoyageurs > 1 ? 's' : ''}</span>
                   </div>
                 </div>
                 
@@ -669,7 +732,7 @@ const ReservationHotel = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Voyageurs</span>
-                <span className="font-medium">{searchParams.nombrePersonnes} personne{searchParams.nombrePersonnes > 1 ? 's' : ''}</span>
+                <span className="font-medium">{searchParams.nombreVoyageurs} personne{searchParams.nombreVoyageurs > 1 ? 's' : ''}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Total</span>
@@ -685,7 +748,6 @@ const ReservationHotel = () => {
   // Rendu du composant principal
   return (
     <div>
-      {currentStep === 'search' && <SearchForm />}
       {currentStep === 'results' && <ResultsList />}
       {currentStep === 'hotel' && <HotelDetail />}
       {currentStep === 'payment' && <PaymentForm />}
