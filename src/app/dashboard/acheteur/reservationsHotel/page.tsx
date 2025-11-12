@@ -179,7 +179,7 @@ const SearchForm: React.FC<SearchFormProps & { isSearching: boolean }> = ({ sear
   </div>
 )
 
-const ReservationHotel = () => {
+export default function ReservationHotelPage() {
   const router = useRouter();
   const { data: session } = useSession();
 
@@ -755,4 +755,3 @@ const ReservationHotel = () => {
   );
 };
 
-export default ReservationHotel;
