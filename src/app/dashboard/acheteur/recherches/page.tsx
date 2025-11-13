@@ -632,7 +632,8 @@ export default function RecherchesPage() {
                       <Image
                         src={propriete.images[0].url}
                         alt={propriete.nom}
-                        className="w-full h-full object-cover"
+                        fill
+                        className="object-cover rounded-t-lg"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
@@ -813,7 +814,8 @@ export default function RecherchesPage() {
                         <Image
                           src={selectedPropriete.images[0].url}
                           alt={selectedPropriete.nom}
-                          className="w-full h-full object-cover"
+                          fill
+                          className="object-cover rounded-lg"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">

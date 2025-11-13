@@ -88,7 +88,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         hotelChoisi = hotel;
         break;
       }
-    }
+    }    
 
     if (!chambreDisponible || !hotelChoisi) {
       return res.status(400).json({ message: "Aucune chambre disponible pour ce nombre de voyageurs et ces dates" });

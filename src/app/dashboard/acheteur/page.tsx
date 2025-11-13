@@ -131,12 +131,13 @@ function PropertyCard({ property, userId }: { property: Property, userId: string
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-      <div className="relative">   
+      <div className="relative h-48 sm:h-56 md:h-64">   
         <Image
           src={imageUrl}
           alt={property.nom}
           fill
           className="object-cover"
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
         />
         {/* ✅ Bouton favori interactif */}
         <FavoriteButton
@@ -144,15 +145,15 @@ function PropertyCard({ property, userId }: { property: Property, userId: string
           proprieteId={Number(property.id)}
           initialFavorite={!!property.isFavorite}
         />
-        <div className="absolute bottom-3 left-3 bg-white px-2 py-1 rounded text-xs font-medium">
+        <div className="absolute bottom-3 left-3 bg-white/90 backdrop-blur-sm px-2 py-1 rounded text-xs font-medium text-gray-800">
           {property.categorie} 
         </div>
       </div>
       
-      <div className="p-4">
-        <h3 className="font-semibold text-gray-900 mb-2">{property.nom}</h3>
-        <div className="flex items-center text-gray-600 text-sm mb-3">
-          <MapPin className="h-4 w-4 mr-1" />
+      <div className="p-4 sm:p-5 flex flex-col justify-between h-full">
+        <h3 className="font-semibold text-gray-900 mb-2 text-base sm:text-lg line-clamp-1">{property.nom}</h3>
+        <div className="flex items-center text-gray-600 text-sm mb-3 truncate">
+          <MapPin className="h-4 w-4 mr-1 flex-shrink-0" />
           {property.geolocalisation}
         </div>
         
@@ -174,8 +175,8 @@ function PropertyCard({ property, userId }: { property: Property, userId: string
           </div>
         )}
         
-        <div className="flex items-center justify-between">
-          <span className="text-lg font-bold text-gray-900">
+        <div className="flex items-center justify-between mt-auto">
+          <span className="text-base sm:text-lg font-bold text-gray-900">
             {Number(property.prix).toLocaleString('fr-FR')} €
           </span>
           <div className="flex items-center space-x-2">
@@ -226,10 +227,10 @@ function VisitCard({ visit }: { visit: Visit }) {
   })
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4">
-      <div className="flex items-start justify-between">
+    <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow duration-200">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div className="flex-1">
-          <h3 className="font-semibold text-gray-900 mb-2">{visit.propriete ? visit.propriete.nom : 'Propriété supprimée'}</h3>
+          <h3 className="font-semibold text-gray-900 text-sm sm:text-base mb-2">{visit.propriete ? visit.propriete.nom : 'Propriété supprimée'}</h3>
           <div className="flex items-center text-sm text-gray-600 mb-2">
             <Calendar className="h-4 w-4 mr-2" />
             {formattedDate} à {formattedTime}
@@ -241,15 +242,22 @@ function VisitCard({ visit }: { visit: Visit }) {
             </div>
           )}
         </div>
-        <div className="flex flex-col items-end space-y-2">
-          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(visit.statut)}`}>
+        <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-2">
+          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+              visit.statut
+            )}`}>
             {getStatusLabel(visit.statut)}
           </span>
           <div className="flex items-center space-x-2">
-            <button className="p-1 text-gray-400 hover:text-green-600">
+            <button className="p-1 text-gray-400 hover:text-green-600 transition-colors"
+                  aria-label="Appeler l'agent"
+            >
               <Phone className="h-4 w-4" />
             </button>
-            <button className="p-1 text-gray-400 hover:text-blue-600">
+            <button 
+              className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
+              aria-label="Envoyer un mail"
+            >
               <Mail className="h-4 w-4" />
             </button>
           </div>
@@ -391,30 +399,30 @@ export default async function AcheteurDashboard() {
 
           {/* Recommended Properties */}
           <div className="mb-8">    
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">Recommandations pour vous</h2>
-              <button className="text-green-600 text-sm font-medium">Voir tout</button>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-900 text-center sm:text-left">Recommandations pour vous</h2>
+              <button className="text-green-600 text-sm font-medium hover:underline self-center sm:self-auto">Voir tout</button>
             </div>  
 
             {proprietes.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
                 {proprietes.map((property) => (
                   <PropertyCard key={property.id} property={property} userId={userId} />
                 ))}
               </div>
               ) : (
                 <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
-                  <p className="text-gray-500">Aucune propriété disponible pour le moment</p>
+                  <p className="text-gray-500 text-sm sm:text-base">Aucune propriété disponible pour le moment</p>
                 </div>
               )}
             </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 px-4 sm:px-6 lg:px-8">
             {/* Saved Searches */}
             <div>
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-gray-900">Mes recherches sauvegardées</h2>
-                <Link href="/dashboard/acheteur/recherches" className="text-green-600 text-sm font-medium">Voir tout</Link>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-2 sm:gap-0">
+                <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Mes recherches sauvegardées</h2>
+                <Link href="/dashboard/acheteur/recherches" className="text-green-600 text-sm font-medium hover:text-green-700">Voir tout</Link>
               </div>
 
               {recherches.length > 0 ? (
@@ -422,9 +430,9 @@ export default async function AcheteurDashboard() {
                 {recherches
                   .slice(0, 2) // ✅ Limite à 2 recherches maximum
                   .map((r) => (
-                  <div key={r.id} className="bg-white border border-gray-200 rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-semibold text-gray-900 text-sm">
+                  <div key={r.id} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow duration-200">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3">
+                      <h3 className="font-semibold text-gray-900 text-sm sm:text-base mb-2 sm:mb-0">
                         {r.titre || `${r.categorie || 'Type inconnu'} à ${r.geolocalisation || 'Lieu inconnu'}`}
                       </h3>
                       <span className="text-sm text-gray-500">
@@ -448,7 +456,7 @@ export default async function AcheteurDashboard() {
               </div>
             ) : (
               <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
-                <p className="text-gray-500">Aucune recherche sauvegardée</p>
+                <p className="text-gray-500 text-sm sm:text-base">Aucune recherche sauvegardée</p>
               </div>
             )}
 
@@ -456,9 +464,10 @@ export default async function AcheteurDashboard() {
 
             {/* Upcoming Visits */}   
             <div>
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-gray-900">Prochaines visites</h2>
-                <Link href="/dashboard/acheteur/visites" className="text-green-600 text-sm font-medium">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-2 sm:gap-0">
+                <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Prochaines visites</h2>
+                <Link href="/dashboard/acheteur/visites" 
+                  className="text-green-600 text-sm font-medium hover:text-green-700">
                   Voir tout
                 </Link>
               </div>
@@ -471,7 +480,7 @@ export default async function AcheteurDashboard() {
                 </div>
               ) : (
                   <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
-                    <p className="text-gray-500">Aucune visite planifiée</p>
+                    <p className="text-gray-500 text-sm sm:text-base">Aucune visite planifiée</p>
                   </div>
                 )}
               </div>

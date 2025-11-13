@@ -367,14 +367,14 @@ const ProprietesPage = () => {
           <div className="flex-1">
             {/* Barre d'outils */}
             <div className="bg-white rounded-2xl shadow-lg p-4 mb-6">
-              <div className="flex items-center justify-between">
-                <div className="text-gray-600">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="text-gray-600 text-sm sm:text-base">
                   <span className="font-medium">{proprietes?.length ?? 0}</span> biens trouvés
                 </div>
                 
-                <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
                   {/* Tri */}
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
                     <ArrowUpDown className="w-4 h-4 text-gray-500" />
                     <select 
                       value={sortBy}
