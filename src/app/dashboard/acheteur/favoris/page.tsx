@@ -2,13 +2,15 @@
 
 import { useState, useEffect } from 'react'
 import {
-  Heart, MapPin, Bed, Bath, Square, Eye, Trash2, Filter, Send
+  Heart, MapPin, Bed, Bath, Square, Eye, Trash2, Filter, Send, Hammer, Hotel, Home
 } from 'lucide-react'
 import { Statut, Categorie, OffreStatut } from '@prisma/client'
 import toast from "react-hot-toast";
+import CategoryButton from "@/components/CategoryButton";
+import MobileAccordionFilter from "@/components/MobileAccordionFilter";
 
 // 🧩 Types corrigés
-interface ProprieteImage {
+interface ProprieteImage {  
   url: string
   ordre: number   
 }
@@ -82,6 +84,10 @@ export default function FavorisPage() {
   // 🆕 Pour la modale de demande de visite
   const [showVisiteModal, setShowVisiteModal] = useState(false);
   const [visiteDate, setVisiteDate] = useState(''); // pour la date saisie par l’utilisateur
+
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [advancedFiltersOpen, setAdvancedFiltersOpen] = useState(false);
+
   const [filters, setFilters] = useState({
     search: '',
     page: 1,
@@ -258,6 +264,7 @@ export default function FavorisPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
+
       <div className="max-w-7xl mx-auto">
         {/* HEADER */}
         <div className="mb-8">
@@ -285,44 +292,88 @@ export default function FavorisPage() {
           </div>
         </div>
 
-        {/* FILTRES */}
-        <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center space-x-2">
-              <Filter className="w-5 h-5 text-gray-500" />
-              <span className="text-sm font-medium text-gray-700">Type:</span>
-              <div className="flex space-x-2">
-                {['all', ...Object.values(Categorie)].map((type) => (
-                <button
-                  key={type}
-                  onClick={() => setSelectedFilter(type)}
-                  className={`px-4 py-2 rounded-lg ${
-                    selectedFilter === type
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 text-gray-700'
-                  }`}
-                >
-                  {type === 'all' ? 'Tous' : type}
-                </button>
-              ))}
+        {/* 📱 FILTRES MOBILE */}
+        <MobileAccordionFilter
+          isOpen={mobileFiltersOpen}
+          toggle={() => setMobileFiltersOpen(!mobileFiltersOpen)}
+        >
+          {/* Filtres INSIDE accordion */}
+          <div className="space-y-4">
 
+            {/* Type - Catégories */}
+            <div>
+              <span className="text-sm font-medium text-gray-700">Type :</span>
+              <div className="grid grid-cols-2 gap-2 mt-2">
+                {['all', ...Object.values(Categorie)].map((type) => (
+                  <CategoryButton
+                    key={type}
+                    type={type}
+                    selected={selectedFilter === type}
+                    onClick={() => setSelectedFilter(type)}
+                  />
+                ))}
               </div>
             </div>
 
-            <div className="flex items-center space-x-2">
-              <span className="text-sm font-medium text-gray-700">
-                Trier par:
-              </span>
+            {/* Tri */}
+            <div>
+              <span className="text-sm font-medium text-gray-700">Trier par :</span>
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full mt-2 px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="recent">Plus récent</option>
                 <option value="price-high">Prix décroissant</option>
                 <option value="price-low">Prix croissant</option>
               </select>
             </div>
+
+          </div>
+        </MobileAccordionFilter>
+
+
+        {/* 💻 FILTRES DESKTOP */}
+        <div className="hidden md:block bg-white rounded-lg shadow-sm p-6 mb-8">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+
+            {/* Type */}
+            <div className="flex flex-col md:flex-row md:items-center gap-3">
+              <div className="flex items-center gap-2">
+                <Filter className="w-5 h-5 text-gray-500" />
+                <span className="text-sm font-medium text-gray-700">Type :</span>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                {['all', ...Object.values(Categorie)].map((type) => (
+                  <CategoryButton
+                    key={type}
+                    type={type}
+                    selected={selectedFilter === type}
+                    onClick={() => setSelectedFilter(type)}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Tri */}
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-700">Trier par :</span>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="recent">Plus récent</option>
+                  <option value="price-high">Prix décroissant</option>
+                  <option value="price-low">Prix croissant</option>
+                </select>
+              </div>
+
+            </div>
+
           </div>
         </div>
 
@@ -560,7 +611,7 @@ export default function FavorisPage() {
                 <button type="button" onClick={closeVisiteModal} className="px-4 py-2 border rounded-lg">
                   Annuler
                 </button>
-                <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                <button type="submit" className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">     
                   Envoyer la demande
                 </button>
               </div>

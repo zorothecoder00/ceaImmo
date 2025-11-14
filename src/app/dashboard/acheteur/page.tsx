@@ -226,7 +226,7 @@ function VisitCard({ visit }: { visit: Visit }) {
     minute: '2-digit'
   })
 
-  return (
+  return (  
     <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow duration-200">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div className="flex-1">

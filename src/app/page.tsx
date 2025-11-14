@@ -16,8 +16,8 @@ import { useRouter } from 'next/navigation';  // 👈 Pour les redirections dyna
 
 interface PropertyImage {
   id: number;
-  url: string;
-}
+  url: string;  
+}     
 
 interface Property {
   id: number;

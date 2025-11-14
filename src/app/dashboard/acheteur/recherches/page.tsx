@@ -801,7 +801,7 @@ export default function RecherchesPage() {
                   className="text-gray-400 hover:text-gray-600 transition-colors"
                 >
                   <X className="h-6 w-6" />
-                </button>
+                </button>  
               </div>
 
               {/* Body */}
