@@ -49,6 +49,7 @@ export default function HomePage()
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [loading, setLoading] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // 🧩 Charger les propriétés initiales
   useEffect(() => {
@@ -133,6 +134,15 @@ export default function HomePage()
                 <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">CEA IMMO</span>
                 <p className="text-xs text-gray-500 font-medium">Votre partenaire immobilier</p>
               </div>
+              <button
+                className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              >
+                <svg className="w-7 h-7 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                    d={mobileMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
+                </svg>
+              </button>
             </div>   
 
             {/* Navigation moderne */}
@@ -153,6 +163,20 @@ export default function HomePage()
           </div>
         </div>
       </header>
+
+      {/* ----- MENU MOBILE ----- */}
+{mobileMenuOpen && (
+  <div className="md:hidden bg-white shadow-lg border-b border-gray-200 px-6 py-4 space-y-4 z-50">
+    <Link href="/" className="block text-gray-800 font-medium py-2">Accueil</Link>
+    <Link href="/proprietes" className="block text-gray-800 font-medium py-2">Biens</Link>
+    <Link href="/reservationsHotel" className="block text-gray-800 font-medium py-2">
+      Réservation hôtel
+    </Link>
+    <Link href="/auth/login" className="block text-gray-800 font-medium py-2">Connexion</Link>
+  </div>
+)}
+
+
 
       {/* Hero Section avec recherche intégrée */}
       <div className="relative overflow-hidden">
