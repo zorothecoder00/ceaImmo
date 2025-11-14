@@ -377,32 +377,37 @@ export default async function AcheteurDashboard() {
 
         {/* Main Content */}
         <main className="flex-1 p-6">
+
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Bonjour {session.user.name ?? 'cher utilisateur'} !</h1>
-            <p className="text-gray-600">Voici un aperçu de vos recherches et de vos biens favoris</p>
+          <div className="mb-6">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-1">
+              Bonjour {session.user.name ?? 'cher utilisateur'} !
+            </h1>
+            <p className="text-sm sm:text-base text-gray-600">
+              Voici un aperçu de vos recherches et de vos biens favoris
+            </p>
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <StatsCard title="Biens favoris" value={totalFavoris} subtitle="sauvegardés" icon={Heart} color="green" />
-            <StatsCard title="Recherches" value={totalRecherches} subtitle="actives" icon={Search} color="blue" />  
+            <StatsCard title="Recherches" value={totalRecherches} subtitle="actives" icon={Search} color="blue" />
             <StatsCard title="Visites" value={totalVisites} subtitle="planifiées" icon={Calendar} color="purple" />
             <StatsCard title="Alertes" value={0} subtitle="nouvelles" icon={Bell} color="orange" />
           </div>
 
           {/* Quick Search */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
+          <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-5 mb-8">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Recherche rapide</h2>
             <SearchForm />
           </div>
 
           {/* Recommended Properties */}
-          <div className="mb-8">    
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
-              <h2 className="text-lg sm:text-xl font-semibold text-gray-900 text-center sm:text-left">Recommandations pour vous</h2>
-              <button className="text-green-600 text-sm font-medium hover:underline self-center sm:self-auto">Voir tout</button>
-            </div>  
+          <div className="mb-10">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Recommandations pour vous</h2>
+              <button className="text-green-600 text-sm font-medium hover:underline">Voir tout</button>
+            </div>
 
             {proprietes.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -410,64 +415,65 @@ export default async function AcheteurDashboard() {
                   <PropertyCard key={property.id} property={property} userId={userId} />
                 ))}
               </div>
+            ) : (
+              <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
+                <p className="text-gray-500 text-sm sm:text-base">
+                  Aucune propriété disponible pour le moment
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Searches & Visits */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+            {/* Saved Searches */}
+            <div>
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Mes recherches sauvegardées</h2>
+                <Link href="/dashboard/acheteur/recherches" className="text-green-600 text-sm font-medium hover:text-green-700">
+                  Voir tout
+                </Link>
+              </div>
+
+              {recherches.length > 0 ? (
+                <div className="space-y-4">
+                  {recherches.slice(0, 2).map((r) => (
+                    <div key={r.id} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow duration-200">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="font-semibold text-gray-900 text-sm sm:text-base">
+                          {r.titre || `${r.categorie || 'Type inconnu'} à ${r.geolocalisation || 'Lieu inconnu'}`}
+                        </h3>
+                        <span className="text-sm text-gray-500">
+                          {r.minPrix ? `${r.minPrix.toLocaleString()}€` : '∞'} -
+                          {r.maxPrix ? `${r.maxPrix.toLocaleString()}€` : '∞'}
+                        </span>
+                      </div>
+
+                      {r.resultats.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          {r.resultats.slice(0, 2).map((property) => (
+                            <PropertyCard key={property.id} property={property} userId={userId} />
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-gray-500 text-sm">Aucun bien ne correspond à cette recherche</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
               ) : (
                 <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
-                  <p className="text-gray-500 text-sm sm:text-base">Aucune propriété disponible pour le moment</p>
+                  <p className="text-gray-500 text-sm sm:text-base">Aucune recherche sauvegardée</p>
                 </div>
               )}
             </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8 px-4 sm:px-6 lg:px-8">
-            {/* Saved Searches */}
+            {/* Upcoming Visits */}
             <div>
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-2 sm:gap-0">
-                <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Mes recherches sauvegardées</h2>
-                <Link href="/dashboard/acheteur/recherches" className="text-green-600 text-sm font-medium hover:text-green-700">Voir tout</Link>
-              </div>
-
-              {recherches.length > 0 ? (
-              <div className="space-y-4">
-                {recherches
-                  .slice(0, 2) // ✅ Limite à 2 recherches maximum
-                  .map((r) => (
-                  <div key={r.id} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow duration-200">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-3">
-                      <h3 className="font-semibold text-gray-900 text-sm sm:text-base mb-2 sm:mb-0">
-                        {r.titre || `${r.categorie || 'Type inconnu'} à ${r.geolocalisation || 'Lieu inconnu'}`}
-                      </h3>
-                      <span className="text-sm text-gray-500">
-                        {r.minPrix ? `${r.minPrix.toLocaleString()}€` : '∞'} - {r.maxPrix ? `${r.maxPrix.toLocaleString()}€` : '∞'}
-                      </span>
-                    </div>
-
-                    {r.resultats.length > 0 ? (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        {r.resultats
-                        .slice(0, 2) // ✅ (Optionnel) limite aussi le nombre de résultats affichés
-                        .map((property) => (
-                          <PropertyCard key={property.id} property={property} userId={userId} />
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-gray-500 text-sm">Aucun bien ne correspond à cette recherche</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
-                <p className="text-gray-500 text-sm sm:text-base">Aucune recherche sauvegardée</p>
-              </div>
-            )}
-
-            </div>
-
-            {/* Upcoming Visits */}   
-            <div>
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-2 sm:gap-0">
+              <div className="flex items-center justify-between mb-5">
                 <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Prochaines visites</h2>
-                <Link href="/dashboard/acheteur/visites" 
-                  className="text-green-600 text-sm font-medium hover:text-green-700">
+                <Link href="/dashboard/acheteur/visites" className="text-green-600 text-sm font-medium hover:text-green-700">
                   Voir tout
                 </Link>
               </div>
@@ -479,13 +485,15 @@ export default async function AcheteurDashboard() {
                   ))}
                 </div>
               ) : (
-                  <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
-                    <p className="text-gray-500 text-sm sm:text-base">Aucune visite planifiée</p>
-                  </div>
-                )}
-              </div>
+                <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
+                  <p className="text-gray-500 text-sm sm:text-base">Aucune visite planifiée</p>
+                </div>
+              )}
             </div>
+
+          </div>
         </main>
+
       </div>
     </div>
   )

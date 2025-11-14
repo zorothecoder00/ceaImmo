@@ -124,11 +124,16 @@ const MesVisites = () => {
     { key: 'week', label: 'Cette semaine' },
     { key: 'month', label: 'Ce mois' },
   ]
+
+  const hasAnyVisite =
+      urgentVisites.length > 0 ||
+      todayVisites.length > 0 ||
+      upcomingVisites.length > 0
     
     // 🧱 Carte de visite
   const VisitCard = ({ visite }: { visite: Visite }) => {
     const timeRemaining = getTimeRemaining(visite.date)
-
+   
     return (
       <div className="rounded-xl p-6 bg-white shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 border-l-4 border-l-green-500">
         <div className="flex justify-between items-start mb-4">
@@ -244,7 +249,7 @@ const MesVisites = () => {
         {/* Chargement */}
         {loading ? (
           <div className="text-center text-gray-500 py-16">Chargement des visites...</div>
-        ) : filteredVisites.length === 0 ? (
+        ) : !hasAnyVisite ? (
           <div className="text-center py-16">
             <div className="text-6xl mb-4">📅</div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">Aucune visite planifiée</h3>
