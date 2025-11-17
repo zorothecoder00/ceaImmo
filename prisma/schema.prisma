@@ -68,6 +68,15 @@ enum ReservationStatut {
   REPORTEE
 }
 
+enum StatutTransaction {
+  EN_ATTENTE      // Paiement initié mais pas encore complété
+  EN_COURS        // En cours de traitement
+  REUSSIE         // Paiement réussi
+  ECHOUEE         // Paiement échoué
+  ANNULEE         // Paiement annulé
+  REMBOURSEE      // Transaction remboursée
+}
+
 enum VisiteStatut {
   DEMANDEE
   CONFIRMEE
@@ -318,20 +327,39 @@ model Offre {
 }  
 
 model Transaction {
-  id             Int                @id @default(autoincrement())
-  mode           Mode
+  id                     Int                @id @default(autoincrement())
+  amount                 BigInt
+  currency               String             @default("XOF")
+  mode                   Mode
+  statut                 StatutTransaction  @default(EN_ATTENTE)
+  reference              String             @unique
 
-  userId         Int?
-  user           User?              @relation("UserTransaction", fields: [userId], references: [id], onDelete: Cascade)
+  provider               String?            // stripe, paypal, moov, cinetpay
+  providerTransactionId  String?            @unique
+  providerPaymentIntent  String?
 
-  agentId        Int?
-  agent          User?              @relation("AgentTransaction", fields: [agentId], references: [id], onDelete: Cascade)
+  fees                   BigInt?
+  netAmount              BigInt?
+  paidAt                 DateTime?
+  refundedAt             DateTime?
+  failureReason          String?
+  receiptUrl             String?
 
-  offreId        Int?               @unique // 👈 clé étrangère unique
-  offre          Offre?             @relation("OffreTransaction", fields: [offreId], references: [id], onDelete: Cascade) 
+  metadata               Json?
 
-  createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
+  userId                 Int?
+  user                   User?              @relation("UserTransaction", fields: [userId], references: [id], onDelete: Cascade)
+
+  agentId                Int?
+  agent                  User?              @relation("AgentTransaction", fields: [agentId], references: [id], onDelete: Cascade)
+
+  offreId                Int?               @unique
+  offre                  Offre?             @relation("OffreTransaction", fields: [offreId], references: [id], onDelete: Cascade)
+
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+
+  @@index([provider, providerTransactionId])
 }
 
 model Message {
