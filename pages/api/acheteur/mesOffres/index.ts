@@ -1,16 +1,24 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/lib/prisma";
-import { getAuthSession } from "@/lib/auth"; // 👈 ta fonction auth
-import { OffreStatut, Prisma } from "@prisma/client";
+import { getAuthSession } from "@/lib/auth"; // 👈 ta fonction auth  
+import { OffreStatut, Prisma } from "@prisma/client";     
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getAuthSession(req, res);
   if (!session || !session.user) {
-    return res.status(401).json({ error: "Non autorisé" });
-  }  
+    return res.status(401).json({ error: "Non autorisé" });  
+  }      
 
   const userId = Number(session.user.id);
 
+  function serializeBigInt<T>(obj: T): T {  
+    return JSON.parse(
+      JSON.stringify(obj, (_, value) =>
+        typeof value === "bigint" ? value.toString() : value
+      )
+    );
+  }
+   
   try {
     if (req.method === "GET") {  
       const { statut } = req.query;
@@ -36,7 +44,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         orderBy: { createdAt: "desc" },
       });
 
-      return res.status(200).json({ data: offres });
+      const safeOffres = serializeBigInt(offres)
+
+      return res.status(200).json({ data: safeOffres });
     }
 
     if (req.method === "POST") {       
@@ -75,7 +85,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const offre = await prisma.offre.create({
         data: {
-          montant: Number(montant),
+          montant: Number(montant), 
           message: message || null,
           proprieteId: Number(proprieteId),
           reservationId: reservationId ? Number(reservationId) : null,
@@ -89,7 +99,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         }, 
       });
 
-      return res.status(201).json({ data: offre });
+      const safeOffre = serializeBigInt(offre)
+
+      return res.status(201).json({ data: safeOffre });
     }
 
     return res.status(405).json({ error: "Méthode non autorisée" });

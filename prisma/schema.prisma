@@ -7,7 +7,7 @@ datasource db {
       
 generator client {    
   provider = "prisma-client-js"      
-}         
+}           
   
 enum Role {    
   ADMIN    
@@ -344,9 +344,9 @@ model Transaction {
   refundedAt             DateTime?
   failureReason          String?
   receiptUrl             String?
-
+   
   metadata               Json?
-
+  
   userId                 Int?
   user                   User?              @relation("UserTransaction", fields: [userId], references: [id], onDelete: Cascade)
 
@@ -358,8 +358,27 @@ model Transaction {
 
   createdAt              DateTime           @default(now())
   updatedAt              DateTime           @updatedAt
-
+    
   @@index([provider, providerTransactionId])
+}
+   
+model IdempotencyKey {   
+  id        Int      @id @default(autoincrement())    
+  key       String   @unique
+  request   Json?
+  response  Json?
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model PaymentLog {
+  id            Int      @id @default(autoincrement())
+  transactionId Int?
+  level         String
+  message       String
+  meta          Json?
+  createdAt     DateTime @default(now())
 }
 
 model Message {

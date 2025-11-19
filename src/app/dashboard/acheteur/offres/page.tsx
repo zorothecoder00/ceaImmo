@@ -5,8 +5,8 @@ import { Home, Search, Heart, Calendar, Briefcase, Settings } from 'lucide-react
 import { OffreStatut } from '@prisma/client'
 
 interface Proprietaire {
-  id: number
-  prenom: string
+  id: number       
+  prenom: string     
   nom: string
 }
 

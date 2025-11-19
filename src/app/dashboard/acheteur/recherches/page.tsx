@@ -2,15 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { Search, Filter, MapPin, Home, Maximize, Users, Star, Heart, Eye, X } from 'lucide-react';
-import { Statut, VisiteStatut, Categorie, OffreStatut } from '@prisma/client'
+import { Statut, VisiteStatut, Categorie, OffreStatut, Mode } from '@prisma/client'
 import toast from "react-hot-toast";
 import Image from 'next/image'
-
-interface Visite {
+  
+interface Visite {  
   id: number;
   date: string;
   statut: VisiteStatut;
-  userId: number;
+  userId: number;   
   proprietaireId?: number; 
   proprieteId: number; 
 }
@@ -40,8 +40,8 @@ interface Propriete {
 
 interface OffreData {   
   montant: string;
-  message: string;
-  mode?: string;
+  message?: string;
+  mode?: Mode;
 }
 
 interface Offre {
@@ -49,7 +49,7 @@ interface Offre {
   montant: number;
   message?: string;
   statut: OffreStatut;
-  mode?: string;
+  mode?: Mode;
 }
 
 interface SearchFilters {
@@ -96,7 +96,7 @@ export default function RecherchesPage() {
   const [favoris, setFavoris] = useState<Set<number>>(new Set());
   const [showOffreModal, setShowOffreModal] = useState(false);
   const [selectedPropriete, setSelectedPropriete] = useState<Propriete | null>(null);
-  const [offreData, setOffreData] = useState<OffreData>({ montant: '', message: '', mode: '' });
+  const [offreData, setOffreData] = useState<OffreData>({ montant: '', message: '', mode: Mode.MIXXBYYAS });
   const [mesOffres, setMesOffres] = useState<Offre[]>([]);
 
   // 🆕 Pour la modale de demande de visite
@@ -248,14 +248,14 @@ export default function RecherchesPage() {
       setOffreData({
         montant: offreExistante.montant.toString(),
         message: offreExistante.message || '',
-        mode: offreExistante.mode || 'CARTEBANCAIRE'
+        mode: offreExistante.mode || Mode.MIXXBYYAS
       });
     } else {
       // Nouvelle offre : pré-remplir avec le prix de la propriété
       setOffreData({
         montant: propriete.prix.toString(),
         message: '',
-        mode: 'CARTEBANCAIRE'
+        mode: Mode.MIXXBYYAS
       });
     }
 
@@ -312,16 +312,16 @@ export default function RecherchesPage() {
     }
 
     try {
-      const response = await fetch('/api/acheteur/mesOffres', {
+      const response = await fetch('/api/acheteur/mesOffres', {   
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           proprieteId: selectedPropriete.id,
           montant: parseFloat(offreData.montant),
           message: offreData.message,
-          mode: offreData.mode || 'CARTEBANCAIRE', // Valeur par défaut
+          mode: offreData.mode || Mode.MIXXBYYAS, // Valeur par défaut
         }),
-      });
+      });   
 
       const data = await response.json();
 
@@ -814,8 +814,9 @@ export default function RecherchesPage() {
                         <Image
                           src={selectedPropriete.images[0].url}
                           alt={selectedPropriete.nom}
-                          fill
-                          className="object-cover rounded-lg"
+                          width={96}
+                          height={96}
+                          className="object-cover rounded-lg w-full h-full"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
@@ -872,7 +873,7 @@ export default function RecherchesPage() {
                     placeholder="Ex: Je suis vraiment intéressé par cette propriété..."
                   ></textarea>
                 </div>
-
+    
                 {/* Mode de paiement (optionnel pour acompte) */}
                 <div className="mb-6">
                   <label htmlFor="mode" className="block text-sm font-medium text-gray-700 mb-1">
@@ -882,16 +883,12 @@ export default function RecherchesPage() {
                     id="mode"
                     name="mode"
                     value={offreData.mode || ''}
-                    onChange={(e) => setOffreData({ ...offreData, mode: e.target.value })}
+                    onChange={(e) => setOffreData({ ...offreData, mode: e.target.value as Mode })}
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    <option value="">Sélectionner un mode</option>
-                    <option value="MIXXBYYAS">MixxByYas</option>
-                    <option value="MOOV">Moov</option>
-                    <option value="CARTEBANCAIRE">Carte bancaire</option>
-                    <option value="WESTERNUNION">Western Union</option>
-                    <option value="PAYPAL">PayPal</option>
-                    <option value="STRIPE">Stripe</option>
+                    {Object.values(Mode).map(m => (
+                      <option key={m} value={m}>{m.replace('_', ' ')}</option>
+                    ))}
                   </select>
                 </div>
 
