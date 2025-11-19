@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Filter, MapPin, Home, Maximize, Users, Star, Heart, Eye, X } from 'lucide-react';
+import { Search, Filter, MapPin, Home, Maximize, Users, Star, Heart, Eye, X, Send } from 'lucide-react';
 import { Statut, VisiteStatut, Categorie, OffreStatut, Mode } from '@prisma/client'
 import toast from "react-hot-toast";
 import Image from 'next/image'
@@ -96,7 +96,7 @@ export default function RecherchesPage() {
   const [favoris, setFavoris] = useState<Set<number>>(new Set());
   const [showOffreModal, setShowOffreModal] = useState(false);
   const [selectedPropriete, setSelectedPropriete] = useState<Propriete | null>(null);
-  const [offreData, setOffreData] = useState<OffreData>({ montant: '', message: '', mode: Mode.MIXXBYYAS });
+  const [offreData, setOffreData] = useState<OffreData>({ montant: '', message: '', mode: Mode.CASH });
   const [mesOffres, setMesOffres] = useState<Offre[]>([]);
 
   // 🆕 Pour la modale de demande de visite
@@ -248,14 +248,14 @@ export default function RecherchesPage() {
       setOffreData({
         montant: offreExistante.montant.toString(),
         message: offreExistante.message || '',
-        mode: offreExistante.mode || Mode.MIXXBYYAS
+        mode: offreExistante.mode || Mode.CASH
       });
     } else {
       // Nouvelle offre : pré-remplir avec le prix de la propriété
       setOffreData({
         montant: propriete.prix.toString(),
         message: '',
-        mode: Mode.MIXXBYYAS
+        mode: Mode.CASH
       });
     }
 
@@ -319,7 +319,7 @@ export default function RecherchesPage() {
           proprieteId: selectedPropriete.id,
           montant: parseFloat(offreData.montant),
           message: offreData.message,
-          mode: offreData.mode || Mode.MIXXBYYAS, // Valeur par défaut
+          mode: offreData.mode || Mode.CASH, // Valeur par défaut
         }),
       });   
 
@@ -734,22 +734,30 @@ export default function RecherchesPage() {
                   </div>
 
                   {/* Actions */}
-                  <div className="p-4 pt-0 flex gap-2">
-                    <button className="flex-1 bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 text-sm">
-                      Voir détails
+                  <div className="p-4 pt-0 flex flex-col gap-2">
+                    {/* Bouton principal */}
+                    <button className="w-full bg-blue-500 text-white py-2.5 rounded-lg hover:bg-blue-600 transition-all duration-200 text-sm font-medium shadow-sm hover:shadow flex items-center justify-center gap-2">
+                      <Eye className="w-4 h-4" />
+                      <span>Voir les détails</span>
                     </button>
-                    <button
-                      onClick={() => openOffreModal(propriete)}
-                      className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-md hover:bg-gray-200 text-sm"
-                    >
-                      Faire une offre
-                    </button>
-                    <button
-                      onClick={() => openVisiteModal(propriete)}
-                      className="flex-1 bg-green-600 text-white py-2 rounded-md hover:bg-green-700 text-sm"
-                    >
-                      Demander une visite
-                    </button>
+                    
+                    {/* Boutons secondaires côte à côte */}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => openOffreModal(propriete)}
+                        className="flex-1 bg-white text-gray-700 py-2 rounded-lg hover:bg-gray-50 transition-all duration-200 text-sm font-medium border border-gray-200 hover:border-gray-300 flex items-center justify-center gap-1.5"
+                      >
+                        <Send className="w-3.5 h-3.5" />
+                        <span>Offre</span>
+                      </button>
+                      <button
+                        onClick={() => openVisiteModal(propriete)}
+                        className="flex-1 bg-green-50 text-green-700 py-2 rounded-lg hover:bg-green-100 transition-all duration-200 text-sm font-medium border border-green-200 hover:border-green-300 flex items-center justify-center gap-1.5"
+                      >
+                        <MapPin className="w-3.5 h-3.5" />
+                        <span>Visite</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}

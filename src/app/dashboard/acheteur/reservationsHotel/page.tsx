@@ -94,7 +94,7 @@ const SearchForm: React.FC<SearchFormProps & { isSearching: boolean }> = ({ sear
     <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-4xl">
       <div className="text-center mb-8">
         <Link
-          href="/"
+          href="/dashboard/acheteur/"
           className="inline-block mb-4 text-blue-600 hover:text-blue-800 font-medium"
         >
           Accueil

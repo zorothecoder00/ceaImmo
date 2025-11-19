@@ -27,6 +27,7 @@ enum Categorie {
 }  
 
 enum Mode {
+  CASH
   MIXXBYYAS
   MOOV
   CARTEBANCAIRE

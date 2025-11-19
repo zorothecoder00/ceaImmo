@@ -3,9 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, MapPin, Clock } from 'lucide-react';
 import { VisiteStatut } from '@prisma/client'
+import Link from "next/link" 
 
 interface Proprietaire {
-  id: number
+  id: number  
   prenom: string
   nom: string
 }
@@ -254,9 +255,13 @@ const MesVisites = () => {
             <div className="text-6xl mb-4">📅</div>
             <h3 className="text-lg font-medium text-gray-900 mb-2">Aucune visite planifiée</h3>
             <p className="text-gray-600">Commencez par rechercher des biens qui vous intéressent.</p>
-            <button className="mt-4 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+            <Link 
+              href="/dashboard/acheteur/recherches"
+              className="mt-4 inline-block px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            >
               Commencer une recherche
-            </button>
+            </Link>
+
           </div>
         ) : (
           <>

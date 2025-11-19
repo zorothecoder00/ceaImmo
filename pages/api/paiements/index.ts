@@ -9,7 +9,7 @@ function genReference(): string {
 }
 
 // ✅ Types pour la requête et la réponse
-interface CreatePaymentRequest {
+interface CreatePaymentRequest {   
   amount: number;
   currency?: string;
   mode: Mode;

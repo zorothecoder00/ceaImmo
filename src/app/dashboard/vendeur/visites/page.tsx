@@ -58,6 +58,10 @@ const MesVisites = () => {
     return () => clearInterval(timer);
   }, []);
 
+  // ⚠️ Enlever les visites dont la date est déjà passée
+  const validVisits = visits.filter(v => new Date(v.date) >= currentTime);
+
+
   const updateVisitStatut = async(id: number, statut: VisiteStatut) => {
     try{
       setLoadingId(id)
@@ -124,7 +128,7 @@ const MesVisites = () => {
   };
 
   // 🧠 Déterminer la catégorie d'affichage selon la date
-  const categorizedVisits: CategorizedVisit[] = visits.map((visit) => {
+  const categorizedVisits: CategorizedVisit[] = validVisits.map((visit) => {
     const visitDate = new Date(visit.date);
     const diffHours = (visitDate.getTime() - currentTime.getTime()) / (1000 * 60 * 60);
 
