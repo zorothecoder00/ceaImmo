@@ -1,15 +1,16 @@
-'use client'
+'use client'       
 
 import React, { useState, useEffect } from 'react'
 import { Home, Search, Heart, Calendar, Briefcase, Settings } from 'lucide-react'
 import { OffreStatut } from '@prisma/client'
+import Link from "next/link"; // assure-toi d'importer Link en haut du fichier
 
 interface Proprietaire {
   id: number       
   prenom: string     
   nom: string
 }
-
+   
 interface Propriete {
   id: number
   nom: string
@@ -48,6 +49,17 @@ const MesOffres = () => {
     fetchOffres()
   }, [])
 
+  const refreshOffers = async () => {
+    try {
+      const res = await fetch('/api/acheteur/mesOffres')
+      const data = await res.json()
+      setOffres(data.data)
+    } catch (error) {
+      console.error('Erreur lors du rechargement des offres', error)
+    }
+  }
+
+
   // 🎨 Style et label selon le statut
   const getStatusBadge = (statut: OffreStatut) => {
     const statusConfig: Record<OffreStatut, { label: string; className: string }> = {
@@ -60,31 +72,64 @@ const MesOffres = () => {
   }
 
   // ⚙️ Boutons selon le statut
-  const getActionButtons = (statut: OffreStatut) => {
-    switch (statut) {
+  const getActionButtons = (offre: Offre, refreshOffers: () => void) => {
+    const handlePatch = async (action: "modifier" | "retirer", payload?: { montant?: number; message?: string }) => {
+      try {
+        const res = await fetch(`/api/acheteur/mesOffres/${offre.id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action, ...payload }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Erreur inconnue");
+
+        alert(data.message);
+        refreshOffers(); // pour recharger la liste après modification
+      } catch (error) {
+        console.error("Erreur lors de la mise à jour", error);
+      }
+    };
+
+    switch (offre.statut) {
       case OffreStatut.EN_ATTENTE:
         return (
           <div className="flex gap-2 mt-4">
-            <button className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
+            <button
+              className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+              onClick={() => {
+                const nouveauMontant = prompt("Montant de l'offre :", String(offre.montant));
+                const nouveauMessage = prompt("Message :", offre.message || "");
+                if (nouveauMontant) {
+                  handlePatch("modifier", { montant: Number(nouveauMontant), message: nouveauMessage || undefined });
+                }
+              }}
+            >
               Modifier l&apos;offre
             </button>
-            <button className="px-4 py-2 text-sm bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors">
+
+            <button
+              className="px-4 py-2 text-sm bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+              onClick={() => handlePatch("retirer")}
+            >
               Retirer l&apos;offre
             </button>
           </div>
-        )
+        );
 
       case OffreStatut.ACCEPTEE:
         return (
           <div className="flex gap-2 mt-4">
-            <button className="px-4 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors">
-              Finaliser la transaction
-            </button>
+            <Link href="/dashboard/acheteur/transactions">
+              <button className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                💳 Procéder au paiement
+              </button>
+            </Link>
             <button className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
               Télécharger le contrat
             </button>
           </div>
-        )
+        );
 
       case OffreStatut.REFUSEE:
         return (
@@ -96,7 +141,7 @@ const MesOffres = () => {
               Voir des biens similaires
             </button>
           </div>
-        )
+        );
 
       case OffreStatut.EXPIREE:
         return (
@@ -105,12 +150,12 @@ const MesOffres = () => {
               Réactiver l&apos;offre
             </button>
           </div>
-        )
+        );
 
       default:
-        return null
+        return null;
     }
-  }
+  };
 
   // 🔍 Filtrage selon le statut
   const filteredOffres =
@@ -141,7 +186,7 @@ const MesOffres = () => {
             <Search className="w-5 h-5 mr-3" />
             Rechercher
           </a>
-          <a
+          <a  
             href="#"
             className="flex items-center py-3 text-gray-600 border-b border-gray-100 hover:text-green-600 transition-colors"
           >
@@ -161,7 +206,7 @@ const MesOffres = () => {
           >
             <Briefcase className="w-5 h-5 mr-3" />
             Mes offres
-          </a>
+          </a>  
           <a
             href="#"
             className="flex items-center py-3 text-gray-600 border-b border-gray-100 hover:text-green-600 transition-colors"
@@ -242,7 +287,7 @@ const MesOffres = () => {
                   </div>
                 </div>
 
-                {getActionButtons(offre.statut)}
+                {getActionButtons(offre, refreshOffers)}
               </div>
             )
           })}

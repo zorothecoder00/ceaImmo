@@ -7,7 +7,7 @@ datasource db {
       
 generator client {    
   provider = "prisma-client-js"      
-}           
+}                       
   
 enum Role {    
   ADMIN    
@@ -22,12 +22,12 @@ enum Categorie {
   MAISON   
   APPARTEMENT
   HOTEL
-  TERRAIN
+  TERRAIN   
   CHANTIER
 }  
 
 enum Mode {
-  CASH
+  CASH        
   MIXXBYYAS
   MOOV
   CARTEBANCAIRE
@@ -62,7 +62,7 @@ enum OffreStatut {
   EXPIREE
 }
 
-enum ReservationStatut {
+enum ReservationStatut {     
   DEMANDEE
   CONFIRMEE
   ANNULEE
@@ -301,7 +301,7 @@ model Reservation {
   updatedAt      DateTime           @updatedAt
 
 }
-
+  
 model Offre {
   id             Int                @id @default(autoincrement())
   montant        BigInt// ✅ permet des valeurs énormes
@@ -484,4 +484,4 @@ model Vu {
   @@unique([userId, proprieteId]) // ✅ Évite les doublons (un utilisateur ne compte qu'une fois par propriété)
 }
 
-  
+         

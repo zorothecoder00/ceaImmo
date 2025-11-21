@@ -11,7 +11,7 @@ import {
   MapPin,
   Bed,
   Square,
-  Search,
+  Search,   
   Star,
   Phone,
   Mail,

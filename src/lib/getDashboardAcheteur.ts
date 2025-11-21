@@ -1,15 +1,15 @@
 import { prisma } from '@/lib/prisma'
-import { Statut, Categorie } from '@prisma/client'
+import { Statut, Categorie, StatutTransaction } from '@prisma/client'
  
 export async function getAvailableProprietes(userId?: string) {
   const proprietes = await prisma.propriete.findMany({
     where: { statut: Statut.DISPONIBLE },
     include: {
-      images: {
+      images: {  
         orderBy: { ordre: 'asc' },
         take: 1  
       },
-      favoris: userId ? {
+      favoris: userId ? {  
         where: { userId: parseInt(userId) }
       } : false       
     },
@@ -248,5 +248,42 @@ export async function getRecherchesSauvegardees(userId: string) {
   });
 
   return { recherches, total: recherches.length };
+}
+
+export async function getMesTransactionsEnAttenteAcheteur(userId: string) {
+  const parsedUserId = parseInt(userId);
+
+  const transactions = await prisma.transaction.findMany({
+    where: {
+      userId: parsedUserId,
+      statut: StatutTransaction.EN_ATTENTE, // seules les transactions à finaliser
+    },
+    include: {
+      offre: {
+        select: {
+          montant: true,
+          userId: true, // éventuellement l'acheteur
+          propriete: {
+            select: {
+              id: true,
+              nom: true,
+              statut: true,
+              images: { orderBy: { ordre: 'asc' }, take: 1 },
+            },
+          },
+        },
+      },
+      agent: {
+        select: { id: true, nom: true, prenom: true },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 5, // limite pour le dashboard
+  });
+
+  return {
+    transactions,
+    total: transactions.length,
+  };
 }
 

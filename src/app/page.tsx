@@ -39,7 +39,7 @@ interface PropertyFilters {
 
 export default function HomePage()
 {
-  const { data: session } = useSession(); // 👈 récupération de la session
+  const { data: session, status } = useSession(); // 👈 récupération de la session
   const router = useRouter();
 
   const [properties, setProperties] = useState<Property[]>([]);
@@ -86,20 +86,30 @@ export default function HomePage()
   // 🔗 Redirection "Voir tout"
   const handleVoirTout = (e: React.MouseEvent) => {
     e.preventDefault();
-    if (!session) {
-      router.push('/auth/login');
-    } else if (session.user?.role === Role.ACHETEUR) {
-      router.push('/dashboard/acheteur/recherches');
+
+    if (status === "loading") return; // on attend brièvement
+
+    if (status === "unauthenticated" || !session) {
+      router.push("/auth/login?redirect=voir-tout");
+      return;
+    }
+
+    if (session.user?.role === Role.ACHETEUR) {
+      router.push("/dashboard/acheteur/recherches");
     } else {
-      router.push('/dashboard');
+      router.push("/dashboard");
     }
   };
+
 
   // 🔗 Redirection "Détails"
   const handleDetails = (id: number, e: React.MouseEvent) => {
     e.preventDefault();
-    if (!session) {
-      router.push('/auth/login');
+
+    if (status === "loading") return; // on attend brièvement
+    
+    if (status === "unauthenticated" || !session) {
+      router.push(`/auth/login?redirect=details&id=${id}`);
     } else if (session.user?.role === Role.ACHETEUR) {
       router.push(`/dashboard/acheteur/recherches/${id}`);
     } else {

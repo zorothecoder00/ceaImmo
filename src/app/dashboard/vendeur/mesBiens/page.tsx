@@ -6,7 +6,7 @@ import {
   Search, 
   MoreVertical, 
   Eye, 
-  Edit, 
+  Edit,    
   Trash2, 
   MapPin, 
   Bed,    
@@ -142,14 +142,20 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ bien, onEdit, onDelete, onV
       <div className="bg-white rounded-lg border border-gray-200 hover:shadow-md transition-all duration-200 overflow-hidden">
         <div className="flex">
           <div className="w-48 h-32 flex-shrink-0">
-            <Image 
-              src={bien.images[0]?.url || '/villapiscine.webp'} 
-              alt={bien.nom}
-              className="w-full h-full object-cover"
-            />
+            <div className="w-48 h-32 relative flex-shrink-0">
+              <Image
+                src={bien.images[0]?.url || '/villapiscine.webp'}
+                alt={bien.nom}
+                fill
+                unoptimized
+                className="object-cover rounded-none"
+              />
+            </div>
+
           </div>
           <div className="flex-1 p-6">
-            <div className="flex items-start justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
                   <CategoryIcon size={16} className="text-gray-400" />
@@ -790,7 +796,7 @@ export default function MesBiens() {
       </div>
 
       {/* ✅ CORRECTION: Modal de visualisation au bon endroit */}
-      <AnimatePresence>
+      <AnimatePresence> 
         {isViewModalOpen && selectedBien && (
           <motion.div
             className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4"
@@ -820,13 +826,15 @@ export default function MesBiens() {
                 </div>
 
                 <div className="space-y-4">
-                  <Image
-                    src={selectedBien.images[0]?.url || '/placeholder.jpg'}
-                    alt={selectedBien.nom}                
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-300"
-                    
-                  />
+                  <div className="relative w-full h-64 rounded-lg overflow-hidden">
+  <Image
+    src={selectedBien.images[0]?.url || '/placeholder.jpg'}
+    alt={selectedBien.nom}
+    fill
+    className="object-cover"
+  />
+</div>
+
 
                   <div>
                     <h3 className="text-lg font-bold">{selectedBien.nom}</h3>

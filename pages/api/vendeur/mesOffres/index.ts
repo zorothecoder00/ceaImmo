@@ -12,7 +12,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const userId = Number(session.user.id);
 
   // Vérifier que l'utilisateur est VENDEUR
-  const user = await prisma.user.findUnique({
+  const user = await prisma.user.findUnique({ 
     where: { id: userId },
     select: { role: true },
   });
@@ -60,6 +60,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             surface: true,
             geolocalisation: true,
             nombreChambres: true,
+            statut: true,
           },
         },
         user: {

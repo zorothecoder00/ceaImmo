@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma"
-import { OffreStatut, Statut } from "@prisma/client"
+import { OffreStatut, Statut, StatutTransaction } from "@prisma/client"
 
  
 export async function getMesProprietes(userId: string) {
@@ -12,7 +12,7 @@ export async function getMesProprietes(userId: string) {
       images: { orderBy: { ordre: 'asc' } },
     },
     orderBy: { createdAt: "desc" },
-  })
+  })   
 
   // 🧮 Calcul des statistiques
   const activeProperties = myProperties.filter(
@@ -107,4 +107,43 @@ export async function getMesProchainesVisites(userId: string){
   });
 
   return prochainesVisites
+}
+
+// Ajoutez dans votre getDashboardVendeur.ts
+export async function getTransactionsAFinaliser(userId: string) {
+  const parsedUserId = parseInt(userId);
+
+  const transactions = await prisma.transaction.findMany({
+    where: {
+      agentId: parsedUserId,
+      statut: StatutTransaction.REUSSIE, // paiements déjà réussis par l'acheteur
+      // ❗ Optionnel : s'assurer que le transfert n'a pas encore été fait
+      offre: {
+        propriete: {
+          statut: { in: ['RESERVE'] }, // propriété réservée mais pas encore transférée
+        },
+      },
+    },
+    include: {
+      user: { // infos acheteur
+        select: { id: true, nom: true, prenom: true },
+      },
+      offre: {
+        include: {
+          propriete: {
+            include: {
+              images: { orderBy: { ordre: 'asc' }, take: 1 },
+            },
+          },
+        },
+      },
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 5, // limit pour le dashboard
+  });
+
+  return {
+    transactions,
+    total: transactions.length,
+  };
 }

@@ -5,6 +5,7 @@ import { Mail, Lock, Eye, EyeOff, ArrowRight, Building2 } from 'lucide-react';
 import Link from "next/link"
 import { useRouter } from 'next/navigation'
 import { signIn } from 'next-auth/react'
+import { useSearchParams } from "next/navigation";
 
 // Définition du type pour nos erreurs
 type Errors = {
@@ -14,6 +15,10 @@ type Errors = {
 }
 
 const LoginPage = () => {    
+  const searchParams = useSearchParams();
+  const redirect = searchParams?.get("redirect");
+  const id = searchParams?.get("id");
+
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -77,11 +82,32 @@ const LoginPage = () => {
       })
       
       if(res?.ok){
-        // Récupère la session pour savoir le rôle de l’utilisateur
+        // Récupération session
         const sessionRes = await fetch('/api/auth/session')
         const sessionData = await sessionRes.json()
 
         const role = sessionData?.user?.role
+
+        // 🎯 Gestion des redirections spéciales (depuis la HomePage)
+        if (redirect === "voir-tout") {
+          if (role === "ACHETEUR") {
+            router.push("/dashboard/acheteur/recherches");
+          } else {
+            router.push("/dashboard");
+          }
+          return;
+        }
+
+        if (redirect === "details" && id) {
+          if (role === "ACHETEUR") {
+            router.push(`/dashboard/acheteur/recherches/${id}`);
+          } else {
+            router.push("/dashboard");
+          }
+          return;
+        }
+
+        // ⭐ Sinon, redirection classique selon le rôle
         if(role === 'ACHETEUR'){  
           router.push('/dashboard/acheteur') 
         }else if(role === 'VENDEUR'){
@@ -95,6 +121,7 @@ const LoginPage = () => {
         }else{
           setErrors({ general: 'Rôle non autorisé' })
         }
+    
       }else{
         setErrors({ general: 'Identifiants invalides' })
       }

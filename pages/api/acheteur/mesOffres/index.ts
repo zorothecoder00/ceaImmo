@@ -98,7 +98,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           agent: true,
         }, 
       });
-
+     
       const safeOffre = serializeBigInt(offre)
 
       return res.status(201).json({ data: safeOffre });

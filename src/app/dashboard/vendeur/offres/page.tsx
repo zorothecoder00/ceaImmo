@@ -1,14 +1,14 @@
 'use client'
-
+   
 import React, { useState, useEffect } from 'react';
 import { Home, Search, Heart, Calendar, Briefcase, Settings } from 'lucide-react';
 import { OffreStatut } from '@prisma/client'
   
  interface Propriete {
-  id: number
-  nom: string
+  id: number   
+  nom: string    
   prix?: number
-  surface?: number
+  surface?: number  
   geolocalisation?: string
   nombreChambres?: number
 }
@@ -44,6 +44,33 @@ const MesOffres = () => {
     fetchOffers()
   }, [])
 
+   // 🔧 Modifier le statut ou l'offre
+  const handleAction = async (id: number, action: 'modifier' | 'accepter' | 'retirer', montant?: number, message?: string) => {
+  try {
+    const res = await fetch(`/api/vendeur/mesOffres/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, montant, message }),
+    });
+    const data = await res.json();
+    console.log('PATCH Response:', res.status, data);
+    if (!res.ok) throw new Error(data.error || 'Erreur serveur');
+
+    const updatedOffer = data.data;
+
+    setOffers(prev =>
+      prev.map(offer =>
+        offer.id === id ? { ...offer, statut: updatedOffer.statut } : offer
+      )
+    );
+
+  } catch (error) {
+    console.error('Erreur lors de la mise à jour de l\'offre', error);
+  }
+};
+
+
+
   const getStatusBadge = (statut: OffreStatut) => {
   const statusConfig: Record<OffreStatut, { label: string; className: string }> = {
     EN_ATTENTE: { label: 'En attente', className: 'bg-yellow-100 text-yellow-800' },
@@ -55,19 +82,33 @@ const MesOffres = () => {
   return statusConfig[statut];
 };
 
-  const getActionButtons = (statut: OffreStatut) => {
-    switch (statut) {
+  const getActionButtons = (offer: Offer) => {
+    switch (offer.statut) {
       case OffreStatut.EN_ATTENTE:
-        return (
-          <div className="flex gap-2 mt-4">
-            <button className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors">
-              Modifier l&apos;offre 
-            </button>
-            <button className="px-4 py-2 text-sm bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors">
-              Refuser l&apos;offre
-            </button>
-          </div>
-        );
+      return (
+        <div className="flex gap-2 mt-4">
+          <button
+            onClick={() => handleAction(offer.id, 'modifier', offer.montant, offer.message)}
+            className="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+          >
+            Modifier l&apos;offre
+          </button>
+
+          <button
+            onClick={() => handleAction(offer.id, 'retirer')}
+            className="px-4 py-2 text-sm bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+          >
+            Refuser l&apos;offre
+          </button>
+
+          <button
+            onClick={() => handleAction(offer.id, 'accepter')}
+            className="px-4 py-2 text-sm bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+          >
+            Accepter l&apos;offre
+          </button>
+        </div>
+      );
       case OffreStatut.EXPIREE:
         return (
           <div className="flex gap-2 mt-4">
@@ -214,7 +255,7 @@ const MesOffres = () => {
                   <div className="text-sm text-gray-600">Offre du {new Date(offer.createdAt).toLocaleDateString('fr-FR')}</div>
                 </div>
                 
-                {getActionButtons(offer.statut)}
+                {getActionButtons(offer)}
               </div>
             );
           })}
