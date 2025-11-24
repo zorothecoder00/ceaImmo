@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { X, Search, Filter, MapPin, Home, DollarSign, Maximize2, Bed, Star } from 'lucide-react';
 import { Categorie, Statut } from '@prisma/client'
 
@@ -32,6 +32,7 @@ export default function SearchModal() {
   const [isSearching, setIsSearching] = useState(false);
   const [results, setResults] = useState<ResultatPropriete[]>([]);
   const [meta, setMeta] = useState<Meta | null>(null);
+  const resultsRef = useRef<HTMLDivElement>(null);
   
   // Filtres de recherche
   const [filters, setFilters] = useState({
@@ -83,6 +84,12 @@ export default function SearchModal() {
       setIsSearching(false);
     }
   };
+
+  useEffect(() => {
+    // On scrolle vers la div des résultats, qu'il y ait ou non des résultats
+    resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [results]);
+
 
   const handleReset = () => {
     setFilters({
@@ -322,7 +329,7 @@ export default function SearchModal() {
 
           {/* Résultats */}
           {results.length > 0 && (
-            <div className="border-t border-gray-200 pt-6">
+            <div ref={resultsRef} className="border-t border-gray-200 pt-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">
                 {meta?.totalApresFiltre || results.length} résultat{results.length > 1 ? 's' : ''} trouvé{results.length > 1 ? 's' : ''}
               </h3>
@@ -379,7 +386,7 @@ export default function SearchModal() {
 
           {/* Aucun résultat */}
           {!isSearching && results.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
+            <div ref={resultsRef} className="text-center py-8 text-gray-500">
               <Search className="w-16 h-16 mx-auto mb-4 text-gray-300" />
               <p>Aucune propriété ne correspond à vos critères</p>
             </div>

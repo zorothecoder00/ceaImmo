@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { Categorie, Statut } from '@prisma/client'
 import toast from "react-hot-toast";
+import Image from 'next/image';
 
 interface SearchFilters {
   titre?: string;
@@ -18,6 +19,12 @@ interface SearchFilters {
   motsCles?: string;
 }
 
+interface ProprieteImage {
+  id: number;
+  url: string;
+  ordre: number;
+}
+
 interface ResultatPropriete {
   id: string;
   nom?: string;
@@ -25,13 +32,32 @@ interface ResultatPropriete {
   geolocalisation?: string;
   statut?: Statut;
   prix?: number;
+  images?: ProprieteImage[]
+}
+
+// Mapping pour affichage lisible
+const CATEGORIE_LABELS: Record<Categorie, string> = {
+  VILLA: "Villa",
+  MAISON: "Maison",
+  APPARTEMENT: "Appartement",
+  HOTEL: "Hôtel",
+  TERRAIN: "Terrain",
+  CHANTIER: "Chantier",
+}
+
+const STATUT_LABELS: Record<Statut, string> = {
+  DISPONIBLE: "Disponible",
+  VENDU: "Vendu",
+  RESERVE: "Réservé",
+  EN_LOCATION: "En location",
+  EN_NEGOCIATION: "En négociation",
 }
 
 export default function SearchForm() {
   const [isLoading, setIsLoading] = useState(false)
   const [geolocalisation, setGeolocalisation] = useState('')
-  const [categorie, setCategorie] = useState<Categorie | "">("") 
-  const [statut, setStatut] = useState<Statut | "DISPONIBLE">("DISPONIBLE")  
+  const [categorie, setCategorie] = useState<Categorie>(Categorie.VILLA) 
+  const [statut, setStatut] = useState<Statut>(Statut.DISPONIBLE)  
   const [nombreChambres, setNombreChambres] = useState('')
   const [budget, setBudget] = useState('')
   const [surface, setSurface] = useState('')
@@ -73,7 +99,7 @@ export default function SearchForm() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          titre: nom || `Recherche ${categorie || ''} ${geolocalisation || ''}`.trim(),
+          titre: nom || `Recherche ${categorie ? CATEGORIE_LABELS[categorie] : ''} ${geolocalisation || ''}`.trim(),
           categorie: categorie || null,
           statut: statut || null,
           geolocalisation: geolocalisation || null,
@@ -83,15 +109,15 @@ export default function SearchForm() {
           minSurface,
           maxSurface,
           triPar: 'prix_desc',
-          motsCles: [categorie, geolocalisation, budget, surface].filter(Boolean).join(', ')
+          motsCles: [categorie ? CATEGORIE_LABELS[categorie] : '', geolocalisation, budget, surface].filter(Boolean).join(', ')
         }),
       })
 
-      if (response.ok) {
+      if (response.ok) {     
         toast.success('✅ Recherche sauvegardée avec succès !')
         setNom('')
-        setCategorie('')
-        setStatut('DISPONIBLE')
+        setCategorie(Categorie.VILLA)
+        setStatut(Statut.DISPONIBLE)
         setGeolocalisation('')
         setBudget('')
         setSurface('')
@@ -141,12 +167,9 @@ export default function SearchForm() {
           disabled={isLoading}
         >
           <option value="">Catégorie</option>
-          <option value="VILLA">Villa</option>
-          <option value="MAISON">Maison</option>
-          <option value="APPARTEMENT">Appartement</option>
-          <option value="HOTEL">Hôtel</option>
-          <option value="TERRAIN">Terrain</option>
-          <option value="CHANTIER">Chantier</option>
+          {Object.entries(CATEGORIE_LABELS).map(([key, label]) => (
+            <option key={key} value={key}>{label}</option>
+          ))}
         </select>
 
         {/* Statut */}
@@ -156,11 +179,10 @@ export default function SearchForm() {
           onChange={(e) => setStatut(e.target.value as Statut)}
           disabled={isLoading}
         >
-          <option value="DISPONIBLE">Disponible</option>
-          <option value="VENDU">Vendu</option>
-          <option value="RESERVE">Réservé</option>
-          <option value="EN_LOCATION">En location</option>
-          <option value="EN_NEGOCIATION">En négociation</option>
+          <option value="">Statut</option>
+          {Object.entries(STATUT_LABELS).map(([key, label]) => (
+            <option key={key} value={key}>{label}</option>
+          ))}
         </select>
 
         {/* Budget */}
@@ -229,8 +251,31 @@ export default function SearchForm() {
       <div className="mt-4">
         <h3 className="font-medium mb-2">Résultats en aperçu :</h3>
         <ul className="space-y-2">
-          {resultats.map((r, index: number) => (
-            <li key={index} className="border p-2 rounded">{r.nom || r.categorie}</li>
+          {resultats.map((r) => (
+            <li key={r.id} className="border p-2 rounded flex gap-4 items-center">
+              {/* Image principale */}
+              {r.images && r.images.length > 0 ? (
+                <Image
+                  src={r.images[0].url}
+                  alt={r.nom || r.categorie || 'Propriété'}
+                  width={96}
+                  height={96}
+                  className="object-cover rounded"
+                />
+              ) : (
+                <div className="w-24 h-24 bg-gray-200 flex items-center justify-center text-gray-500">
+                  Pas d&apos;image
+                </div>
+              )}
+
+              {/* Infos */}
+              <div>
+                <h4 className="font-semibold">{r.nom || r.categorie}</h4>
+                <p>{r.geolocalisation}</p>
+                <p>{r.prix ? `${r.prix.toLocaleString()} €` : ''}</p>
+                <p>{r.statut}</p>
+              </div>
+            </li>
           ))}
         </ul>
       </div>

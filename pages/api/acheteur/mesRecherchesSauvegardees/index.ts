@@ -19,7 +19,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {    
-    // 🔹 Récupération des recherches sauvegardées
+    // 🔹 Récupération des recherches sauvegardées   
     if (req.method === "GET") {
       const data = await getRecherchesSauvegardees(session?.user?.id);
 
@@ -29,15 +29,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
      // 🟨 2️⃣ Lancer une recherche instantanée (prévisualisation)
     if (req.method === "POST" && req.query.preview === "true") {
-      const { titre, categorie, geolocalisation, minPrix, maxPrix, nombreChambres } = req.body;
+      const { titre, categorie, statut, geolocalisation, minPrix, maxPrix, minSurface, maxSurface,  nombreChambres } = req.body;
 
       const resultats = await filtrageProprietes(
         session.user.id,
         titre ?? undefined,
         geolocalisation ?? undefined,
         categorie ?? undefined,
+        statut ?? undefined,
         minPrix ? Number(minPrix) : undefined,
         maxPrix ? Number(maxPrix) : undefined,
+        minSurface ? Number(minSurface) : undefined,
+        maxSurface ? Number(maxSurface) : undefined,
         nombreChambres ? Number(nombreChambres) : undefined
       );
 

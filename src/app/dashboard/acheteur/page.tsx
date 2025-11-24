@@ -4,9 +4,9 @@ import {
   Calendar,  
   FileText, 
   Settings,    
-  Bell,
+  Bell,    
   User,  
-  Eye,
+  Eye,     
   Heart,
   MapPin,
   Bed,
@@ -340,7 +340,7 @@ export default async function AcheteurDashboard() {
 
             <div className="w-full mb-6">
               <SearchModal />
-            </div>
+            </div> 
 
             <nav className="space-y-2">
               <a href="#" className="flex items-center space-x-3 text-gray-700 hover:bg-gray-100 rounded-lg p-2">

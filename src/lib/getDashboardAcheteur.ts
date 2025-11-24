@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { Statut, Categorie, StatutTransaction } from '@prisma/client'
+import { Statut, Categorie, StatutTransaction, Prisma } from '@prisma/client'
  
 export async function getAvailableProprietes(userId?: string) {
   const proprietes = await prisma.propriete.findMany({
@@ -23,44 +23,50 @@ export async function getAvailableProprietes(userId?: string) {
   }))
 }
 
-// Filtrer par catégorie + budget
+// Filtrer par catégorie + statut + budget
 export async function filtrageProprietes(
   userId?: string,
   nom?: string,
   geolocalisation?: string,
-  categorie?: Categorie,   
-  minPrix?: number,
-  maxPrix?: number,
+  categorie?: Categorie,
+  statut?: Statut,   
+  minPrix?: number | bigint,
+  maxPrix?: number | bigint,
+  minSurface?: number,
+  maxSurface?: number,
   nombreChambres?: number
 ) {
+
+  const prixFilter: Prisma.IntFilter = {};
+  if (minPrix !== undefined && minPrix !== null) prixFilter.gte = Number(minPrix);
+  if (maxPrix !== undefined && maxPrix !== null) prixFilter.lte = Number(maxPrix);
+
+  const surfaceFilter: Prisma.IntFilter = {};
+  if (minSurface !== undefined && minSurface !== null) surfaceFilter.gte = minSurface;
+  if (maxSurface !== undefined && maxSurface !== null) surfaceFilter.lte = maxSurface;
+
   const proprietes = await prisma.propriete.findMany({
     where: {
-      statut: Statut.DISPONIBLE,
-      ...(nom ? { nom }: {}),
-      ...(geolocalisation ? { geolocalisation } : {}),
-      ...(categorie ? { categorie } : {}),
-      ...(minPrix !== undefined && maxPrix !== undefined ? { 
-        prix: { gte: minPrix, lte: maxPrix } 
-      } : {}),
-      ...(nombreChambres !== undefined ? { nombreChambres } : {}),
+      ...(nom ? { nom: { contains: nom, mode: 'insensitive' } } : {}),
+      ...(geolocalisation ? { geolocalisation: { contains: geolocalisation, mode: 'insensitive' } } : {}),
+      ...(categorie && Object.values(Categorie).includes(categorie) ? { categorie } : {}),
+      ...(statut && Object.values(Statut).includes(statut) ? { statut } : {}),
+      ...(Object.keys(prixFilter).length ? { prix: prixFilter } : {}),
+      ...(Object.keys(surfaceFilter).length ? { surface: surfaceFilter } : {}),
+      ...(nombreChambres !== undefined ? { nombreChambres: { gte: nombreChambres } } : {}),
     },
     include: {
-      images: {
-        orderBy: { ordre: 'asc' },
-        take: 1
-      },
-      favoris: userId ? {
-        where: { userId: parseInt(userId) }
-      } : false
+      images: { orderBy: { ordre: 'asc' }, take: 1 },
+      favoris: userId ? { where: { userId: parseInt(userId) } } : false
     },
     orderBy: { createdAt: 'desc' },
     take: 3
-  })
+  });
 
   return proprietes.map(prop => ({
     ...prop,
     isFavorite: userId ? prop.favoris.length > 0 : false
-  }))
+  }));
 }
 
 // Récupérer les prochaines visites d'un utilisateur
@@ -222,10 +228,13 @@ export async function getRecherchesSauvegardeesEtResultats(userId: string) {
         r.titre ?? undefined,
         r.geolocalisation ?? undefined,
         r.categorie ?? undefined,
+        undefined, 
         r.minPrix !== null && r.minPrix !== undefined ? Number(r.minPrix) : undefined,
         r.maxPrix !== null && r.maxPrix !== undefined ? Number(r.maxPrix) : undefined,
+        undefined,
+        undefined,
         r.nombreChambres ?? undefined
-      )
+      );
 
       return {
         ...r,

@@ -50,12 +50,12 @@ enum Statut {
   EN_NEGOCIATION
 }    
 
-enum Type {
+enum Type {   
   SEJOUR
   LOCATION
-}
+}   
 
-enum OffreStatut {
+enum OffreStatut {  
   EN_ATTENTE
   ACCEPTEE
   REFUSEE
@@ -339,13 +339,13 @@ model Transaction {
   providerTransactionId  String?            @unique
   providerPaymentIntent  String?
 
-  fees                   BigInt?
+  fees                   BigInt?   
   netAmount              BigInt?
   paidAt                 DateTime?
   refundedAt             DateTime?
   failureReason          String?
   receiptUrl             String?
-   
+     
   metadata               Json?
   
   userId                 Int?
