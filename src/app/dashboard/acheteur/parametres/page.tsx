@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { User, Lock, Bell, Eye, Palette, Globe, Clock, Save, Camera } from 'lucide-react';
+import Link from 'next/link'
 
 export default function BuyerSettingsPage() {
   const [activeTab, setActiveTab] = useState('profil');
@@ -305,6 +306,13 @@ export default function BuyerSettingsPage() {
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-7xl mx-auto">
+        {/* Bouton retour dashboard */}
+        <Link
+          href="/dashboard/acheteur"
+          className="inline-block mb-6 px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors"
+        >
+          ← Retour au dashboard
+        </Link>
         <h1 className="text-3xl font-bold text-gray-900 mb-8">Paramètres - Acheteur</h1>
         
         <div className="flex flex-col md:flex-row gap-6">

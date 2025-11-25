@@ -2,11 +2,11 @@
 
 import { getAuthSession } from "@/lib/auth";   
 import {  
-  Building,         
+  Building,             
   Calendar, 
   User,        
   Eye,       
-  Edit,   
+  Edit,       
   MapPin,
   Bed,
   Bath,

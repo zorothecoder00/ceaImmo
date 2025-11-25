@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link'
 import { 
   Home, 
   Plus,  
@@ -559,6 +560,13 @@ export default function VendeurDashboard() {
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Tableau de Bord Vendeur</h1>
               <p className="text-gray-600 mt-1">Gérez vos propriétés et suivez vos performances</p>
+              <Link
+                href="/dashboard/vendeur"
+                className="inline-block mt-2 text-indigo-600 hover:text-indigo-800 font-medium"
+              >
+                ← Retour au Dashboard
+              </Link>
+
             </div>
             <div className="flex items-center gap-3">
               <button className="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors relative">

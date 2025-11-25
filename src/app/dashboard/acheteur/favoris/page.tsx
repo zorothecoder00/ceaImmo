@@ -8,6 +8,7 @@ import { Statut, Categorie, OffreStatut, Mode } from '@prisma/client'
 import toast from "react-hot-toast";
 import CategoryButton from "@/components/CategoryButton";
 import MobileAccordionFilter from "@/components/MobileAccordionFilter";
+import Link from 'next/link'
 
 // 🧩 Types corrigés
 interface ProprieteImage {  
@@ -272,15 +273,24 @@ export default function FavorisPage() {
 
       <div className="max-w-7xl mx-auto">
         {/* HEADER */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Mes Propriétés Favorites
-          </h1>
-          <p className="text-gray-600">
-            Gérez vos propriétés favorites et trouvez celle de vos rêves
-          </p>
-        </div>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              Mes Propriétés Favorites
+            </h1>
+            <p className="text-gray-600">
+              Gérez vos propriétés favorites et trouvez celle de vos rêves
+            </p>
+          </div>
 
+          {/* Bouton vers Dashboard Acheteur */}
+          <Link
+            href="/dashboard/acheteur"
+            className="px-4 py-2 border border-blue-600 text-blue-600 rounded-lg hover:bg-blue-50 transition"
+          >
+           ← Retour au Dashboard
+          </Link>
+        </div>
         {/* STATS */}
         <div className="bg-white rounded-lg shadow-sm p-6 mb-8">
           <div className="flex items-center justify-between">

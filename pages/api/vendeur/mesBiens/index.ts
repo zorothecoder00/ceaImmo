@@ -5,7 +5,7 @@ import { Prisma, Role, Categorie, Statut } from "@prisma/client";
 import { getAuthSession } from "@/lib/auth"; 
    
 interface ChambreInput {
-  nom: string;
+  nom: string;  
   description?: string;
   prixParNuit: number | string;
   capacite: number | string;
@@ -61,7 +61,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       limit = "10",
     } = req.query;
 
-    const where: Prisma.ProprieteWhereInput = { proprietaireId: userId };
+    // ⬅️ Exclure automatiquement les propriétés vendues
+    const where: Prisma.ProprieteWhereInput = { 
+      proprietaireId: userId,
+      statut: { not: Statut.VENDU }
+    };
 
     if (categorie && Object.values(Categorie).includes(categorie as Categorie)) {
       where.categorie = categorie as Categorie;

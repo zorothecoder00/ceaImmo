@@ -5,8 +5,9 @@ import { Search, Filter, MapPin, Home, Maximize, Users, Star, Heart, Eye, X, Sen
 import { Statut, VisiteStatut, Categorie, OffreStatut, Mode } from '@prisma/client'
 import toast from "react-hot-toast";
 import Image from 'next/image'
+import Link from 'next/link'
   
-interface Visite {  
+interface Visite {     
   id: number;
   date: string;
   statut: VisiteStatut;
@@ -398,6 +399,13 @@ export default function RecherchesPage() {
           <h1 className="text-3xl font-bold text-gray-900 mb-4">
             Recherche de Propriétés
           </h1>
+
+          <Link
+            href="/dashboard/acheteur"
+            className="inline-block mb-6 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            ← Aller au Dashboard Acheteur
+          </Link>
           
           {/* Barre de recherche principale */}
           <div className="flex flex-col lg:flex-row gap-4">

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Home, Search, Heart, Calendar, Briefcase, Settings, MapPin, Clock } from 'lucide-react';
 import { VisiteStatut } from '@prisma/client'  
 import { toast } from 'react-hot-toast';
+import Link from "next/link";
   
 interface Propriete {  
   id: number    
@@ -262,33 +263,52 @@ const MesVisites = () => {
     });
   };
 
+  const getFallbackMessage = () => {
+    switch (activeFilter) {
+      case 'today':
+        return {
+          title: "Aucune visite aujourd'hui",
+          message: "Vous n'avez aucune visite prévue pour aujourd'hui."
+        }
+      case 'week':
+        return {
+          title: "Aucune visite cette semaine",
+          message: "Vous n'avez aucune visite prévue cette semaine."
+        }
+      case 'month':
+        return {
+          title: "Aucune visite ce mois",
+          message: "Vous n'avez aucune visite prévue ce mois-ci."
+        }
+      default:
+        return {
+          title: "Aucune visite programmée",
+          message: "Vous n'avez pour le moment aucune demande ou visite programmée."
+        }
+    }
+  };
+
+
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
       <div className="w-64 bg-white shadow-lg">
         <div className="p-6">
-          <button className="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors">
-            + Nouvelle recherche
-          </button>
-        </div>
+          
+        </div> 
 
         <nav className="px-6">
-          <a href="#" className="flex items-center py-3 text-gray-600 border-b border-gray-100 hover:text-green-600 transition-colors">
-            <Home className="w-5 h-5 mr-3" /> Tableau de bord
-          </a>
-          <a href="#" className="flex items-center py-3 text-gray-600 border-b border-gray-100 hover:text-green-600 transition-colors">
-            <Search className="w-5 h-5 mr-3" /> Rechercher
-          </a>
-          <a href="#" className="flex items-center py-3 text-gray-600 border-b border-gray-100 hover:text-green-600 transition-colors">
-            <Heart className="w-5 h-5 mr-3" /> Mes favoris
-          </a>
-          <a href="#" className="flex items-center py-3 text-green-600 font-medium border-b border-gray-100">
+          <Link href="/dashboard/vendeur" className="flex items-center py-3 text-gray-600 border-b border-gray-100 hover:text-green-600 transition-colors">
+            <Home className="w-5 h-5 mr-3" /> ← Tableau de bord
+          </Link>
+          
+          <a href="/dashboard/vendeur/visites" className="flex items-center py-3 text-green-600 font-medium border-b border-gray-100">
             <Calendar className="w-5 h-5 mr-3" /> Mes visites
           </a>
-          <a href="#" className="flex items-center py-3 text-gray-600 border-b border-gray-100 hover:text-green-600 transition-colors">
+          <a href="/dashboard/vendeur/offres" className="flex items-center py-3 text-gray-600 border-b border-gray-100 hover:text-green-600 transition-colors">
             <Briefcase className="w-5 h-5 mr-3" /> Mes offres
           </a>
-          <a href="#" className="flex items-center py-3 text-gray-600 border-b border-gray-100 hover:text-green-600 transition-colors">
+          <a href="/dashboard/vendeur/parametres" className="flex items-center py-3 text-gray-600 border-b border-gray-100 hover:text-green-600 transition-colors">
             <Settings className="w-5 h-5 mr-3" /> Paramètres
           </a>
         </nav>
@@ -353,14 +373,29 @@ const MesVisites = () => {
 
         {filteredVisits.length === 0 && (
           <div className="text-center py-16">
-            <div className="text-6xl mb-4">📅</div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Aucune visite planifiée</h3>
-            <p className="text-gray-600">Commencez par rechercher des biens qui vous intéressent.</p>
-            <button className="mt-4 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-              Commencer une recherche
-            </button>
+            <div className="text-6xl mb-4">📭</div>
+
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              {getFallbackMessage().title}
+            </h3>
+
+            <p className="text-gray-600">
+              {getFallbackMessage().message}
+            </p>
+
+            <p className="text-gray-600 mt-2">
+              Les acheteurs pourront vous contacter lorsqu&apos;ils s&apos;intéresseront à vos propriétés.
+            </p>
+
+            <Link
+              href="/dashboard/vendeur/mesBiens"
+              className="mt-4 inline-block px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            >
+              Voir mes propriétés
+            </Link>
           </div>
         )}
+
       </div>
     </div>
   );

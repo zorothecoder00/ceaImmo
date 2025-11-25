@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Home, Search, Heart, Calendar, Briefcase, Settings } from 'lucide-react';
 import { OffreStatut } from '@prisma/client'
+import Link from 'next/link'
   
  interface Propriete {
   id: number   
@@ -169,38 +170,29 @@ const MesOffres = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
-      <div className="w-64 bg-white shadow-lg">
+      <div className="w-64 bg-white shadow-lg">   
         <div className="p-6">
-          <button className="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors">
-            + Nouvelle recherche
-          </button>
+          
         </div>
         
         <nav className="px-6">
-          <a href="#" className="flex items-center py-3 text-gray-600 border-b border-gray-100 hover:text-green-600 transition-colors">
+          <Link href="/dashboard/vendeur" className="flex items-center py-3 text-gray-600 border-b border-gray-100 hover:text-green-600 transition-colors">
             <Home className="w-5 h-5 mr-3" />
-            Tableau de bord
-          </a>
-          <a href="#" className="flex items-center py-3 text-gray-600 border-b border-gray-100 hover:text-green-600 transition-colors">
-            <Search className="w-5 h-5 mr-3" />
-            Rechercher
-          </a>
-          <a href="#" className="flex items-center py-3 text-gray-600 border-b border-gray-100 hover:text-green-600 transition-colors">
-            <Heart className="w-5 h-5 mr-3" />
-            Mes favoris
-          </a>
-          <a href="#" className="flex items-center py-3 text-gray-600 border-b border-gray-100 hover:text-green-600 transition-colors">
+            ← Tableau de bord
+          </Link>
+        
+          <Link href="/dashboard/vendeur/visites" className="flex items-center py-3 text-gray-600 border-b border-gray-100 hover:text-green-600 transition-colors">
             <Calendar className="w-5 h-5 mr-3" />
             Mes visites
-          </a>
-          <a href="#" className="flex items-center py-3 text-green-600 font-medium border-b border-gray-100">
+          </Link>
+          <Link href="/dashboard/vendeur/offres" className="flex items-center py-3 text-green-600 font-medium border-b border-gray-100">
             <Briefcase className="w-5 h-5 mr-3" />
             Mes offres
-          </a>
-          <a href="#" className="flex items-center py-3 text-gray-600 border-b border-gray-100 hover:text-green-600 transition-colors">
+          </Link>
+          <Link href="/dashboard/vendeur/parametres" className="flex items-center py-3 text-gray-600 border-b border-gray-100 hover:text-green-600 transition-colors">
             <Settings className="w-5 h-5 mr-3" />
             Paramètres
-          </a>
+          </Link>
         </nav>
       </div>
 

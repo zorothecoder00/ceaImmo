@@ -209,97 +209,91 @@ const MesVisites = () => {
 
   // 🖥️ Rendu principal
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
-      <div className="w-64 bg-white shadow-lg">
-        <div className="p-6">
-          <button className="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors">
-            + Nouvelle recherche
-          </button>
-        </div>
-        <nav className="px-6">
-          <a href="#" className="flex items-center py-3 text-green-600 font-medium border-b border-gray-100">
-            <Calendar className="w-5 h-5 mr-3" />
-            Mes visites
-          </a>
-        </nav>
+  <div className="min-h-screen bg-gray-50 p-8">
+    {/* Bouton retour dashboard */}
+    <Link
+      href="/dashboard/acheteur"
+      className="inline-block mb-6 px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors"
+    >
+      ← Retour au dashboard
+    </Link>
+
+    <h1 className="text-3xl font-semibold text-gray-900 mb-2">Mes Visites</h1>
+    <p className="text-gray-600 mb-6">Gérez vos rendez-vous de visites immobilières</p>
+
+    {/* Filtres */}
+    <div className="flex gap-4 mb-8 flex-wrap">
+      {filters.map(f => (
+        <button
+          key={f.key}
+          onClick={() => setActiveFilter(f.key)}
+          className={`px-5 py-2 text-sm rounded-full border transition-all duration-300 ${
+            activeFilter === f.key
+              ? 'bg-green-600 text-white border-green-600'
+              : 'bg-white text-gray-600 border-gray-300 hover:border-green-600'
+          }`}
+        >
+          {f.label}
+        </button>
+      ))}
+    </div>
+
+    {/* Chargement */}
+    {loading ? (
+      <div className="text-center text-gray-500 py-16">Chargement des visites...</div>
+    ) : !hasAnyVisite ? (
+      <div className="text-center py-16">
+        <div className="text-6xl mb-4">📅</div>
+        <h3 className="text-lg font-medium text-gray-900 mb-2">Aucune visite planifiée</h3>
+        <p className="text-gray-600">
+          Commencez par rechercher des biens qui vous intéressent.
+        </p>
+        <Link
+          href="/dashboard/acheteur/recherches"
+          className="mt-4 inline-block px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+        >
+          Commencer une recherche
+        </Link>
       </div>
-
-      {/* Main content */}
-      <div className="flex-1 p-8">
-        <h1 className="text-3xl font-semibold text-gray-900 mb-2">Mes Visites</h1>
-        <p className="text-gray-600 mb-6">Gérez vos rendez-vous de visites immobilières</p>
-
-        {/* Filtres */}
-        <div className="flex gap-4 mb-8 flex-wrap">
-          {filters.map(f => (
-            <button
-              key={f.key}
-              onClick={() => setActiveFilter(f.key)}
-              className={`px-5 py-2 text-sm rounded-full border transition-all duration-300 ${
-                activeFilter === f.key
-                  ? 'bg-green-600 text-white border-green-600'
-                  : 'bg-white text-gray-600 border-gray-300 hover:border-green-600'
-              }`}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Chargement */}
-        {loading ? (
-          <div className="text-center text-gray-500 py-16">Chargement des visites...</div>
-        ) : !hasAnyVisite ? (
-          <div className="text-center py-16">
-            <div className="text-6xl mb-4">📅</div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Aucune visite planifiée</h3>
-            <p className="text-gray-600">Commencez par rechercher des biens qui vous intéressent.</p>
-            <Link 
-              href="/dashboard/acheteur/recherches"
-              className="mt-4 inline-block px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-            >
-              Commencer une recherche
-            </Link>
-
-          </div>
-        ) : (
+    ) : (
+      <>
+        {urgentVisites.length > 0 && (
           <>
-            {urgentVisites.length > 0 && (
-              <>
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">🚨 Visites urgentes</h2>
-                <div className="space-y-4 mb-8">
-                  {urgentVisites.map(v => (
-                    <VisitCard key={v.id} visite={v} />
-                  ))}
-                </div>
-              </>
-            )}
-            {todayVisites.length > 0 && (
-              <>
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">📅 Aujourd’hui</h2>
-                <div className="space-y-4 mb-8">
-                  {todayVisites.map(v => (
-                    <VisitCard key={v.id} visite={v} />
-                  ))}
-                </div>
-              </>
-            )}
-            {upcomingVisites.length > 0 && (
-              <>
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">🗓️ À venir</h2>
-                <div className="space-y-4">
-                  {upcomingVisites.map(v => (
-                    <VisitCard key={v.id} visite={v} />
-                  ))}
-                </div>
-              </>
-            )}
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">🚨 Visites urgentes</h2>
+            <div className="space-y-4 mb-8">
+              {urgentVisites.map(v => (
+                <VisitCard key={v.id} visite={v} />
+              ))}
+            </div>
           </>
         )}
-      </div>
-    </div>
-  )
+
+        {todayVisites.length > 0 && (
+          <>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">📅 Aujourd’hui</h2>
+            <div className="space-y-4 mb-8">
+              {todayVisites.map(v => (
+                <VisitCard key={v.id} visite={v} />
+              ))}
+            </div>
+          </>
+        )}
+
+        {upcomingVisites.length > 0 && (
+          <>
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">🗓️ À venir</h2>
+            <div className="space-y-4">
+              {upcomingVisites.map(v => (
+                <VisitCard key={v.id} visite={v} />
+              ))}
+            </div>
+          </>
+        )}
+      </>
+    )}
+  </div>
+)
+
 };
 
-export default MesVisites;
+export default MesVisites;  

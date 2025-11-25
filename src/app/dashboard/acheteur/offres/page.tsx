@@ -163,57 +163,60 @@ const MesOffres = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
+      {/* Sidebar */}   
       <div className="w-64 bg-white shadow-lg">
         <div className="p-6">
-          <button className="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors">
-            + Nouvelle recherche
-          </button>
+          <Link
+            href="/dashboard/acheteur"
+            className="inline-block mb-6 px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors"
+          >
+            ← Retour au dashboard
+          </Link>
         </div>
 
         <nav className="px-6">
-          <a
-            href="#"
+          <Link
+            href="/dashboard/acheteur"
             className="flex items-center py-3 text-gray-600 border-b border-gray-100 hover:text-green-600 transition-colors"
           >
             <Home className="w-5 h-5 mr-3" />
             Tableau de bord
-          </a>
-          <a
-            href="#"
+          </Link>
+          <Link
+            href="/dashboard/acheteur/recherches"
             className="flex items-center py-3 text-gray-600 border-b border-gray-100 hover:text-green-600 transition-colors"
           >
             <Search className="w-5 h-5 mr-3" />
             Rechercher
-          </a>
-          <a  
-            href="#"
+          </Link>
+          <Link  
+            href="/dashboard/acheteur/favoris"
             className="flex items-center py-3 text-gray-600 border-b border-gray-100 hover:text-green-600 transition-colors"
           >
             <Heart className="w-5 h-5 mr-3" />
             Mes favoris
-          </a>
-          <a
-            href="#"
+          </Link>
+          <Link
+            href="/dashboard/acheteur/visites"
             className="flex items-center py-3 text-gray-600 border-b border-gray-100 hover:text-green-600 transition-colors"
           >
             <Calendar className="w-5 h-5 mr-3" />
             Mes visites
-          </a>
-          <a
-            href="#"
+          </Link>
+          <Link
+            href="/dashboard/acheteur/offres"
             className="flex items-center py-3 text-green-600 font-medium border-b border-gray-100"
           >
             <Briefcase className="w-5 h-5 mr-3" />
             Mes offres
-          </a>  
-          <a
-            href="#"
+          </Link>  
+          <Link
+            href="/dashboard/acheteur/parametres"
             className="flex items-center py-3 text-gray-600 border-b border-gray-100 hover:text-green-600 transition-colors"
           >
             <Settings className="w-5 h-5 mr-3" />
             Paramètres
-          </a>
+          </Link>
         </nav>
       </div>
 

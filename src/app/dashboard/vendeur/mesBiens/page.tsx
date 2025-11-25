@@ -1,15 +1,16 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link'
 import {   
   Plus, 
-  Search, 
+  Search,    
   MoreVertical, 
   Eye, 
   Edit,    
   Trash2, 
-  MapPin, 
-  Bed,    
+  MapPin,     
+  Bed,        
   Square, 
   Heart,
   MessageSquare,
@@ -659,10 +660,17 @@ export default function MesBiens() {
                   Voici vos {biens.length} biens immobiliers. Gérez-les à votre rythme.
                 </p>
               </div>
+              <Link 
+                href="/dashboard/vendeur"
+                className="bg-gray-800 text-white px-5 py-3 rounded-xl hover:bg-gray-900 transition-colors font-medium shadow-sm flex items-center gap-2"
+              >
+                ← Retour au Dashboard
+              </Link>
+
               <button 
                 onClick={handleAddNew}
                 className="bg-indigo-600 text-white px-6 py-3 rounded-xl hover:bg-indigo-700 transition-colors flex items-center gap-2 font-medium shadow-sm"
-              >
+              > 
                 <Plus size={20} />
                 Ajouter un bien
               </button>
@@ -827,14 +835,13 @@ export default function MesBiens() {
 
                 <div className="space-y-4">
                   <div className="relative w-full h-64 rounded-lg overflow-hidden">
-  <Image
-    src={selectedBien.images[0]?.url || '/placeholder.jpg'}
-    alt={selectedBien.nom}
-    fill
-    className="object-cover"
-  />
-</div>
-
+                    <Image
+                      src={selectedBien.images[0]?.url || '/placeholder.jpg'}
+                      alt={selectedBien.nom}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
 
                   <div>
                     <h3 className="text-lg font-bold">{selectedBien.nom}</h3>
