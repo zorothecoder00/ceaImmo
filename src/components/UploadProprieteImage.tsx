@@ -62,7 +62,7 @@ export default function UploadProprieteImage({ images, setImages }: UploadPropri
                 src={image.url}
                 alt={`Image ${index + 1}`}
                 fill
-    className="object-cover rounded-lg border border-gray-200"
+                className="object-cover rounded-lg border border-gray-200"
               />
               
               {/* Badge d'ordre */}

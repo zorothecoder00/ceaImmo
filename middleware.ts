@@ -7,6 +7,34 @@ export async function middleware(request: NextRequest) {
   const url = request.nextUrl
   const { pathname } = url  
 
+  // ⚡ Autoriser certaines routes sans fetch (API, auth, maintenance)
+  if (
+    pathname.startsWith('/maintenance') ||
+    pathname.startsWith('/api') ||
+    pathname.startsWith('/auth')
+  ) {
+    return NextResponse.next()
+  }
+  
+  // 🔹 Vérifier le mode maintenance via API
+  let maintenance = false
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/admin/maintenance`, {
+      cache: "no-store" // 🔹 Toujours récupérer la dernière valeur
+    })
+    const data = await res.json()
+    maintenance = data.maintenance === true
+  } catch (error) {
+    console.error("Erreur fetch maintenance", error)
+  }
+
+  // 🔹 Bloquer site si maintenance activée et non-admin
+  if (maintenance) {
+    if (!token || token.role !== "ADMIN") {
+      return NextResponse.redirect(new URL('/maintenance', request.url))
+    }
+  }
+
   // Si l'utilisateur n'est pas connecté → rediriger vers /login
   if (!token) {
     if (!pathname.startsWith('/auth')) {
@@ -42,5 +70,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'], // toutes les routes sauf les assets
 }

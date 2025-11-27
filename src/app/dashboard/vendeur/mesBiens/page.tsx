@@ -670,7 +670,7 @@ export default function MesBiens() {
               <button 
                 onClick={handleAddNew}
                 className="bg-indigo-600 text-white px-6 py-3 rounded-xl hover:bg-indigo-700 transition-colors flex items-center gap-2 font-medium shadow-sm"
-              > 
+              >   
                 <Plus size={20} />
                 Ajouter un bien
               </button>

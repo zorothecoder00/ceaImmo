@@ -1,40 +1,11 @@
-// pages/dashboard/admin/index.js ou app/dashboard/admin/page.js
-'use client'; // Si vous utilisez app directory
-
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation'; // ou 'next/navigation' pour app directory
+import fs from 'fs/promises';
+import { getDashboardStats, setMaintenanceMode, getDashboardAdmin } from '@/lib/getDashboardAdmin';
 
-const AdminDashboard = () => {
-  const router = useRouter();
-  const [stats, setStats] = useState({
-    users: { total: 0, new: 0, pending: 0 },
-    properties: { total: 0, pending: 0, reported: 0 },
-    system: { uptime: '0%', dailyViews: '0', growth: '0%' }
-  });
-
-  useEffect(() => {
-    // Simulation du chargement des statistiques
-    // Remplacez par vos vraies API calls
-    const loadStats = async () => {
-      try {
-        // const response = await fetch('/api/admin/stats');
-        // const data = await response.json();
-        
-        // Données simulées pour l'exemple
-        setStats({
-          users: { total: 1247, new: 23, pending: 5 },
-          properties: { total: 856, pending: 12, reported: 3 },
-          system: { uptime: '95.2%', dailyViews: '2.4k', growth: '+15%' }
-        });
-      } catch (error) {
-        console.error('Erreur lors du chargement des statistiques:', error);
-      }
-    };
-
-    loadStats();
-  }, []);
-
+export default async function AdminDashboard() {
+  // Récupère les stats côté serveur
+  const stats = await getDashboardStats();
+    
   const dashboardCards = [
     {
       id: 'users',
@@ -102,35 +73,6 @@ const AdminDashboard = () => {
     }
   ];
 
-  const handleExportData = async () => {
-    try {
-      // Implémentez votre logique d'export
-      const response = await fetch('/api/admin/export', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `cea-immo-report-${new Date().toISOString().split('T')[0]}.xlsx`;
-        a.click();
-      }
-    } catch (error) {
-      console.error('Erreur lors de l\'export:', error);
-      alert('Erreur lors de l\'export des données');
-    }
-  };
-
-  const handleMaintenance = () => {
-    if (confirm('Activer le mode maintenance ? Les utilisateurs ne pourront plus accéder au site.')) {
-      // Implémentez votre logique de maintenance
-      router.push('/dashboard/admin/parametres?tab=maintenance');
-    }
-  };
-
   return (
     <>
       <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-4 lg:p-8">
@@ -188,7 +130,7 @@ const AdminDashboard = () => {
                 </div>
               </Link>
             ))}
-          </div>
+          </div>    
 
           {/* Quick Actions */}
           <div className="bg-white/95 backdrop-blur-lg rounded-b-3xl shadow-2xl p-8">
@@ -196,24 +138,16 @@ const AdminDashboard = () => {
               Actions Rapides
             </h3>
             <div className="flex flex-wrap gap-4 justify-center lg:justify-start">
-              <button
-                onClick={() => router.push('/dashboard/admin/utilisateurs/nouveau')}
-                className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-medium transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
-              >
+              <Link href="/dashboard/admin/utilisateurs/nouveau" className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-medium transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                 👥 + Nouvel Agent
-              </button>
-              <button
-                onClick={handleExportData}
-                className="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-medium transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
-              >
-                📊 Rapport Mensuel
-              </button>
-              <button
-                onClick={handleMaintenance}
-                className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-medium transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
-              >
+              </Link>
+              
+              <Link href="/dashboard/admin/maintenance?enable=true" className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-medium transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                 🔧 Mode Maintenance
-              </button>
+              </Link>
+              <Link href="/dashboard/admin/maintenance?enable=false" className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-medium transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+                🔧 Désactiver Maintenance
+              </Link>
             </div>
           </div>
         </div>
@@ -221,5 +155,3 @@ const AdminDashboard = () => {
     </>
   );
 };
-
-export default AdminDashboard;

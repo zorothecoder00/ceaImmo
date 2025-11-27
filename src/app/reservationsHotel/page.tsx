@@ -315,7 +315,7 @@ const ReservationHotel = () => {
             Modifier la recherche
           </button>
           <div className="flex items-center gap-4 text-gray-600">
-            <span><MapPin className="w-4 h-4 inline mr-1" />{searchParams.destination || "Côte d'Azur"}</span>
+            <span><MapPin className="w-4 h-4 inline mr-1" />{searchParams.destination || "Kpalimé"}</span>
             <span><Calendar className="w-4 h-4 inline mr-1" />{searchParams.dateArrivee || "Date d'arrivée"}</span>
             <span><Calendar className="w-4 h-4 inline mr-1" />{searchParams.dateDepart || "Date de départ"}</span>
             <span><Users className="w-4 h-4 inline mr-1" />{searchParams.nombreVoyageurs} voyageur{searchParams.nombreVoyageurs > 1 ? 's' : ''}</span>

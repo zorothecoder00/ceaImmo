@@ -4,15 +4,15 @@ datasource db {
   provider = "postgresql" // ou "mysql", selon ta base
   url      = env("DATABASE_URL")             
 }     
-      
+          
 generator client {    
   provider = "prisma-client-js"      
-}                       
+}                          
   
-enum Role {    
+enum Role {       
   ADMIN    
   ACHETEUR
-  VENDEUR   
+  VENDEUR      
   AGENT
   ENTREPRISE
 }    
@@ -136,6 +136,7 @@ model User {
   avis              Avis[]
   recherches        Recherche[] // 👈 Ajoute cette ligne
   vus               Vu[]
+  signalements      Signalement[]
 }        
 
 model Propriete {   
@@ -171,7 +172,7 @@ model Propriete {
   avis              Avis[]
   vus               Vu[]
   hotel             Hotel?          @relation("ProprieteHotel")
-
+  signalements      Signalement[]
 }  
 
 model ProprieteImage {
@@ -410,11 +411,11 @@ model Avis {
   userId         Int
   user           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  createdAt      DateTime           @default(now())
+  createdAt      DateTime           @default(now())  
   updatedAt      DateTime           @updatedAt
 
   @@unique([proprieteId, userId]) // 👈 un user ne peut noter une propriété qu’une seule fois
-}
+}   
 
 
 model Log {
@@ -427,8 +428,8 @@ model Log {
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
 }
-   
-model Notification {
+      
+model Notification {    
   id             Int                @id @default(autoincrement())
   systeme        Systeme
   contenu        String             // message à afficher/envoyer
@@ -438,7 +439,7 @@ model Notification {
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
 }         
-
+  
 model Config {
   id             Int                @id @default(1)
   maintenance    Boolean            @default(false)  
@@ -482,6 +483,25 @@ model Vu {
   dateVu         DateTime   @default(now())
 
   @@unique([userId, proprieteId]) // ✅ Évite les doublons (un utilisateur ne compte qu'une fois par propriété)
+}
+
+model Signalement {
+  id           Int        @id @default(autoincrement())
+  proprieteId  Int
+  propriete    Propriete  @relation(fields: [proprieteId], references: [id], onDelete: Cascade)
+
+  userId       Int
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  raison       String     // Ex: "Annonce frauduleuse", "Prix incorrect", "Contenu inapproprié"
+  description  String?    // Détails optionnels
+
+  statut       String     @default("EN_ATTENTE") // EN_ATTENTE, TRAITE, REJETE
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([proprieteId])
+  @@index([userId])
 }
 
          

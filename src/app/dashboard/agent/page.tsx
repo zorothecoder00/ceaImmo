@@ -1,11 +1,11 @@
 // src/app/dashboard/agent/page.tsx
 import {  
   Home,   
-  Building, 
+  Building,    
   Calendar, 
   Users, 
   FileText, 
-  Settings, 
+  Settings,    
   Bell,
   User,
   Eye,
@@ -164,11 +164,14 @@ function PropertyCard({ property }: { property: Property }) {
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
       <div className="relative">
-        <Image         
-          src={property.images[0]} 
-          alt={property.title}
-          className="w-full h-48 object-cover"
-        />
+        <div className="relative w-full h-48">
+          <Image
+            src={property.images[0]}
+            alt={property.title}
+            fill
+            className="object-cover"
+          />
+        </div>
         <span className={`absolute top-3 left-3 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(property.status)}`}>
           {property.status}
         </span>

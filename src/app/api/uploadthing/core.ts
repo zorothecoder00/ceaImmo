@@ -2,7 +2,7 @@ import { createUploadthing, type FileRouter } from "uploadthing/next";
 
 const f = createUploadthing();
 
-export const ourFileRouter = {
+export const ourFileRouter = {   
   proprieteImage: f({ image: { maxFileSize: "4MB", maxFileCount: 5 } }) // 5 images max
     .onUploadComplete(async ({ file }) => {
       console.log("✅ Fichier uploadé avec succès :", file.url);

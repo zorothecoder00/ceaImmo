@@ -6,5 +6,6 @@ export default function MaintenancePage() {
         <p className="mt-4 text-lg">Nous travaillons à l’amélioration du site. Merci de revenir bientôt 🙏</p>
       </div>
     </main>
-  )
-}
+  )   
+}      
+   
