@@ -7,7 +7,7 @@ import { getAuthSession } from "@/lib/auth";
 interface ChambreInput {
   nom: string;  
   description?: string;
-  prixParNuit: number | string;
+  prixParNuit: number | string;   
   capacite: number | string;
   disponible?: boolean;
 }

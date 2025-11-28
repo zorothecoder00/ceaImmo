@@ -65,8 +65,8 @@ export default async function handler(
         data: {   
           nom: propriete.nom,
           description: propriete.description || null,
-          prix: propriete.prix ?? 0,       // 🔹 Ajouter un prix par défaut si nécessaire
-          surface: propriete.surface ?? 0, // 🔹 Ajouter une surface par défaut si nécessaire
+          prix: propriete.prix && propriete.prix !== "" ? BigInt(propriete.prix) : undefined,
+          surface: propriete.surface && propriete.surface !== "" ? BigInt(propriete.surface) : undefined,
           categorie: Categorie.HOTEL,
           statut: propriete.statut || Statut.DISPONIBLE,
           geolocalisation: propriete.geolocalisation,

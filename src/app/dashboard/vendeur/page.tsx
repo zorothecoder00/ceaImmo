@@ -30,7 +30,7 @@ import { Categorie, VisiteStatut, Statut, OffreStatut } from '@prisma/client'
 import { getMesProprietes, getMesOffresRecus, getMesProchainesVisites } from '@/lib/getDashboardVendeur'
 import VendeurDashboardClient from '@/components/DashboardVendeur'
 
-// Types
+// Types     
 interface Property {
   id: number  
   nom: string

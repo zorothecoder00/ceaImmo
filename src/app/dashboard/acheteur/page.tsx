@@ -42,10 +42,10 @@ interface Property {
   id: number
   nom: string
   geolocalisation: string  
-  prix: number|bigint
+  prix: number|bigint | null
   nombreChambres: number  
   chambre?: string
-  surface: number | bigint
+  surface: number | bigint | null
   categorie: Categorie
   images: Image[]
   description: string | null
