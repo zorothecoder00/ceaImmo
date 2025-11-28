@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Home, Building, Calendar, Settings, Bell, User, Eye, 
   TrendingUp, Euro, X, Plus, Trash2, Loader2,    
-  AlertCircle, MapPin, Bed, CheckCircle      
+  AlertCircle, MapPin, Bed, CheckCircle, Hotel as HotelIcon, Star      
 } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'  
@@ -77,6 +77,14 @@ interface FormDataProps {
   visiteVirtuelle: string
 }
 
+interface HotelFormData {
+  propriete: FormDataProps
+  nombreEtoiles: number;
+  nombreChambresTotal: number;
+  nombreVoyageursMax: number;
+  politiqueAnnulation?: string;
+}
+
 interface PropertyImage {
   id: number
   url: string
@@ -109,7 +117,10 @@ export default function VendeurDashboardClient({
   prochainesVisites,
 }: VendeurDashboardClientProps) {
   const [showModal, setShowModal] = useState(false)
+  const [showHotelModal, setShowHotelModal] = useState(false);
   const [currentStep, setCurrentStep] = useState(1)
+  const [currentStepHotel, setCurrentStepHotel] = useState(1)
+
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [images, setImages] = useState<PropertyImage[]>([])
@@ -127,6 +138,24 @@ export default function VendeurDashboardClient({
     visiteVirtuelle: '',
   })
 
+  const [hotelData, setHotelData] = useState<HotelFormData>({
+    propriete: {
+      nom: "",
+      description: "",
+      categorie: Categorie.HOTEL,
+      prix: "",
+      surface: "",
+      statut: Statut.DISPONIBLE,
+      geolocalisation: "",
+      nombreChambres: "",
+      visiteVirtuelle: "",
+    },
+    nombreEtoiles: 1,
+    nombreChambresTotal: 1,
+    nombreVoyageursMax: 1,
+    politiqueAnnulation: ""
+  })
+
   // 🔹 Handlers
   const handleChange = (field: keyof FormDataProps, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -134,6 +163,11 @@ export default function VendeurDashboardClient({
 
   const handleAddNew = () => setShowModal(true)
   const handleCloseModal = () => setShowModal(false)
+
+  const handleOpenHotelModal = () => {
+    setShowHotelModal(true);
+    setCurrentStep(1);
+  };
 
   const addChambre = () => {
     setChambres(prev => [
@@ -146,7 +180,7 @@ export default function VendeurDashboardClient({
     setChambres(prev => prev.filter((_, i) => i !== index))
   }
 
-  const updateChambre = (index: number, field: keyof Chambre, value: string) => {
+  const updateChambre = (index: number, field: keyof Chambre, value: string | boolean) => {
     setChambres(prev => {
       const updated = [...prev]
       updated[index] = { ...updated[index], [field]: value }
@@ -172,6 +206,25 @@ export default function VendeurDashboardClient({
         return true
     }
   }
+
+  const isHotelStepValid = () => {
+    switch (currentStepHotel) {
+      case 1:
+        return (
+          hotelData.propriete.nom &&
+          hotelData.propriete.geolocalisation &&
+          hotelData.nombreEtoiles &&
+          hotelData.nombreChambresTotal &&
+          hotelData.nombreVoyageursMax
+        );
+      case 2:
+        return images.length > 0;
+      case 3:
+        return chambres.length > 0;
+      default:
+        return true;
+    }
+  };
 
   // 🔹 Soumission du formulaire
   const handleSubmit = async () => {
@@ -225,6 +278,68 @@ export default function VendeurDashboardClient({
       setIsSubmitting(false)
     }
   }
+
+  const handleSubmitHotel = async () => {
+    if (!isHotelStepValid()) return;
+
+    setIsSubmitting(true);
+    setErrorMsg(null);
+
+    try {
+      const payload = {
+        propriete: {
+          ...hotelData.propriete,
+          nombreChambres: Number(hotelData.propriete.nombreChambres),
+          imageUrls: images.map(img => img.url),
+        },
+        hotel: {
+          nombreEtoiles: hotelData.nombreEtoiles,
+          nombreChambresTotal: hotelData.nombreChambresTotal,
+          nombreVoyageursMax: hotelData.nombreVoyageursMax,
+          politiqueAnnulation: hotelData.politiqueAnnulation,
+          chambres,
+        }
+      };
+
+      const res = await fetch("/api/vendeur/mesHotels", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Erreur lors de la création de l'hôtel.");
+
+      // reset
+      setHotelData({
+        propriete: {
+          nom: "",
+          description: "",
+          categorie: Categorie.HOTEL,
+          prix: "",
+          surface: "",
+          statut: Statut.DISPONIBLE,
+          geolocalisation:  "",
+          nombreChambres:  "",
+          visiteVirtuelle:  "",        
+        },
+        nombreEtoiles: 1,
+        nombreChambresTotal: 1,
+        nombreVoyageursMax: 1,
+        politiqueAnnulation: ""
+      });
+      setImages([]);
+      setChambres([]);
+
+      setShowHotelModal(false);
+      window.location.reload();
+    } catch (error) {
+      console.error("Erreur:", error);
+      setErrorMsg(error instanceof Error ? error.message : "Erreur inconnue");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const categories = Object.values(Categorie)
   const statuts = Object.values(Statut)
@@ -281,9 +396,16 @@ export default function VendeurDashboardClient({
 
           <button
             onClick={handleAddNew}
-            className="w-full bg-orange-600 text-white rounded-lg py-2 px-4 text-sm font-medium mb-6 hover:bg-orange-700 transition-colors"
+            className="w-full bg-orange-600 text-white rounded-lg py-2 px-4 text-sm font-medium mb-2 hover:bg-orange-700 transition-colors"
           >
             + Ajouter un bien
+          </button>
+
+          <button
+            onClick={handleOpenHotelModal}
+            className="w-full bg-sky-600 text-white rounded-lg py-2 px-4 text-sm font-medium mb-6 hover:bg-sky-700 transition-colors"
+          >
+            + Ajouter un hôtel
           </button>
 
           <nav className="space-y-2">
@@ -454,9 +576,10 @@ export default function VendeurDashboardClient({
    
       </main>
     </div>
+
     {/* Modal */}
       <AnimatePresence>
-        {showModal && (
+        {showModal && (   
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -530,11 +653,14 @@ export default function VendeurDashboardClient({
                         </label>
                         <select
                           value={formData.categorie}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
                           onChange={(e) => setFormData({ ...formData, categorie: e.target.value as Categorie })}
                         >
-                          {categories.map(cat => (
-                            <option key={cat} value={cat}>{cat}</option>
-                          ))}
+                          {categories
+                            .filter(cat => cat !== Categorie.HOTEL)
+                            .map(cat => (
+                              <option key={cat} value={cat}>{cat}</option>
+                            ))}
                         </select>
 
                       </div>
@@ -571,6 +697,7 @@ export default function VendeurDashboardClient({
                         </label>
                         <select
                           value={formData.statut}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
                           onChange={(e) => setFormData({ ...formData, statut: e.target.value as Statut })}
                         >
                           {statuts.map(st => (
@@ -776,6 +903,315 @@ export default function VendeurDashboardClient({
         )}
       </AnimatePresence>
       
+      {/* Modal Hôtel */}
+      <AnimatePresence>
+      {showHotelModal && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={() => setShowHotelModal(false)}
+        >
+          <motion.div
+            initial={{ scale: 0.9 }}
+            animate={{ scale: 1 }}
+            exit={{ scale: 0.9 }}
+            onClick={(e) => e.stopPropagation()}
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden"
+          >
+            {/* HEADER */}
+            <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-6 text-white">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold flex items-center gap-2">
+                    <HotelIcon size={28} /> Ajouter un hôtel
+                  </h2>
+                  <p className="text-blue-100 text-sm mt-1">Étape {currentStepHotel} sur 3</p>
+                </div>
+                <button onClick={() => setShowHotelModal(false)} className="p-2 hover:bg-white/20 rounded-lg">
+                  <X size={24} />
+                </button>
+              </div>
+
+              <div className="mt-6 flex gap-2">
+                {[1, 2, 3].map(step => (
+                  <div key={step} className={`h-1 flex-1 rounded-full ${step <= currentStepHotel ? 'bg-white' : 'bg-white/30'}`} />
+                ))}
+              </div>
+            </div>
+
+            {/* CONTENT */}
+            <div className="p-6 overflow-y-auto max-h-[60vh]">
+              
+              {/* STEP 1 : PROPRIETE + HOTEL INFO */}
+              {currentStepHotel === 1 && (
+                <div className="space-y-4">
+
+                  {/* NOM */}
+                  <input
+                    type="text"
+                    value={hotelData?.propriete?.nom}
+                    onChange={(e) =>
+                      setHotelData({
+                        ...hotelData,
+                        propriete: { ...hotelData?.propriete, nom: e.target.value },
+                      })
+                    }
+                    className="w-full px-4 py-3 border rounded-lg"
+                    placeholder="Nom de l'hôtel *"
+                  />
+
+                  {/* DESCRIPTION */}
+                  <textarea
+                    value={hotelData?.propriete?.description}
+                    onChange={(e) =>
+                      setHotelData({
+                        ...hotelData,
+                        propriete: { ...hotelData?.propriete, description: e.target.value },
+                      })
+                    }
+                    className="w-full px-4 py-3 border rounded-lg"
+                    placeholder="Description"
+                  />
+
+                  {/* NOMBRE CHAMBRES PROPRIÉTÉ */}
+                  <input
+                    type="number"
+                    value={hotelData?.propriete?.nombreChambres}
+                    onChange={(e) =>
+                      setHotelData({
+                        ...hotelData,
+                        propriete: { ...hotelData?.propriete, nombreChambres: e.target.value },
+                      })
+                    }
+                    className="w-full px-4 py-3 border rounded-lg"
+                    placeholder="Nombre de chambres *"
+                  />
+
+                  {/* VISITE VIRTUELLE */}
+                  <input
+                    type="text"
+                    value={hotelData?.propriete?.visiteVirtuelle}
+                    onChange={(e) =>
+                      setHotelData({
+                        ...hotelData,
+                        propriete: { ...hotelData?.propriete, visiteVirtuelle: e.target.value },
+                      })
+                    }
+                    className="w-full px-4 py-3 border rounded-lg"
+                    placeholder="Lien de visite virtuelle"
+                  />
+
+                  {/* HOTEL INFOS */}
+                  <div className="grid grid-cols-2 gap-4">
+
+                    {/* Nombre d'étoiles */}
+                    <div className="flex flex-col">
+                      <label className="mb-1 text-sm text-gray-600">Nombre d&apos;étoiles *</label>
+                      <select
+                        value={hotelData?.nombreEtoiles}
+                        onChange={(e) =>
+                          setHotelData({ ...hotelData, nombreEtoiles: Number(e.target.value) })
+                        }
+                        className="px-4 py-3 border rounded-lg"
+                      >
+                        <option value="" disabled>Choisir...</option>
+                        {[1, 2, 3, 4, 5].map((n) => (
+                          <option key={n} value={n}>
+                            {n} étoile{n > 1 ? "s" : ""}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Nombre total de chambres */}
+                    <div className="flex flex-col">
+                      <label className="mb-1 text-sm text-gray-600">Nombre total de chambres *</label>
+                      <input
+                        type="number"
+                        value={hotelData?.nombreChambresTotal}
+                        onChange={(e) =>
+                          setHotelData({
+                            ...hotelData,
+                            nombreChambresTotal: Number(e.target.value),
+                          })
+                        }
+                        className="px-4 py-3 border rounded-lg"
+                        placeholder="Ex : 50"
+                      />
+                    </div>
+
+                  </div>
+
+                  {/* Nombre maximum de voyageurs */}
+                  <div className="flex flex-col mt-4">
+                    <label className="mb-1 text-sm text-gray-600">
+                      Nombre maximum de voyageurs *
+                    </label>
+                    <input
+                      type="number"
+                      value={hotelData?.nombreVoyageursMax}
+                      onChange={(e) =>
+                        setHotelData({
+                          ...hotelData,
+                          nombreVoyageursMax: Number(e.target.value),
+                        })
+                      }
+                      className="w-full px-4 py-3 border rounded-lg"
+                      placeholder="Ex : 120"
+                    />
+                  </div>
+
+
+                  {/* GEOLOCALISATION */}
+                  <input
+                    type="text"
+                    value={hotelData?.propriete?.geolocalisation}
+                    onChange={(e) =>
+                      setHotelData({
+                        ...hotelData,
+                        propriete: { ...hotelData?.propriete, geolocalisation: e.target.value },
+                      })
+                    }
+                    className="w-full px-4 py-3 border rounded-lg"
+                    placeholder="Géolocalisation *"
+                  />
+
+                  {/* POLITIQUE ANNULATION */}
+                  <textarea
+                    value={hotelData?.politiqueAnnulation}
+                    onChange={(e) => setHotelData({...hotelData, politiqueAnnulation: e.target.value})}
+                    className="w-full px-4 py-3 border rounded-lg h-24"
+                    placeholder="Politique d'annulation"
+                  />
+                </div>
+              )}
+
+              {/* STEP 2 : IMAGES */}
+              {currentStepHotel === 2 && (
+                <UploadProprieteImage images={images} setImages={setImages} />
+              )}
+
+              {/* STEP 3 : CHAMBRES */}
+              {currentStepHotel === 3 && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold">Chambres de l&apos;hôtel *</h3>
+                    <button
+                      onClick={addChambre}
+                      className="bg-blue-500 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+                    >
+                      <Plus size={16} /> Ajouter une chambre
+                    </button>
+                  </div>
+
+                  {chambres.length === 0 ? (
+                    <div className="text-center py-12 bg-gray-50 rounded-xl">
+                      <Bed className="mx-auto w-12 h-12 text-gray-300 mb-3" />
+                      <p className="text-gray-500">Aucune chambre ajoutée</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {chambres.map((ch, index) => (
+                        <div key={index} className="border p-4 rounded-lg">
+                          <div className="flex justify-between mb-3">
+                            <h4 className="font-medium">Chambre {index + 1}</h4>
+                            <button
+                              onClick={() => removeChambre(index)}
+                              className="text-red-500 hover:text-red-600"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-3">
+
+                            <input
+                              type="text"
+                              value={ch.nom}
+                              onChange={(e) => updateChambre(index, "nom", e.target.value)}
+                              placeholder="Nom"
+                              className="px-3 py-2 border rounded-lg"
+                            />
+
+                            <input
+                              type="number"
+                              value={ch.capacite}
+                              onChange={(e) => updateChambre(index, "capacite", e.target.value)}
+                              placeholder="Capacité"
+                              className="px-3 py-2 border rounded-lg"
+                            />
+
+                            <input
+                              type="number"
+                              value={ch.prixParNuit}
+                              onChange={(e) => updateChambre(index, "prixParNuit", e.target.value)}
+                              placeholder="Prix / nuit"
+                              className="px-3 py-2 border rounded-lg col-span-2"
+                            />
+
+                            <textarea
+                              value={ch.description}
+                              onChange={(e) => updateChambre(index, "description", e.target.value)}
+                              placeholder="Description"
+                              className="px-3 py-2 border rounded-lg col-span-2"
+                            />
+
+                            <label className="flex items-center gap-2 col-span-2">
+                              <input
+                                type="checkbox"
+                                checked={ch.disponible}
+                                onChange={(e) => updateChambre(index, "disponible", e.target.checked)}
+                              />
+                              Disponible
+                            </label>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+            </div>
+
+            {/* FOOTER */}
+            <div className="border-t p-6 bg-gray-50 flex justify-between">
+              <button
+                onClick={() =>
+                  currentStepHotel > 1 ? setCurrentStepHotel(currentStepHotel - 1) : setShowHotelModal(false)
+                }
+                className="px-6 py-2 border rounded-lg hover:bg-gray-100"
+              >
+                {currentStepHotel === 1 ? "Annuler" : "Précédent"}
+              </button>
+
+              {currentStepHotel < 3 ? (
+                <button
+                  onClick={() => setCurrentStepHotel(currentStepHotel + 1)}
+                  disabled={!isHotelStepValid()}
+                  className="px-6 py-2 bg-blue-500 text-white rounded-lg disabled:bg-gray-300"
+                >
+                  Suivant
+                </button>
+              ) : (
+                <button
+                  onClick={handleSubmitHotel}
+                  disabled={isSubmitting || !isHotelStepValid()}
+                  className="px-6 py-2 bg-green-500 text-white rounded-lg disabled:bg-gray-300 flex items-center gap-2"
+                >
+                  {isSubmitting ? <Loader2 className="animate-spin" size={16} /> : <CheckCircle size={16} />}
+                  {isSubmitting ? "Enregistrement..." : "Enregistrer l'hôtel"}
+                </button>
+              )}
+            </div>
+
+          </motion.div>
+        </motion.div>
+      )}
+      </AnimatePresence>
+
     </div>
   )
 }

@@ -1,14 +1,13 @@
 import Link from 'next/link';
-import fs from 'fs/promises';
 import { getDashboardStats, setMaintenanceMode, getDashboardAdmin } from '@/lib/getDashboardAdmin';
 
 export default async function AdminDashboard() {
   // Récupère les stats côté serveur
-  const stats = await getDashboardStats();
+  const stats = await getDashboardStats();    
     
   const dashboardCards = [
-    {
-      id: 'users',
+    {  
+      id: 'users',   
       title: 'Gestion des Utilisateurs',
       description: 'Administrer les comptes utilisateurs, gérer les permissions et surveiller l\'activité des membres.',
       icon: '👥',

@@ -7,7 +7,7 @@ import {
   User,        
   Eye,       
   Edit,       
-  MapPin,
+  MapPin,   
   Bed,
   Bath,
   Square,     
@@ -19,7 +19,7 @@ import {
   Clock,
   CheckCircle,
   X,
-  Upload,
+  Upload,   
   Trash2,
   AlertCircle  
 } from 'lucide-react'  
@@ -28,7 +28,7 @@ import { Card } from '@/components/ui/card'
 import Image from 'next/image'
 import { Categorie, VisiteStatut, Statut, OffreStatut } from '@prisma/client'
 import { getMesProprietes, getMesOffresRecus, getMesProchainesVisites } from '@/lib/getDashboardVendeur'
-import DashboardVendeurClient from '@/components/DashboardVendeur'
+import VendeurDashboardClient from '@/components/DashboardVendeur'
 
 // Types
 interface Property {
@@ -121,6 +121,15 @@ interface FormData {
   visiteVirtuelle: string
 }
 
+interface HotelFormData {
+  propriete: FormData
+  nombreEtoiles: string;
+  nombreChambresTotal: string;
+  nombreVoyageursMax: string;
+  politiqueAnnulation: string;
+  visiteVirtuelle: string;
+}
+
 // Main Dashboard Component
 export default async function VendeurDashboard() { 
   const session = await getAuthSession()
@@ -178,7 +187,7 @@ export default async function VendeurDashboard() {
   }))
 
   return (
-    <DashboardVendeurClient
+    <VendeurDashboardClient
       user={{
         id: session.user.id.toString(),
         prenom: session.user.prenom || 'Utilisateur',

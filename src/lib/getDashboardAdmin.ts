@@ -35,7 +35,7 @@ export const getDashboardStats = async () => {
         reserved: reservedProperties,
         pending: pendingProperties,
         reported: reportedProperties
-      },
+      },        
       system: systemStats
     };
 

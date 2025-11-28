@@ -15,6 +15,11 @@ export async function middleware(request: NextRequest) {
   ) {
     return NextResponse.next()
   }
+
+  // 👉 Rendre l'accueil publique
+  if (pathname === "/") {
+    return NextResponse.next()
+  }
   
   // 🔹 Vérifier le mode maintenance via API
   let maintenance = false
