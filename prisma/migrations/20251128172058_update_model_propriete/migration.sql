@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Propriete" ALTER COLUMN "prix" DROP NOT NULL,
+ALTER COLUMN "surface" DROP NOT NULL;

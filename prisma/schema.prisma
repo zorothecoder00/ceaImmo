@@ -3,7 +3,7 @@
 datasource db {    
   provider = "postgresql" // ou "mysql", selon ta base
   url      = env("DATABASE_URL")             
-}     
+}          
           
 generator client {    
   provider = "prisma-client-js"      
@@ -144,8 +144,8 @@ model Propriete {
   nom               String        
   description       String?  
   categorie         Categorie
-  prix              BigInt// ✅ permet des valeurs énormes
-  surface           BigInt// ✅ permet des valeurs énormes       
+  prix              BigInt?// ✅ permet des valeurs énormes
+  surface           BigInt?// ✅ permet des valeurs énormes       
   statut            Statut     
   
   images            ProprieteImage[]// 🖼️ Images multiples (UploadThing URLs)
