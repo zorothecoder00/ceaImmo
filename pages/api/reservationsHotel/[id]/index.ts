@@ -26,13 +26,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             images: true,
             avis: { include: { user: true } },
             favoris: true,
-            chambres: {
-              include: {
-                reservations: {
-                  include: { user: true },
-                },
-              },
-            },
           },
         },
         chambres: {

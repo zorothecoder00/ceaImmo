@@ -4,6 +4,14 @@ import { prisma } from '@/lib/prisma';
 import { Categorie, Statut } from "@prisma/client";
 import { getAuthSession } from "@/lib/auth";
 
+type ChambreInput = {
+  nom: string;
+  description?: string;
+  prixParNuit: number | string;
+  capacite: number | string;
+  disponible?: boolean;
+};
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse    
@@ -52,6 +60,7 @@ export default async function handler(
         nombreChambresTotal,
         nombreVoyageursMax,
         politiqueAnnulation,
+        chambres,
       } = req.body;
 
       if (!propriete || propriete.categorie !== "HOTEL") {
@@ -72,27 +81,62 @@ export default async function handler(
           geolocalisation: propriete.geolocalisation,
           nombreChambres: Number(propriete.nombreChambres),
           visiteVirtuelle: propriete.visiteVirtuelle || null,
+          images: propriete.imageUrls && propriete.imageUrls.length > 0
+            ? {
+                create: propriete.imageUrls.map((url: string, index: number) => ({
+                  url,
+                  ordre: index
+                }))
+              }
+            : undefined,
           proprietaireId, // ✅ depuis la session
         },
       });
 
       // Créer l'hôtel associé
       const nouvelHotel = await prisma.hotel.create({
-        data: {
-          proprieteId: nouvellePropriete.id,
+        data: {   
+          proprieteId: nouvellePropriete.id,  
           nombreEtoiles: nombreEtoiles || 1,
           nombreChambresTotal: nombreChambresTotal || Number(propriete.nombreChambres),
           nombreVoyageursMax: nombreVoyageursMax || 1,
           politiqueAnnulation: politiqueAnnulation || null,
+          chambres: chambres && chambres.length > 0
+            ? {
+                create: chambres.map((ch: ChambreInput) => ({
+                  nom: ch.nom,
+                  description: ch.description || "",
+                  prixParNuit: Number(ch.prixParNuit),
+                  capacite: Number(ch.capacite),
+                  disponible: ch.disponible ?? true,
+                })),
+              }
+            : undefined,
         },
         include: {
-          propriete: true,
+          propriete: {
+            include: { images: true } // ⚡ inclure les images ici
+          },
           chambres: true,
-          disponibilites: true,
-        },
+          disponibilites: true,   
+        },  
+      });
+  
+      await prisma.disponibilite.create({
+        data: {
+          hotelId: nouvelHotel.id,
+          startDate: new Date(), // aujourd'hui
+          endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)), // +1 an
+          disponible: true,
+        }
       });
 
-      const safeNouvelHotel = serializeBigInt(nouvelHotel);
+
+      const safeNouvelHotel = serializeBigInt(await prisma.hotel.findUnique({
+        where: { id: nouvelHotel.id },
+        include: { propriete: true, chambres: true, disponibilites: true }
+      }));
+
 
       return res.status(201).json({ data: safeNouvelHotel });
     }

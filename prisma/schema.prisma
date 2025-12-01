@@ -152,7 +152,7 @@ model Propriete {
 
   visiteVirtuelle   String?// 🎥 Lien unique ou optionnel vers la visite virtuelle (YouTube, Matterport, etc.)  
 
-  geolocalisation   String  
+  geolocalisation   String     
   
   nombreChambres    Int             @default(1)/// Nombre total de chambres disponibles (ex: 50 chambres dans un hôtel)
 
@@ -199,7 +199,7 @@ model Hotel {
   prixParNuitParDefaut BigInt?      // override si tu veux
   politiqueAnnulation String?       // texte court
 
-  chambres           Chambre[]
+  chambres           Chambre[]  
 
   createdAt          DateTime       @default(now())
   updatedAt          DateTime       @updatedAt

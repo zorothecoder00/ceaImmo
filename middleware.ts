@@ -7,6 +7,11 @@ export async function middleware(request: NextRequest) {
   const url = request.nextUrl
   const { pathname } = url  
 
+  // 🎯 URL absolue obligatoire dans le middleware
+  const baseUrl =
+    process.env.NEXT_PUBLIC_BASE_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000")
+
   // ⚡ Autoriser certaines routes sans fetch (API, auth, maintenance)
   if (
     pathname.startsWith('/maintenance') ||
@@ -24,7 +29,7 @@ export async function middleware(request: NextRequest) {
   // 🔹 Vérifier le mode maintenance via API
   let maintenance = false
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/admin/maintenance`, {
+    const res = await fetch(`${baseUrl}/api/admin/maintenance`, {
       cache: "no-store" // 🔹 Toujours récupérer la dernière valeur
     })
     const data = await res.json()

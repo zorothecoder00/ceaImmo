@@ -401,16 +401,19 @@ export default function MesBiens() {
       } finally {
         setIsLoading(false);
       }
-    };
+    };   
 
     fetchBiens();
-  }, []);
+  }, []);   
 
   // Filtrage des biens
   const filteredBiens = biens.filter(bien => {
-    const matchSearch = bien.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                       bien.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                       bien.geolocalisation.toLowerCase().includes(searchTerm.toLowerCase());
+    const search = searchTerm.toLowerCase();
+
+    const matchSearch =
+      (bien.nom?.toLowerCase().includes(search) ?? false) ||
+      (bien.description?.toLowerCase().includes(search) ?? false) ||
+      (bien.geolocalisation?.toLowerCase().includes(search) ?? false);
     const matchCategorie = !selectedCategorie || bien.categorie === selectedCategorie;
     const matchStatut = !selectedStatut || bien.statut === selectedStatut;
     

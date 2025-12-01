@@ -297,7 +297,15 @@ export default function VendeurDashboardClient({
           nombreChambresTotal: hotelData.nombreChambresTotal,
           nombreVoyageursMax: hotelData.nombreVoyageursMax,
           politiqueAnnulation: hotelData.politiqueAnnulation,
-          chambres,
+          chambres: chambres.length > 0
+            ? chambres.map(ch => ({
+                nom: ch.nom,
+                description: ch.description || "",
+                prixParNuit: Number(ch.prixParNuit),
+                capacite: Number(ch.capacite),
+                disponible: ch.disponible ?? true,
+              }))
+            : [], // ✅ chambres
         }
       };
 
@@ -868,13 +876,13 @@ export default function VendeurDashboardClient({
                       </div>
                     )}
                     
-                    {currentStep < 3 ? (
+                    {currentStep < 3 ? (  
                       <Button
                         onClick={() => setCurrentStep(currentStep + 1)}
                         disabled={!isStepValid()}
                         className="bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300"
                       >
-                        Suivant
+                        Suivant  
                       </Button>
                     ) : (
                       <Button  
@@ -1187,13 +1195,13 @@ export default function VendeurDashboardClient({
                 {currentStepHotel === 1 ? "Annuler" : "Précédent"}
               </button>
 
-              {currentStepHotel < 3 ? (
+              {currentStepHotel < 3 ? (    
                 <button
                   onClick={() => setCurrentStepHotel(currentStepHotel + 1)}
                   disabled={!isHotelStepValid()}
                   className="px-6 py-2 bg-blue-500 text-white rounded-lg disabled:bg-gray-300"
                 >
-                  Suivant
+                  Suivant  
                 </button>
               ) : (
                 <button

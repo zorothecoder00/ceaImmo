@@ -138,7 +138,7 @@ export default function HomePage()
                 <div className="absolute inset-0 bg-blue-600 rounded-xl blur-md opacity-50 group-hover:opacity-75 transition-opacity"></div>
                 <div className="relative bg-gradient-to-br from-blue-600 to-indigo-600 p-2.5 rounded-xl transform group-hover:scale-110 transition-transform">
                   <Home className="h-7 w-7 text-white" />
-                </div>
+                </div>    
               </div>
               <div>
                 <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">CEA IMMO</span>
@@ -175,16 +175,16 @@ export default function HomePage()
       </header>
 
       {/* ----- MENU MOBILE ----- */}
-{mobileMenuOpen && (
-  <div className="md:hidden bg-white shadow-lg border-b border-gray-200 px-6 py-4 space-y-4 z-50">
-    <Link href="/" className="block text-gray-800 font-medium py-2">Accueil</Link>
-    <Link href="/proprietes" className="block text-gray-800 font-medium py-2">Biens</Link>
-    <Link href="/reservationsHotel" className="block text-gray-800 font-medium py-2">
-      Réservation hôtel
-    </Link>
-    <Link href="/auth/login" className="block text-gray-800 font-medium py-2">Connexion</Link>
-  </div>
-)}
+      {mobileMenuOpen && (
+        <div className="md:hidden bg-white shadow-lg border-b border-gray-200 px-6 py-4 space-y-4 z-50">
+          <Link href="/" className="block text-gray-800 font-medium py-2">Accueil</Link>
+          <Link href="/proprietes" className="block text-gray-800 font-medium py-2">Biens</Link>
+          <Link href="/reservationsHotel" className="block text-gray-800 font-medium py-2">
+            Réservation hôtel
+          </Link>
+          <Link href="/auth/login" className="block text-gray-800 font-medium py-2">Connexion</Link>
+        </div>
+      )}
 
 
 
@@ -396,7 +396,7 @@ export default function HomePage()
                         <div>
                           <p className="text-xs text-gray-500 mb-1">Prix</p>
                           <p className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                            {property.prix.toLocaleString()}
+                            {property.prix?.toLocaleString()}
                           </p>
                         </div>
                         <span className="text-sm font-semibold text-gray-600">FCFA</span>

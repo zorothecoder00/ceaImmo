@@ -2,11 +2,11 @@
 
 import React, { useState } from 'react';
 import {   
-  MapPin, 
+  MapPin,    
   Calendar,     
-  Users, 
+  Users,     
   Search,   
-  Star, 
+  Star,      
   Wifi, 
   Car,    
   Coffee,             
@@ -47,33 +47,53 @@ interface Equipement {
   nom: string
 }
 
+interface SearchFormProps {
+  searchParams: {
+    destination: string;
+    arrivee: string;
+    depart: string;
+    voyageurs: number;
+  };
+  setSearchParams: React.Dispatch<React.SetStateAction<{
+    destination: string;
+    arrivee: string;
+    depart: string;
+    voyageurs: number;
+  }>>;
+  handleSearch: () => void;
+}
+
+
 // 2. Le type principal pour un hôtel
 interface Hotel {
-  id: number
-  nom: string
-  geolocalisation: string
-  prix: number
-  note: number
-  nombreAvis: number
-  disponible: boolean
-  image: string
-  description: string
-  equipements: Equipement[]
-  galerie: GalerieItem[]
-  avis: Avis[]
-}
-
-interface SearchParams {
-  destination: string;
-  dateArrivee: string;
-  dateDepart: string;   
-  nombreVoyageurs: number;
-}
-
-interface SearchFormProps {
-  searchParams: SearchParams
-  setSearchParams: React.Dispatch<React.SetStateAction<SearchParams>>
-  handleSearch: () => void
+  id: number;
+  nombreVoyageursMax: number;
+  nombreEtoiles?: number;
+  disponible?: boolean;
+  equipements?: Equipement[];
+  note?: number;
+  nombreAvis?: number;
+  propriete: {
+    id: number;
+    nom: string;
+    geolocalisation: string;
+    images: { id: number; url: string }[];
+    description: string;
+    avis?: Avis[];
+    prix?: number;
+  };
+  chambres: {
+    id: number;
+    nom: string;
+    prix: number;
+    nombreVoyageurs: number;
+  }[];
+  disponibilites: {
+    id: number;
+    startDate: string;
+    endDate: string;
+    disponible: boolean;
+  }[];
 }
 
 type Step = 'search' | 'results' | 'hotel' | 'payment';
@@ -124,8 +144,8 @@ const SearchForm: React.FC<SearchFormProps & { isSearching: boolean }> = ({ sear
             <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="date"
-              value={searchParams.dateArrivee}
-              onChange={(e) => setSearchParams({ ...searchParams, dateArrivee: e.target.value })}
+              value={searchParams.arrivee}
+              onChange={(e) => setSearchParams({ ...searchParams, arrivee: e.target.value })}
               className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
@@ -137,8 +157,8 @@ const SearchForm: React.FC<SearchFormProps & { isSearching: boolean }> = ({ sear
             <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="date"
-              value={searchParams.dateDepart}
-              onChange={(e) => setSearchParams({ ...searchParams, dateDepart: e.target.value })}
+              value={searchParams.depart}
+              onChange={(e) => setSearchParams({ ...searchParams, depart: e.target.value })}
               className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
@@ -149,8 +169,8 @@ const SearchForm: React.FC<SearchFormProps & { isSearching: boolean }> = ({ sear
           <div className="relative">
             <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <select
-              value={searchParams.nombreVoyageurs}
-              onChange={(e) => setSearchParams({ ...searchParams, nombreVoyageurs: parseInt(e.target.value) })}
+              value={searchParams.voyageurs}
+              onChange={(e) => setSearchParams({ ...searchParams, voyageurs: parseInt(e.target.value) })}
               className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
             >
               {Array.from({ length: 10 }, (_, i) => (
@@ -165,7 +185,7 @@ const SearchForm: React.FC<SearchFormProps & { isSearching: boolean }> = ({ sear
 
       <button
         onClick={handleSearch}
-        disabled={isSearching}
+        disabled={isSearching}    
         className={`w-full py-4 rounded-xl font-semibold text-lg flex items-center justify-center gap-3 transition-all duration-300
           ${isSearching 
             ? 'bg-gray-400 cursor-not-allowed text-gray-200' 
@@ -190,12 +210,13 @@ export default function ReservationHotelPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedHotel, setSelectedHotel] = useState<Hotel | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [searchParams, setSearchParams] = useState<SearchParams>({
-    destination: '',
-    dateArrivee: '',
-    dateDepart: '',
-    nombreVoyageurs: 2,
+  const [searchParams, setSearchParams] = useState({
+    destination: "",
+    arrivee: "",
+    depart: "",  
+    voyageurs: 2,
   });
+
   const [paymentData, setPaymentData] = useState<PaymentData>({
     nom: '',
     email: '',
@@ -211,11 +232,16 @@ export default function ReservationHotelPage() {
     setIsSearching(true)
     setError(null);
     try {
-      const res = await fetch('/api/reservationsHotel', {
+      const res = await fetch('/api/acheteur/rechercheHotels', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include', // 🔑 pour envoyer la session
-        body: JSON.stringify(searchParams),
+        body: JSON.stringify({
+          destination: searchParams.destination,
+          arrivee: searchParams.arrivee,
+          depart: searchParams.depart,
+          voyageurs: searchParams.voyageurs,
+        }),
       });
 
       // Si la session est invalide ou inexistante
@@ -232,11 +258,11 @@ export default function ReservationHotelPage() {
         setHotels([]);
         setCurrentStep('results');
         return;
-      }
+      }   
 
-      const hotelsTrouves = data.hotels ? data.hotels : data.hotel ? [data.hotel] : [];
-      setHotels(hotelsTrouves);
-      setCurrentStep('results');
+      // 👉 Ton API retourne :  { success, total, data: hotels }
+      setHotels(data.data);
+      setCurrentStep("results");
     } catch (err) {
       console.error('Erreur lors de la recherche.', err);
       setError('Erreur lors de la recherche.');
@@ -276,14 +302,48 @@ export default function ReservationHotelPage() {
       return;
     }
 
+    if (!selectedHotel) {
+      setError("Aucun hôtel sélectionné.");
+      return;
+    }
+
     try {
-      // Simuler un paiement réel ou appel API vers ton backend Stripe / autre
-      alert('Réservation confirmée ! Merci pour votre confiance.');
-      setCurrentStep('search');
+      const res = await fetch("/api/reservationsHotel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          dateArrivee: searchParams.arrivee,
+          dateDepart: searchParams.depart,
+          nombreVoyageurs: searchParams.voyageurs,
+
+          // 👇 liaison correcte avec le modèle Prisma
+          proprieteId: selectedHotel.propriete?.id ?? null,
+
+          // 👉 si ton utilisateur sélectionne une chambre spécifique
+          chambreId:
+            selectedHotel.chambres && selectedHotel.chambres.length > 0
+              ? selectedHotel.chambres[0].id
+              : null,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Erreur lors de la réservation.");
+        return;
+      }
+
+      alert("Réservation confirmée !");
+      router.push("/dashboard/acheteur/mes-reservations");
+
     } catch (error) {
-      console.error('Erreur paiement:', error);
+      console.error("Erreur paiement:", error);
+      setError("Impossible de finaliser la réservation.");
     }
   };
+
 
   const renderStars = (nombre: number) => {
     return Array.from({ length: 5 }, (_, i) => (
@@ -315,18 +375,18 @@ export default function ReservationHotelPage() {
             Modifier la recherche
           </button>
           <div className="flex items-center gap-4 text-gray-600">
-            <span><MapPin className="w-4 h-4 inline mr-1" />{searchParams.destination || "Côte d'Azur"}</span>
-            <span><Calendar className="w-4 h-4 inline mr-1" />{searchParams.dateArrivee || "Date d'arrivée"}</span>
-            <span><Calendar className="w-4 h-4 inline mr-1" />{searchParams.dateDepart || "Date de départ"}</span>
-            <span><Users className="w-4 h-4 inline mr-1" />{searchParams.nombreVoyageurs} voyageur{searchParams.nombreVoyageurs > 1 ? 's' : ''}</span>
+            <span><MapPin className="w-4 h-4 inline mr-1" />{searchParams.destination || "Lomé"}</span>
+            <span><Calendar className="w-4 h-4 inline mr-1" />{searchParams.arrivee || "Date d'arrivée"}</span>
+            <span><Calendar className="w-4 h-4 inline mr-1" />{searchParams.depart || "Date de départ"}</span>
+            <span><Users className="w-4 h-4 inline mr-1" />{searchParams.voyageurs} voyageur{searchParams.voyageurs > 1 ? 's' : ''}</span>
           </div>
         </div>
         
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">{hotels.length} hôtels disponibles</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">{hotels?.length} hôtels disponibles</h2>
         
         <div className="space-y-6">
           {hotels.map((hotel) => (
-            <div key={hotel.id} className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+            <div key={hotel.propriete.id} className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
               <div className="flex flex-col lg:flex-row">
                 <div className="lg:w-1/3">
                   <div className="h-64 lg:h-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center">
@@ -340,30 +400,32 @@ export default function ReservationHotelPage() {
                 <div className="lg:w-2/3 p-6 flex flex-col justify-between">
                   <div>
                     <div className="flex items-start justify-between mb-2">
-                      <h3 className="text-xl font-bold text-gray-900">{hotel.nom}</h3>
+                      <h3 className="text-xl font-bold text-gray-900">{hotel.propriete.nom}</h3>
                       <div className="text-right">
-                        <div className="text-2xl font-bold text-blue-600">{formatPrice(hotel.prix)}</div>
+                        <div className="text-2xl font-bold text-blue-600">{hotel.chambres.length > 0 ? formatPrice(hotel.chambres[0].prix) : "N/A"}</div>
                         <div className="text-sm text-gray-500">par nuit</div>
                       </div>
                     </div>
                     
                     <div className="flex items-center gap-2 mb-3">
-                      <div className="flex">{renderStars(hotel.note)}</div>
-                      <span className="text-sm text-gray-600">({hotel.note} étoiles)</span>
+                      <div className="flex">{renderStars(hotel.nombreEtoiles ?? 0)}</div>
+                        <span className="text-sm text-gray-600">({hotel.nombreEtoiles ?? 0} étoiles)
+                        </span>
                     </div>
                     
                     <div className="flex items-center text-gray-600 mb-3">
                       <MapPin className="w-4 h-4 mr-2" />
-                      <span>{hotel.geolocalisation}</span>
+                      <span>{hotel.propriete.geolocalisation}</span>
                     </div>
                     
-                    <p className="text-gray-700 mb-4 line-clamp-2">{hotel.description}</p>
+                    <p className="text-gray-700 mb-4 line-clamp-2">{hotel.propriete.description}</p>
                     
                     <div className="flex items-center gap-4 mb-4">
                       <div className="flex items-center gap-1">
                         <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                        <span className="font-medium">{hotel.note}</span>
-                        <span className="text-sm text-gray-500">({hotel.nombreAvis} avis)</span>
+                        <div className="flex">{renderStars(hotel.nombreEtoiles ?? 0)}</div>
+                        <span className="text-sm text-gray-600">({hotel.nombreEtoiles ?? 0} étoiles)
+                        </span>
                       </div>
                       
                       {hotel.disponible ? (
@@ -427,9 +489,9 @@ export default function ReservationHotelPage() {
               {/* Galerie photos */}
               <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
                 <div className="relative h-96">
-                  {selectedHotel.galerie?.length > 0 ? (
+                  {selectedHotel.propriete?.images?.length > 0 ? (
                     <img
-                      src={selectedHotel.galerie[currentImageIndex]?.url}
+                      src={selectedHotel.propriete?.images[currentImageIndex]?.url}
                       alt={`Photo ${currentImageIndex + 1}`}
                       className="w-full h-full object-cover"
                     />
@@ -445,12 +507,12 @@ export default function ReservationHotelPage() {
                   )}
 
                   {/* Flèches de navigation */}
-                  {selectedHotel.galerie?.length > 1 && (
+                  {selectedHotel.propriete?.images?.length > 1 && (
                     <>
                       <button
                         onClick={() =>
                           setCurrentImageIndex((prev) =>
-                            prev > 0 ? prev - 1 : selectedHotel.galerie.length - 1
+                            prev > 0 ? prev - 1 : selectedHotel.propriete?.images.length - 1
                           )
                         }
                         className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg hover:bg-white"
@@ -461,7 +523,7 @@ export default function ReservationHotelPage() {
                       <button
                         onClick={() =>
                           setCurrentImageIndex((prev) =>
-                            prev < selectedHotel.galerie.length - 1 ? prev + 1 : 0
+                            prev < selectedHotel.propriete?.images.length - 1 ? prev + 1 : 0
                           )
                         }
                         className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm rounded-full p-2 shadow-lg hover:bg-white"
@@ -473,10 +535,10 @@ export default function ReservationHotelPage() {
                 </div>
 
                 {/* Miniatures */}
-                {selectedHotel.galerie?.length > 1 && (
+                {selectedHotel?.propriete?.images?.length > 1 && (
                   <div className="p-4">
                     <div className="flex gap-2 overflow-x-auto">
-                      {selectedHotel.galerie.map((img, index) => (
+                      {selectedHotel?.propriete?.images.map((img, index) => (
                         <button
                           key={index}
                           onClick={() => setCurrentImageIndex(index)}
@@ -501,14 +563,14 @@ export default function ReservationHotelPage() {
               {/* Description */}
               <div className="bg-white rounded-2xl shadow-lg p-6">
                 <h2 className="text-2xl font-bold text-gray-900 mb-4">Description</h2>
-                <p className="text-gray-700 leading-relaxed">{selectedHotel?.description}</p>
+                <p className="text-gray-700 leading-relaxed">{selectedHotel?.propriete?.description}</p>
               </div>
               
               {/* Équipements */}
               <div className="bg-white rounded-2xl shadow-lg p-6">
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">Équipements</h2>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {selectedHotel?.equipements.map((equipement, index) => {
+                  {selectedHotel?.equipements?.map((equipement: Equipement, index: number) => {
                     const Icon = equipement.icon;
                     return (
                       <div key={index} className="flex items-center p-3 bg-gray-50 rounded-lg">
@@ -519,12 +581,12 @@ export default function ReservationHotelPage() {
                   })}
                 </div>
               </div>
-              
+                 
               {/* Avis clients */}
               <div className="bg-white rounded-2xl shadow-lg p-6">
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">Avis clients</h2>
                 <div className="space-y-4">
-                  {selectedHotel?.avis?.map((avis, index) => (
+                  {selectedHotel?.propriete?.avis?.map((avis: Avis, index: number) => (
                     <div key={index} className="border-b border-gray-200 pb-4 last:border-b-0">
                       <div className="flex items-start gap-3">
                         <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center">
@@ -550,35 +612,38 @@ export default function ReservationHotelPage() {
             {/* Sidebar réservation */}
             <div className="space-y-6">
               <div className="bg-white rounded-2xl shadow-lg p-6 sticky top-6">
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">{selectedHotel?.nom}</h1>
+                <h1 className="text-2xl font-bold text-gray-900 mb-2">{selectedHotel?.propriete?.nom}</h1>
                 
                 <div className="flex items-center gap-2 mb-4">
-                  <div className="flex">{renderStars(selectedHotel?.note)}</div>
-                  <span className="text-sm text-gray-600">({selectedHotel?.note} étoiles)</span>
+                  <div className="flex">{renderStars(selectedHotel?.nombreEtoiles ?? 0)}</div>
+                  <span className="text-sm text-gray-600">({selectedHotel?.nombreEtoiles} étoiles)</span>
                 </div>
                 
                 <div className="flex items-center text-gray-600 mb-6">
                   <MapPin className="w-5 h-5 mr-2" />
-                  <span>{selectedHotel?.geolocalisation}</span>
+                  <span>{selectedHotel?.propriete?.geolocalisation}</span>
                 </div>
                 
                 <div className="text-3xl font-bold text-blue-600 mb-2">
-                  {formatPrice(selectedHotel?.prix)}
+                  {selectedHotel?.chambres && selectedHotel.chambres.length > 0
+                    ? formatPrice(selectedHotel.chambres[0].prix)
+                    : "N/A"}
                 </div>
+
                 <div className="text-sm text-gray-500 mb-6">par nuit</div>
                 
                 <div className="space-y-4 mb-6 p-4 bg-gray-50 rounded-lg">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Arrivée</span>
-                    <span className="font-medium">{searchParams.dateArrivee || "À définir"}</span>
+                    <span className="font-medium">{searchParams.arrivee || "À définir"}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Départ</span>
-                    <span className="font-medium">{searchParams.dateDepart || "À définir"}</span>
+                    <span className="font-medium">{searchParams.depart || "À définir"}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Voyageurs</span>
-                    <span className="font-medium">{searchParams.nombreVoyageurs} personne{searchParams.nombreVoyageurs > 1 ? 's' : ''}</span>
+                    <span className="font-medium">{searchParams.voyageurs} personne{searchParams.voyageurs > 1 ? 's' : ''}</span>
                   </div>
                 </div>
                 
@@ -720,23 +785,23 @@ export default function ReservationHotelPage() {
             <div className="space-y-4">
               <div className="flex justify-between">
                 <span className="text-gray-600">Hôtel</span>
-                <span className="font-medium">{selectedHotel?.nom}</span>
+                <span className="font-medium">{selectedHotel?.propriete?.nom}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Arrivée</span>
-                <span className="font-medium">{searchParams.dateArrivee || "À définir"}</span>
+                <span className="font-medium">{searchParams.arrivee || "À définir"}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Départ</span>
-                <span className="font-medium">{searchParams.dateDepart || "À définir"}</span>
+                <span className="font-medium">{searchParams.depart || "À définir"}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Voyageurs</span>
-                <span className="font-medium">{searchParams.nombreVoyageurs} personne{searchParams.nombreVoyageurs > 1 ? 's' : ''}</span>
+                <span className="font-medium">{searchParams.voyageurs} personne{searchParams.voyageurs > 1 ? 's' : ''}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600">Total</span>
-                <span className="font-medium">{selectedHotel?.prix}</span>
+                <span className="font-medium">{selectedHotel?.propriete?.prix}</span>
               </div>
             </div>   
           </div>

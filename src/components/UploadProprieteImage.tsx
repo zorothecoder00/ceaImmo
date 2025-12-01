@@ -57,7 +57,7 @@ export default function UploadProprieteImage({ images, setImages }: UploadPropri
       {images.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {images.map((image, index) => (
-            <div key={image.id} className="relative group">
+            <div key={image.id} className="relative group aspect-square">
               <Image
                 src={image.url}
                 alt={`Image ${index + 1}`}
