@@ -9,6 +9,10 @@ export async function getAvailableProprietes(userId?: string) {
         orderBy: { ordre: 'asc' },
         take: 1  
       },
+      hotel: true,          // 🔹 inclure le nombre d'étoiles si c'est un hôtel
+      avis: {
+        select: { note: true } // récupère uniquement la note
+      },      
       favoris: userId ? {  
         where: { userId: parseInt(userId) }
       } : false       
@@ -17,10 +21,19 @@ export async function getAvailableProprietes(userId?: string) {
     take: 3
   })
 
-  return proprietes.map(prop => ({
-    ...prop,  
-    isFavorite: userId ? prop.favoris.length > 0 : false
+  // 🔹 Transformer les avis pour inclure un id
+  const proprietesAvecAvis = proprietes.map(prop => ({
+    ...prop,
+    avis: prop.avis.map((avis, index) => ({
+      id: index, // ou l'ID réel si disponible
+      note: avis.note
+    })),
+    isFavorite: userId ? prop.favoris.length > 0 : false,
+    nombreVu: prop.nombreVu ?? 0,
+    hotel: prop.hotel ?? null
   }))
+
+  return proprietesAvecAvis
 }
 
 // Filtrer par catégorie + statut + budget

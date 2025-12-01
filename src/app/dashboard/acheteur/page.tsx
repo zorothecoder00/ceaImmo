@@ -47,12 +47,16 @@ interface Property {
   chambre?: string
   surface: number | bigint | null
   categorie: Categorie
+  hotel?: {
+    nombreEtoiles: number | null
+  } | null
   images: Image[]
   description: string | null
   agent?: string
   avis?: Avis[]
   isFavorite?: boolean
   vu?: boolean
+  nombreVu?: number
 }
 
 interface Avis {
@@ -129,6 +133,11 @@ function PropertyCard({ property, userId }: { property: Property, userId: string
     ? (property.avis.reduce((acc, avis) => acc + avis.note, 0) / property.avis.length).toFixed(1)
     : null
 
+  // Nombre d'étoiles si c'est un hôtel
+  const etoiles = property.categorie === Categorie.HOTEL 
+    ? property.hotel?.nombreEtoiles ?? 0
+    : 0
+
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
       <div className="relative h-48 sm:h-56 md:h-64">   
@@ -168,12 +177,29 @@ function PropertyCard({ property, userId }: { property: Property, userId: string
           </div>
         </div>
 
-        {moyenneAvis && (
-          <div className="flex items-center text-sm text-gray-600 mb-3">
-            <Star className="h-4 w-4 mr-1 text-yellow-400 fill-current" />
-            <span>{moyenneAvis}</span>
-          </div>
-        )}
+        <div className="flex items-center space-x-3 mb-3">
+          {moyenneAvis && (
+            <div className="flex items-center text-sm text-gray-600">
+              <Star className="h-4 w-4 mr-1 text-yellow-400 fill-current" />
+              <span>{moyenneAvis}</span>
+            </div>
+          )}
+
+          {etoiles > 0 && (
+            <div className="flex items-center text-sm text-gray-600">
+              <Star className="h-4 w-4 mr-1 text-gray-500 fill-current" />
+              <span>{etoiles} étoiles</span>
+            </div>
+          )}
+
+
+          {property.nombreVu !== undefined && (
+            <div className="flex items-center text-sm text-gray-600">
+              <Eye className="h-4 w-4 mr-1" />
+              <span>{property.nombreVu}</span>
+            </div>
+          )}
+        </div>
         
         <div className="flex items-center justify-between mt-auto">
           <span className="text-base sm:text-lg font-bold text-gray-900">
