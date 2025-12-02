@@ -2,9 +2,9 @@
 
 datasource db {    
   provider = "postgresql" // ou "mysql", selon ta base
-  url      = env("DATABASE_URL")             
-}          
-          
+  url      = env("DATABASE_URL")                 
+}              
+            
 generator client {    
   provider = "prisma-client-js"      
 }                          
@@ -12,7 +12,7 @@ generator client {
 enum Role {       
   ADMIN    
   ACHETEUR
-  VENDEUR      
+  VENDEUR         
   AGENT
   ENTREPRISE
 }    
@@ -181,7 +181,7 @@ model ProprieteImage {
 
   ordre             Int             @default(0) // pour trier les images
   proprieteId       Int
-  propriete         Propriete       @relation(fields: [proprieteId], references: [id], onDelete: Cascade)
+  propriete         Propriete       @relation(fields: [proprieteId], references: [id], onDelete: Cascade)  
 
   createdAt         DateTime         @default(now())  
 }
@@ -206,23 +206,23 @@ model Hotel {
 }
 
 model Disponibilite {
-  id           Int       @id @default(autoincrement())
-  hotelId      Int
-  hotel        Hotel     @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  id                 Int            @id @default(autoincrement())
+  hotelId            Int
+  hotel              Hotel          @relation(fields: [hotelId], references: [id], onDelete: Cascade)
 
-  startDate    DateTime
-  endDate      DateTime
-  disponible   Boolean   @default(true) // true = période disponible, false = fermé/non-disponible
+  startDate          DateTime
+  endDate            DateTime
+  disponible         Boolean         @default(true) // true = période disponible, false = fermé/non-disponible
 
   // optionnel: capacité restreinte pour cette plage
   capaciteDisponibilite Int? 
 
-  createdAt    DateTime  @default(now())
+  createdAt          DateTime        @default(now())
 
   @@index([hotelId, startDate, endDate])   
 }
 
-model Chambre {
+model Chambre {      
   id                Int              @id @default(autoincrement())
   nom               String
   description       String?

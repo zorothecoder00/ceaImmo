@@ -10,6 +10,16 @@ export async function getMesProprietes(userId: string) {
     include: {
       offres: true, // pour compter les offres liées
       images: { orderBy: { ordre: 'asc' } },
+      hotel: {
+        select: {
+          nombreEtoiles: true,
+          nombreChambresTotal: true,
+          nombreVoyageursMax: true,
+        },
+      },
+      avis: {
+        select: { note: true },
+      },
     },
     orderBy: { createdAt: "desc" },
   })   

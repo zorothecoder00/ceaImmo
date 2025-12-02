@@ -7,11 +7,11 @@ export async function getAvailableProprietes(userId?: string) {
     include: {
       images: {  
         orderBy: { ordre: 'asc' },
-        take: 1  
+        take: 1     
       },
-      hotel: true,          // 🔹 inclure le nombre d'étoiles si c'est un hôtel
+      hotel: true,          
       avis: {
-        select: { note: true } // récupère uniquement la note
+        select: { note: true } 
       },      
       favoris: userId ? {  
         where: { userId: parseInt(userId) }
@@ -30,7 +30,12 @@ export async function getAvailableProprietes(userId?: string) {
     })),
     isFavorite: userId ? prop.favoris.length > 0 : false,
     nombreVu: prop.nombreVu ?? 0,
-    hotel: prop.hotel ?? null
+    hotel: prop.hotel
+    ? {
+        ...prop.hotel,
+        nombreEtoiles: Number(prop.hotel.nombreEtoiles)
+      }
+    : null,
   }))
 
   return proprietesAvecAvis

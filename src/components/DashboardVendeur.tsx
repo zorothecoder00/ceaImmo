@@ -2,7 +2,7 @@
 
 import { useState } from 'react'    
 import { motion, AnimatePresence } from 'framer-motion'   
-import { 
+import {    
   Home, Building, Calendar, Settings, Bell, User, Eye, 
   TrendingUp, Euro, X, Plus, Trash2, Loader2,    
   AlertCircle, MapPin, Bed, CheckCircle, Hotel as HotelIcon, Star      
@@ -36,8 +36,18 @@ interface RecentProperty {
   geolocalisation: string
   createdAt: string
   images?: PropertyImage[]
+  hotel?: {
+    nombreEtoiles: number
+  } | null
+  avis?: {   
+    note: number
+  }[]
 }
 
+interface Avis {
+  id: number
+  note: number  
+}
 
 interface Offre {
   id: number
@@ -79,10 +89,11 @@ interface FormDataProps {
 
 interface HotelFormData {
   propriete: FormDataProps
-  nombreEtoiles: number;
+  nombreEtoiles?: number;
   nombreChambresTotal: number;
   nombreVoyageursMax: number;
   politiqueAnnulation?: string;
+  chambres: Chambre[];
 }
 
 interface PropertyImage {
@@ -123,7 +134,10 @@ export default function VendeurDashboardClient({
 
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+
   const [images, setImages] = useState<PropertyImage[]>([])
+  const [propertiesData, setPropertiesData] = useState<RecentProperty[]>(recentProperties);
+  const [hotelsData, setHotelsData] = useState<HotelFormData[]>([]);
   const [chambres, setChambres] = useState<Chambre[]>([])
 
   const [formData, setFormData] = useState<FormDataProps>({
@@ -153,7 +167,8 @@ export default function VendeurDashboardClient({
     nombreEtoiles: 1,
     nombreChambresTotal: 1,
     nombreVoyageursMax: 1,
-    politiqueAnnulation: ""
+    politiqueAnnulation: "",
+    chambres: []
   })
 
   // 🔹 Handlers
@@ -251,6 +266,9 @@ export default function VendeurDashboardClient({
       const data = await res.json()
       if (!res.ok) throw new Error(data.message || 'Erreur lors de la création')
 
+      // ✅ Ajouter la nouvelle propriété en haut de la liste côté client
+      setPropertiesData(prev => [data.data, ...prev]);
+
       // Réinitialisation
       setFormData({
         nom: '',
@@ -266,7 +284,6 @@ export default function VendeurDashboardClient({
       setImages([])
       setChambres([])
       setShowModal(false)
-      window.location.reload()
     } catch (error) {
       console.error('Erreur soumission:', error)
       if (error instanceof Error) {
@@ -292,21 +309,17 @@ export default function VendeurDashboardClient({
           nombreChambres: Number(hotelData.propriete.nombreChambres),
           imageUrls: images.map(img => img.url),
         },
-        hotel: {
-          nombreEtoiles: hotelData.nombreEtoiles,
-          nombreChambresTotal: hotelData.nombreChambresTotal,
-          nombreVoyageursMax: hotelData.nombreVoyageursMax,
-          politiqueAnnulation: hotelData.politiqueAnnulation,
-          chambres: chambres.length > 0
-            ? chambres.map(ch => ({
-                nom: ch.nom,
-                description: ch.description || "",
-                prixParNuit: Number(ch.prixParNuit),
-                capacite: Number(ch.capacite),
-                disponible: ch.disponible ?? true,
-              }))
-            : [], // ✅ chambres
-        }
+        nombreEtoiles: hotelData.nombreEtoiles, // 
+        nombreChambresTotal: hotelData.nombreChambresTotal,
+        nombreVoyageursMax: hotelData.nombreVoyageursMax,
+        politiqueAnnulation: hotelData.politiqueAnnulation,
+        chambres: chambres.map(ch => ({
+          nom: ch.nom,
+          description: ch.description || "",
+          prixParNuit: Number(ch.prixParNuit),
+          capacite: Number(ch.capacite),
+          disponible: ch.disponible ?? true,
+        }))
       };
 
       const res = await fetch("/api/vendeur/mesHotels", {
@@ -317,6 +330,9 @@ export default function VendeurDashboardClient({
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Erreur lors de la création de l'hôtel.");
+
+      // ✅ Mettre à jour la liste des hôtels sans recharger
+      setHotelsData(prev => [data.data, ...prev]);
 
       // reset
       setHotelData({
@@ -334,13 +350,13 @@ export default function VendeurDashboardClient({
         nombreEtoiles: 1,
         nombreChambresTotal: 1,
         nombreVoyageursMax: 1,
-        politiqueAnnulation: ""
+        politiqueAnnulation: "",
+        chambres: []
       });
       setImages([]);
       setChambres([]);
 
       setShowHotelModal(false);
-      window.location.reload();
     } catch (error) {
       console.error("Erreur:", error);
       setErrorMsg(error instanceof Error ? error.message : "Erreur inconnue");
@@ -351,7 +367,6 @@ export default function VendeurDashboardClient({
 
   const categories = Object.values(Categorie)
   const statuts = Object.values(Statut)
-
 
   return (  
     <div className="min-h-screen bg-gray-50">
@@ -477,7 +492,7 @@ export default function VendeurDashboardClient({
             </Link>
           </div>
 
-          {recentProperties.length === 0 ? (
+          {propertiesData.length === 0 ? (
             <div className="text-center py-12 bg-gray-50 rounded-xl">
               <Home className="mx-auto w-10 h-10 text-gray-300 mb-3" />
               <p className="text-gray-500">Aucune propriété enregistrée.</p>
@@ -492,32 +507,40 @@ export default function VendeurDashboardClient({
               transition={{ duration: 0.5 }}
               className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6"
             >
-              {recentProperties.map((p) => (
-                <PropertyCard
-                  key={p.id}
-                  property={{
-                    id: p.id,
-                    nom: p.nom,
-                    description: p.description ?? undefined,
-                    categorie: p.categorie,
-                    prix: p.prix,
-                    surface: p.surface,
-                    statut: p.statut,
-                    nombreChambres: p.nombreChambres,
-                    geolocalisation: p.geolocalisation,
-                    createdAt: p.createdAt,
-                    images: p.images?.map((img) => ({
-                      id: img.id,
-                      url: img.url,
-                      ordre: img.ordre,
-                    })) || [],
-                  }}
-                />
-              ))}
+              {recentProperties.map((p) => {
+
+                const moyenneAvis = p.avis?.length
+                ? p.avis.reduce((sum, a) => sum + a.note, 0) / p.avis.length
+                : null;
+
+                return (
+                  <PropertyCard
+                    key={p.id}
+                    property={{  
+                      id: p.id,
+                      nom: p.nom,
+                      description: p.description ?? undefined,
+                      categorie: p.categorie,
+                      prix: p.prix,
+                      surface: p.surface,
+                      statut: p.statut,
+                      nombreChambres: p.nombreChambres,
+                      geolocalisation: p.geolocalisation,
+                      createdAt: p.createdAt,
+                      images: p.images?.map((img) => ({
+                        id: img.id,
+                        url: img.url,
+                        ordre: img.ordre,
+                      })) || [],
+                      nombreEtoiles: p.hotel?.nombreEtoiles ?? null,
+                      moyenneAvis: moyenneAvis,
+                    }}
+                  />
+                )
+              })}
             </motion.div>
           )}
-        </section>
- 
+        </section> 
    
         {/* 🔹 Offres récentes + Visites à venir côte à côte */}
         <section className="mt-10">
@@ -1017,17 +1040,23 @@ export default function VendeurDashboardClient({
                     {/* Nombre d'étoiles */}
                     <div className="flex flex-col">
                       <label className="mb-1 text-sm text-gray-600">Nombre d&apos;étoiles *</label>
+
                       <select
-                        value={hotelData?.nombreEtoiles}
+                        value={hotelData.nombreEtoiles ?? ""}
                         onChange={(e) =>
-                          setHotelData({ ...hotelData, nombreEtoiles: Number(e.target.value) })
+                          setHotelData({
+                            ...hotelData,
+                            nombreEtoiles:
+                              e.target.value === "" ? undefined : Number(e.target.value),
+                          })
                         }
                         className="px-4 py-3 border rounded-lg"
                       >
                         <option value="" disabled>Choisir...</option>
+
                         {[1, 2, 3, 4, 5].map((n) => (
                           <option key={n} value={n}>
-                            {n} étoile{n > 1 ? "s" : ""}
+                            {"⭐".repeat(n)} — {n} étoile{n > 1 ? "s" : ""}
                           </option>
                         ))}
                       </select>

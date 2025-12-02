@@ -159,6 +159,11 @@ export default async function VendeurDashboard() {
     prix: Number(p.prix),
     surface: Number(p.surface),
     createdAt: p.createdAt.toISOString(),
+    hotel: p.hotel
+    ? {
+        nombreEtoiles: p.hotel.nombreEtoiles ?? 0   // <= corrige le type attendu
+      }
+    : null
   }))
 
   const offresRecentesConverted = offresRecentes.map(o => ({

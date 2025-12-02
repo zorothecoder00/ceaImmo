@@ -23,6 +23,8 @@ export interface Property {
   nombreVu?: number;
   prix?: number;
   categorie?: string;
+  nombreEtoiles?: number | null; 
+  moyenneAvis?: number | null;
 }
 
 interface PropertyCardProps {
@@ -95,6 +97,18 @@ export default function PropertyCard({ property }: PropertyCardProps) {
             {property.geolocalisation}
           </div>   
         )}
+
+        {property.nombreEtoiles ? (
+          <div className="flex items-center text-yellow-500 text-sm mb-2">
+            {"★".repeat(property.nombreEtoiles)}
+          </div>
+        ) : null}
+
+        {property.moyenneAvis ? (
+          <div className="text-sm text-gray-700 mb-2">
+            ⭐ {property.moyenneAvis.toFixed(1)} / 5
+          </div>
+        ) : null}
 
         <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
           {property.nombreChambres !== undefined && (

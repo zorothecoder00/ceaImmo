@@ -1,7 +1,7 @@
 // src/app/dashboard/acheteur/page.tsx
 import {    
   Home, 
-  Calendar,  
+  Calendar,      
   FileText, 
   Settings,    
   Bell,    
@@ -185,12 +185,11 @@ function PropertyCard({ property, userId }: { property: Property, userId: string
             </div>
           )}
 
-          {etoiles > 0 && (
-            <div className="flex items-center text-sm text-gray-600">
-              <Star className="h-4 w-4 mr-1 text-gray-500 fill-current" />
-              <span>{etoiles} étoiles</span>
-            </div>
-          )}
+          {etoiles > 0 && (   
+          <div className="flex items-center text-sm text-yellow-500 font-semibold">
+            {"⭐".repeat(etoiles)}
+          </div>
+        )}
 
 
           {property.nombreVu !== undefined && (
