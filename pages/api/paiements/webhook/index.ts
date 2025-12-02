@@ -1,8 +1,7 @@
-// app/api/paiements/webhook/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { Prisma } from "@prisma/client"  
-import { computeHMAC, decryptJSON } from "@/lib/crypto";  
+import { Prisma } from "@prisma/client";
+import { computeHMAC } from "@/lib/crypto";
 import { logPayment } from "@/lib/logger";
 import { notifyFailure } from "@/lib/notify";
 
@@ -21,15 +20,15 @@ interface WebhookPayload {
 interface TransactionMetadata {
   processedWebhooks?: string[];
   [key: string]: unknown;
-} 
+}
 
 export async function POST(req: NextRequest) {
   try {
     const raw = await req.text();
-    const provider = req.headers.get("x-sim-provider") || "simulated"; // header to indicate source in this simulation
+    const provider = req.headers.get("x-sim-provider") || "simulated";
     const sig = req.headers.get("x-sim-signature") || "";
 
-    // Validate signature using HMAC-SHA256 with WEBHOOK_SECRET_SIMULATOR
+    // Validation HMAC
     const secret = process.env.WEBHOOK_SECRET_SIMULATOR || "";
     const expected = computeHMAC(secret, raw);
     if (!sig || sig !== expected) {
@@ -37,43 +36,42 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
     }
 
-    const payload = JSON.parse(raw);
+    const payload: WebhookPayload = JSON.parse(raw);
 
-    // payload example: { providerTransactionId, status: "REUSSIE"|"ECHOUEE", fees?, netAmount?, reference? }
+    // ✅ Déstructuration sans eventId pour éviter la redéclaration
     const { providerTransactionId, status, fees, netAmount, reference, reason } = payload;
 
-    // Find transaction by providerTransactionId or reference
+    // Find transaction
     let tx = null;
     if (providerTransactionId) {
-      tx = await prisma.transaction.findFirst({ where: { providerTransactionId: providerTransactionId }});
+      tx = await prisma.transaction.findFirst({ where: { providerTransactionId } });
     }
     if (!tx && reference) {
-      tx = await prisma.transaction.findFirst({ where: { reference }});
+      tx = await prisma.transaction.findFirst({ where: { reference } });
     }
     if (!tx) {
-      await logPayment("error", "Webhook: transaction not found", payload);
+      await logPayment("error", "Webhook: transaction not found", { ...payload } as Record<string, unknown>);
       return NextResponse.json({ error: "Transaction not found" }, { status: 404 });
     }
 
-    // Idempotence on webhook updates: use updatedAt/time or a metadata.processedWebhooks array
+    // Idempotence
     const metadata = (tx.metadata as TransactionMetadata) || {};
     const processedWebhooks = metadata.processedWebhooks || [];
     const eventId = payload.eventId ?? `${provider}_${providerTransactionId}_${status}`;
 
-    const alreadyProcessed = processedWebhooks.includes(eventId);
-    if (alreadyProcessed) {
-      await logPayment("info", "Webhook already processed", payload, tx.id);
+    if (processedWebhooks.includes(eventId)) {
+      await logPayment("info", "Webhook already processed", { ...payload } as Record<string, unknown>, tx.id);
       return NextResponse.json({ ok: true });
     }
 
-    // Update transaction according to status
+    // Update transaction
     const updates: Prisma.TransactionUpdateInput = {
       providerTransactionId: providerTransactionId ?? tx.providerTransactionId,
-      fees: fees ? BigInt(fees) : tx.fees,
-      netAmount: netAmount ? BigInt(netAmount) : tx.netAmount,
+      fees: fees !== undefined ? BigInt(fees) : tx.fees,
+      netAmount: netAmount !== undefined ? BigInt(netAmount) : tx.netAmount,
       metadata: {
         ...metadata,
-        processedWebhooks: [...processedWebhooks, eventId]
+        processedWebhooks: [...processedWebhooks.filter(Boolean), eventId]
       }
     };
 
@@ -84,7 +82,7 @@ export async function POST(req: NextRequest) {
       updates.statut = "ECHOUEE";
       updates.failureReason = reason ?? "unknown";
 
-      // send notification (if user email known)
+      // Notification utilisateur
       try {
         if (tx.userId) {
           const user = await prisma.user.findUnique({ where: { id: tx.userId } });
@@ -104,15 +102,12 @@ export async function POST(req: NextRequest) {
     }
 
     await prisma.transaction.update({ where: { id: tx.id }, data: updates });
-    await logPayment("info", "Webhook processed", { payload }, tx.id);
+    await logPayment("info", "Webhook processed", { ...payload } as Record<string, unknown>, tx.id);
 
     return NextResponse.json({ ok: true });
   } catch (err) {
     const error = err as Error;
     console.error("webhook error", error);
-    return NextResponse.json(
-      { error: error.message || "internal" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error.message || "internal" }, { status: 500 });
   }
 }

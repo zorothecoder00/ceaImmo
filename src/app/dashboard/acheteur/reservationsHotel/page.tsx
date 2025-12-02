@@ -7,14 +7,6 @@ import {
   Users,     
   Search,   
   Star,      
-  Wifi, 
-  Car,    
-  Coffee,             
-  Utensils,
-  Dumbbell,
-  Waves,   
-  AirVent,
-  Tv,
   User,
   Heart,
   Share2,
@@ -28,6 +20,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Mode, ReservationStatut, Type } from '@prisma/client'
+import Image from 'next/image';
 
 // 1. On définit le type des avis et galerie
 interface Avis {
@@ -72,7 +65,7 @@ interface Hotel {
   disponible?: boolean;
   equipements?: Equipement[];
   note?: number;
-  nombreAvis?: number;
+  nombreAvis?: number;     
   propriete: {
     id: number;
     nom: string;
@@ -85,8 +78,8 @@ interface Hotel {
   chambres: {
     id: number;
     nom: string;
-    prix: number;
-    nombreVoyageurs: number;
+    prixParNuit: number;
+    capacite: number;
   }[];
   disponibilites: {
     id: number;
@@ -355,7 +348,7 @@ export default function ReservationHotelPage() {
   };
       
   const formatPrice = (price: number) => {
-    return price.toLocaleString('fr-FR') + ' €';
+    return price?.toLocaleString('fr-FR') + ' €';
   };
 
   // ✅ Rendu conditionnel selon l’étape
@@ -402,7 +395,7 @@ export default function ReservationHotelPage() {
                     <div className="flex items-start justify-between mb-2">
                       <h3 className="text-xl font-bold text-gray-900">{hotel.propriete.nom}</h3>
                       <div className="text-right">
-                        <div className="text-2xl font-bold text-blue-600">{hotel.chambres.length > 0 ? formatPrice(hotel.chambres[0].prix) : "N/A"}</div>
+                        <div className="text-2xl font-bold text-blue-600">{hotel.chambres.length > 0 ? formatPrice(hotel.chambres[0].prixParNuit) : "N/A"}</div>
                         <div className="text-sm text-gray-500">par nuit</div>
                       </div>
                     </div>
@@ -548,10 +541,12 @@ export default function ReservationHotelPage() {
                               : 'border-transparent'
                           }`}
                         >
-                          <img
+                          <Image
                             src={img.url}
                             alt={`Miniature ${index + 1}`}
-                            className="w-full h-full object-cover"
+                            width={80}
+                            height={64}
+                            className="rounded-lg object-cover"
                           />
                         </button>
                       ))}
@@ -626,7 +621,7 @@ export default function ReservationHotelPage() {
                 
                 <div className="text-3xl font-bold text-blue-600 mb-2">
                   {selectedHotel?.chambres && selectedHotel.chambres.length > 0
-                    ? formatPrice(selectedHotel.chambres[0].prix)
+                    ? formatPrice(selectedHotel.chambres[0].prixParNuit)
                     : "N/A"}
                 </div>
 

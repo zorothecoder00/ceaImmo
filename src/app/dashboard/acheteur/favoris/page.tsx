@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import {
-  Heart, MapPin, Bed, Bath, Square, Eye, Trash2, Filter, Send, Hammer, Hotel, Home
+  Heart, MapPin, Bed, Bath, Square, Eye, Trash2, Filter, Send
 } from 'lucide-react'
 import { Statut, Categorie, OffreStatut, Mode } from '@prisma/client'
 import toast from "react-hot-toast";
@@ -82,17 +82,17 @@ export default function FavorisPage() {
     mode: Mode.CASH
   })
   // ✅ Gestion des visites et offres existantes
-  const [mesVisites, setMesVisites] = useState<Visite[]>([])
-  const [mesOffres, setMesOffres] = useState<Offre[]>([])
+  const [mesVisites, _setMesVisites] = useState<Visite[]>([])
+  const [mesOffres, _setMesOffres] = useState<Offre[]>([])
 
   // 🆕 Pour la modale de demande de visite
   const [showVisiteModal, setShowVisiteModal] = useState(false);
   const [visiteDate, setVisiteDate] = useState(''); // pour la date saisie par l’utilisateur
 
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-  const [advancedFiltersOpen, setAdvancedFiltersOpen] = useState(false);
+  const [advancedFiltersOpen, _setAdvancedFiltersOpen] = useState(false);
 
-  const [filters, setFilters] = useState({
+  const [filters, _setFilters] = useState({
     search: '',
     page: 1,
     limit: 10,

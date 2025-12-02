@@ -313,7 +313,7 @@ export default async function AcheteurDashboard() {
   ])
 
   const { visites, total: totalVisites } = visitesData
-  const { favoris, total: totalFavoris } = favorisData
+  const { total: totalFavoris } = favorisData
 
   const recherchesData = await getRecherchesSauvegardeesEtResultats(userId)
   const { recherches, total: totalRecherches } = recherchesData

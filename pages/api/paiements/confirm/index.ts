@@ -2,6 +2,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { logPayment } from "@/lib/logger";  
+import { StatutTransaction } from "@prisma/client"
 
 // ✅ Type pour le body de la requête
 interface ConfirmPaymentRequest {
@@ -42,13 +43,13 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "not found" }, { status: 404 });
       }
 
-      if (tx.statut === "REUSSIE") {
+      if (tx.statut === StatutTransaction.REUSSIE) {
         return NextResponse.json({ ok: true, message: "déjà payé" });
       }
 
       await prisma.transaction.update({
         where: { id: tx.id },
-        data: { statut: "REUSSIE", paidAt: new Date() }
+        data: { statut: StatutTransaction.REUSSIE, paidAt: new Date() }
       });
 
       if (idempotencyKey) {
@@ -70,7 +71,7 @@ export async function POST(req: NextRequest) {
       );
     }
   } catch(error) {
-
+    console.error("Outer catch:", error);
   }
 
 }
