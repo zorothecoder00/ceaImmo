@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react';
-import {   
+import {       
   MapPin,    
   Calendar,     
   Users,     
@@ -9,10 +9,10 @@ import {
   Star,      
   User,
   Heart,
-  Share2,
+  Share2,      
   ChevronLeft,
   ChevronRight,
-  CreditCard,
+  CreditCard,     
   Lock,
   Eye
 } from 'lucide-react';  
@@ -335,8 +335,7 @@ export default function ReservationHotelPage() {
       console.error("Erreur paiement:", error);
       setError("Impossible de finaliser la réservation.");
     }
-  };
-
+  };  
 
   const renderStars = (nombre: number) => {
     return Array.from({ length: 5 }, (_, i) => (
@@ -349,6 +348,12 @@ export default function ReservationHotelPage() {
       
   const formatPrice = (price: number) => {
     return price?.toLocaleString('fr-FR') + ' €';
+  };
+
+  const getLowestPrice = (chambres) => {
+    if (!chambres || chambres.length === 0) return null;
+
+    return Math.min(...chambres.map(c => c.prixParNuit));
   };
 
   // ✅ Rendu conditionnel selon l’étape
@@ -395,15 +400,20 @@ export default function ReservationHotelPage() {
                     <div className="flex items-start justify-between mb-2">
                       <h3 className="text-xl font-bold text-gray-900">{hotel.propriete.nom}</h3>
                       <div className="text-right">
-                        <div className="text-2xl font-bold text-blue-600">{hotel.chambres.length > 0 ? formatPrice(hotel.chambres[0].prixParNuit) : "N/A"}</div>
-                        <div className="text-sm text-gray-500">par nuit</div>
+                        <div className="text-2xl font-bold text-blue-600">
+                          {hotel.chambres.length > 0
+                          ? formatPrice(getLowestPrice(hotel.chambres))
+                          : "N/A"}                       
+                        </div>
+                        <div className="text-sm text-gray-500">à partir de / par nuit</div>
                       </div>
                     </div>
                     
                     <div className="flex items-center gap-2 mb-3">
-                      <div className="flex">{renderStars(hotel.nombreEtoiles ?? 0)}</div>
-                        <span className="text-sm text-gray-600">({hotel.nombreEtoiles ?? 0} étoiles)
-                        </span>
+                      <div className="flex">{renderStars(hotel.nombreEtoiles ?? 0)}
+                      </div>
+                      <span className="text-sm text-gray-600">({hotel.nombreEtoiles ?? 0} étoiles)
+                      </span>
                     </div>
                     
                     <div className="flex items-center text-gray-600 mb-3">
@@ -414,12 +424,7 @@ export default function ReservationHotelPage() {
                     <p className="text-gray-700 mb-4 line-clamp-2">{hotel.propriete.description}</p>
                     
                     <div className="flex items-center gap-4 mb-4">
-                      <div className="flex items-center gap-1">
-                        <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                        <div className="flex">{renderStars(hotel.nombreEtoiles ?? 0)}</div>
-                        <span className="text-sm text-gray-600">({hotel.nombreEtoiles ?? 0} étoiles)
-                        </span>
-                      </div>
+                      
                       
                       {hotel.disponible ? (
                         <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-sm">
@@ -539,7 +544,7 @@ export default function ReservationHotelPage() {
                             currentImageIndex === index
                               ? 'border-blue-500'
                               : 'border-transparent'
-                          }`}
+                          }`}  
                         >
                           <Image
                             src={img.url}

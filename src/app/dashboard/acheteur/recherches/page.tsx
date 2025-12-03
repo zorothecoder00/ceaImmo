@@ -428,7 +428,7 @@ export default function RecherchesPage() {
             </button>
           </div>
         </div>
-      </div>
+      </div>   
 
       {/* Filtres avancés */}
       {showFilters && (

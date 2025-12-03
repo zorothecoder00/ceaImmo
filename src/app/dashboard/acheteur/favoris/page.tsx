@@ -79,7 +79,7 @@ export default function FavorisPage() {
   const [offreForm, setOffreForm] = useState<OffreForm>({
     montant: '',
     message: '',
-    mode: Mode.CASH
+    mode: Mode.CASH     
   })
   // ✅ Gestion des visites et offres existantes
   const [mesVisites, _setMesVisites] = useState<Visite[]>([])

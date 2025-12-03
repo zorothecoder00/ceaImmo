@@ -88,13 +88,18 @@ export default async function handler(
         return res.status(400).json({ message: "Propriété de type HOTEL requise" });
       }
 
+      // --- Détermination du total de chambres ---    
+      const totalChambres = chambres?.length ?? 0;
+      // --- Calcul du nombre max de voyageurs ---
+      const maxVoyageurs = chambres?.reduce((acc, ch) => acc + ch.capacite, 0) ?? 1;
+
+      // --- Création de la propriété ---   
       const createProprieteData = {
         nom: propriete.nom,
         description: propriete.description ?? null,
         categorie: Categorie.HOTEL,
         statut: propriete.statut ?? Statut.DISPONIBLE,
         geolocalisation: propriete.geolocalisation,
-        nombreChambres: Number(propriete.nombreChambres),
         visiteVirtuelle: propriete.visiteVirtuelle ?? null,
         proprietaireId,
         prix: propriete.prix ? BigInt(propriete.prix) : undefined,
@@ -104,13 +109,13 @@ export default async function handler(
           : undefined,
       };
 
-       // Création hôtel
+      // --- Création de l'hôtel ---
       const nouvelHotel = await prisma.hotel.create({
         data: {
           propriete: { create: createProprieteData },
           nombreEtoiles: nombreEtoiles ?? 1,
-          nombreChambresTotal: nombreChambresTotal ?? Number(propriete.nombreChambres),
-          nombreVoyageursMax: nombreVoyageursMax ?? 1,
+          nombreChambresTotal: totalChambres,
+          nombreVoyageursMax: maxVoyageurs,
           politiqueAnnulation: politiqueAnnulation ?? null,
         },
         include: {
@@ -119,7 +124,6 @@ export default async function handler(
           disponibilites: true,
         },
       });
-
       // Création chambres si fournies
       if (chambres && chambres.length > 0) {
         await prisma.chambre.createMany({

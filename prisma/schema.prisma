@@ -9,7 +9,7 @@ generator client {
   provider = "prisma-client-js"      
 }                          
   
-enum Role {       
+enum Role {                 
   ADMIN    
   ACHETEUR
   VENDEUR         
@@ -52,7 +52,7 @@ enum Statut {
 
 enum Type {   
   SEJOUR
-  LOCATION
+  LOCATION   
 }   
 
 enum OffreStatut {  
@@ -154,7 +154,7 @@ model Propriete {
 
   geolocalisation   String     
   
-  nombreChambres    Int             @default(1)/// Nombre total de chambres disponibles (ex: 50 chambres dans un hôtel)
+  nombreChambres    Int?             @default(1)/// Nombre total de chambres disponibles (ex: 50 chambres dans un hôtel)
 
   proprietaireId    Int?
   proprietaire      User?           @relation("UserPropriete", fields: [proprietaireId], references: [id], onDelete: Cascade)
@@ -183,7 +183,7 @@ model ProprieteImage {
   proprieteId       Int
   propriete         Propriete       @relation(fields: [proprieteId], references: [id], onDelete: Cascade)  
 
-  createdAt         DateTime         @default(now())  
+  createdAt         DateTime         @default(now())     
 }
 
 model Hotel {
@@ -394,11 +394,11 @@ model Message {
 
   receiverId     Int?
   receiver       User?              @relation("MessagesRecus", fields: [receiverId], references: [id], onDelete: Cascade)
-
+   
   createdAt      DateTime           @default(now())
   updatedAt      DateTime           @updatedAt
 }
-
+  
 model Avis {
   id             Int                @id @default(autoincrement())
   commentaire    String?// texte optionnel    

@@ -13,7 +13,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(401).json({ error: "Non authentifié" });
   }
 
-  const userId = parseInt(session.user.id, 10);
+  const userId = parseInt(session.user.id, 10);   
 
   try {
     const {

@@ -32,7 +32,7 @@ interface RecentProperty {
   prix: number
   surface: number
   statut: Statut
-  nombreChambres: number
+  nombreChambres?: number
   geolocalisation: string
   createdAt: string
   images?: PropertyImage[]
@@ -83,14 +83,14 @@ interface FormDataProps {
   surface: string      
   statut: Statut
   geolocalisation: string
-  nombreChambres: string
+  nombreChambres?: string
   visiteVirtuelle: string
 }
 
 interface HotelFormData {
   propriete: FormDataProps
   nombreEtoiles?: number;
-  nombreChambresTotal: number;
+  nombreChambresTotal?: number;
   nombreVoyageursMax: number;
   politiqueAnnulation?: string;
   chambres: Chambre[];
@@ -306,12 +306,9 @@ export default function VendeurDashboardClient({
       const payload = {
         propriete: {
           ...hotelData.propriete,
-          nombreChambres: Number(hotelData.propriete.nombreChambres),
           imageUrls: images.map(img => img.url),
         },
         nombreEtoiles: hotelData.nombreEtoiles, // 
-        nombreChambresTotal: hotelData.nombreChambresTotal,
-        nombreVoyageursMax: hotelData.nombreVoyageursMax,
         politiqueAnnulation: hotelData.politiqueAnnulation,
         chambres: chambres.map(ch => ({
           nom: ch.nom,
@@ -1006,20 +1003,6 @@ export default function VendeurDashboardClient({
                     placeholder="Description"
                   />
 
-                  {/* NOMBRE CHAMBRES PROPRIÉTÉ */}
-                  <input
-                    type="number"
-                    value={hotelData?.propriete?.nombreChambres}
-                    onChange={(e) =>
-                      setHotelData({
-                        ...hotelData,
-                        propriete: { ...hotelData?.propriete, nombreChambres: e.target.value },
-                      })
-                    }
-                    className="w-full px-4 py-3 border rounded-lg"
-                    placeholder="Nombre de chambres *"
-                  />
-
                   {/* VISITE VIRTUELLE */}
                   <input
                     type="text"
@@ -1062,44 +1045,7 @@ export default function VendeurDashboardClient({
                       </select>
                     </div>
 
-                    {/* Nombre total de chambres */}
-                    <div className="flex flex-col">
-                      <label className="mb-1 text-sm text-gray-600">Nombre total de chambres *</label>
-                      <input
-                        type="number"
-                        value={hotelData?.nombreChambresTotal}
-                        onChange={(e) =>
-                          setHotelData({
-                            ...hotelData,
-                            nombreChambresTotal: Number(e.target.value),
-                          })
-                        }
-                        className="px-4 py-3 border rounded-lg"
-                        placeholder="Ex : 50"
-                      />
-                    </div>
-
                   </div>
-
-                  {/* Nombre maximum de voyageurs */}
-                  <div className="flex flex-col mt-4">
-                    <label className="mb-1 text-sm text-gray-600">
-                      Nombre maximum de voyageurs *
-                    </label>
-                    <input
-                      type="number"
-                      value={hotelData?.nombreVoyageursMax}
-                      onChange={(e) =>
-                        setHotelData({
-                          ...hotelData,
-                          nombreVoyageursMax: Number(e.target.value),
-                        })
-                      }
-                      className="w-full px-4 py-3 border rounded-lg"
-                      placeholder="Ex : 120"
-                    />
-                  </div>
-
 
                   {/* GEOLOCALISATION */}
                   <input
