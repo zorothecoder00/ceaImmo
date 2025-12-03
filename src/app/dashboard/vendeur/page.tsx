@@ -163,7 +163,8 @@ export default async function VendeurDashboard() {
     ? {
         nombreEtoiles: p.hotel.nombreEtoiles ?? 0   // <= corrige le type attendu
       }
-    : null
+    : null,
+    nombreChambres: p.nombreChambres ?? undefined,
   }))
 
   const offresRecentesConverted = offresRecentes.map(o => ({
@@ -173,7 +174,8 @@ export default async function VendeurDashboard() {
       ...o.propriete,
       prix: Number(o.propriete.prix),
       surface: Number(o.propriete.surface),
-      createdAt: o.propriete.createdAt.toISOString()
+      createdAt: o.propriete.createdAt.toISOString(),
+      nombreChambres: o.propriete.nombreChambres ?? undefined,
     },
     createdAt: o.createdAt.toISOString()
   }))
@@ -185,7 +187,8 @@ export default async function VendeurDashboard() {
           ...v.propriete,
           prix: Number(v.propriete.prix),
           surface: Number(v.propriete.surface),
-          createdAt: v.propriete.createdAt.toISOString()
+          createdAt: v.propriete.createdAt.toISOString(),
+          nombreChambres: v.propriete.nombreChambres ?? undefined,
         }
       : null,
     date: v.date instanceof Date ? v.date.toISOString() : v.date

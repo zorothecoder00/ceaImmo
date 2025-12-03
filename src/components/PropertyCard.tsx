@@ -18,7 +18,7 @@ export interface Property {
   statut: Statut;
   createdAt: string;
   geolocalisation?: string;
-  nombreChambres?: number;
+  nombreChambres?: number | null;
   surface?: number;
   nombreVu?: number;
   prix?: number;
@@ -114,7 +114,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
           {property.nombreChambres !== undefined && (
             <div className="flex items-center">
               <Bed className="h-4 w-4 mr-1" />
-              {property.nombreChambres}
+              {property.nombreChambres  ?? 'N/A'}
             </div>
           )}
           {property.surface !== undefined && (

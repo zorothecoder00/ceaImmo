@@ -43,7 +43,7 @@ interface Property {
   nom: string
   geolocalisation: string  
   prix: number|bigint | null
-  nombreChambres: number  
+  nombreChambres: number | null  
   chambre?: string
   surface: number | bigint | null
   categorie: Categorie

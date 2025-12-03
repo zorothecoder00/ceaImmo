@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react';
-import {       
+import {   
   MapPin,    
   Calendar,     
   Users,     
@@ -9,10 +9,10 @@ import {
   Star,      
   User,
   Heart,
-  Share2,      
+  Share2,
   ChevronLeft,
   ChevronRight,
-  CreditCard,     
+  CreditCard,
   Lock,
   Eye
 } from 'lucide-react';  
@@ -335,7 +335,7 @@ export default function ReservationHotelPage() {
       console.error("Erreur paiement:", error);
       setError("Impossible de finaliser la réservation.");
     }
-  };  
+  };
 
   const renderStars = (nombre: number) => {
     return Array.from({ length: 5 }, (_, i) => (
@@ -350,10 +350,9 @@ export default function ReservationHotelPage() {
     return price?.toLocaleString('fr-FR') + ' €';
   };
 
-  const getLowestPrice = (chambres) => {
+  const getLowestPrice = (chambres: { prixParNuit: number }[]): number | null => {
     if (!chambres || chambres.length === 0) return null;
-
-    return Math.min(...chambres.map(c => c.prixParNuit));
+    return Math.min(...chambres.map((c) => c.prixParNuit));
   };
 
   // ✅ Rendu conditionnel selon l’étape
@@ -393,7 +392,7 @@ export default function ReservationHotelPage() {
                       <p className="text-gray-600">Photo de l&apos;hôtel</p>
                     </div>
                   </div>
-                </div>
+                </div>   
                 
                 <div className="lg:w-2/3 p-6 flex flex-col justify-between">
                   <div>
@@ -401,10 +400,11 @@ export default function ReservationHotelPage() {
                       <h3 className="text-xl font-bold text-gray-900">{hotel.propriete.nom}</h3>
                       <div className="text-right">
                         <div className="text-2xl font-bold text-blue-600">
-                          {hotel.chambres.length > 0
-                          ? formatPrice(getLowestPrice(hotel.chambres))
-                          : "N/A"}                       
+                          {hotel.chambres.length > 0 && getLowestPrice(hotel.chambres) !== null
+                            ? formatPrice(getLowestPrice(hotel.chambres)!)
+                            : "N/A"}
                         </div>
+
                         <div className="text-sm text-gray-500">à partir de / par nuit</div>
                       </div>
                     </div>

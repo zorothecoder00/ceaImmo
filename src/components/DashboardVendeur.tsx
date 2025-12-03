@@ -301,7 +301,7 @@ export default function VendeurDashboardClient({
 
     setIsSubmitting(true);
     setErrorMsg(null);
-
+   
     try {
       const payload = {
         propriete: {
