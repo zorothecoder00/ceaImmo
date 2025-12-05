@@ -816,7 +816,7 @@ export default function VendeurDashboardClient({
                           className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
                           placeholder="Lomé, Bè"
                         />
-                      </div>
+                      </div>  
                       <button
                         type="button"
                         onBlur={handleGeocode}
