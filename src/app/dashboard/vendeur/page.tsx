@@ -30,14 +30,23 @@ import { Categorie, VisiteStatut, Statut, OffreStatut } from '@prisma/client'
 import { getMesProprietes, getMesOffresRecus, getMesProchainesVisites } from '@/lib/getDashboardVendeur'
 import VendeurDashboardClient from '@/components/DashboardVendeur'
 
-// Types     
+// Types   
+interface Geolocalisation {
+  id: number  
+  proprieteId: number
+  latitude: number
+  longitude: number
+  createdAt: Date
+  updatedAt: Date
+}
+
 interface Property {
   id: number  
   nom: string
-  geolocalisation: string  
+  geolocalisation: Geolocalisation | null  
   prix: number|bigint
   nombreChambres: number  
-  chambre?: string
+  chambre?: string 
   surface: number | bigint
   categorie: Categorie
   images: PropertyImage[]
@@ -116,7 +125,7 @@ interface FormData {
   prix: string
   surface: string
   statut: Statut
-  geolocalisation: string
+  geolocalisation: Geolocalisation
   nombreChambres: string
   visiteVirtuelle: string
 }
@@ -149,7 +158,7 @@ export default async function VendeurDashboard() {
     getMesOffresRecus(userId),
     getMesProchainesVisites(userId),
   ])
-
+   
   const { recentProperties, stats } = proprietesData
   const { offresRecentes, totalOffresEnAttente } = offresData
   const prochainesVisites = visitesData
@@ -165,6 +174,7 @@ export default async function VendeurDashboard() {
       }
     : null,
     nombreChambres: p.nombreChambres ?? undefined,
+    geolocalisation: p.geolocalisation ?? null,
   }))
 
   const offresRecentesConverted = offresRecentes.map(o => ({
@@ -176,6 +186,7 @@ export default async function VendeurDashboard() {
       surface: Number(o.propriete.surface),
       createdAt: o.propriete.createdAt.toISOString(),
       nombreChambres: o.propriete.nombreChambres ?? undefined,
+      geolocalisation: o.propriete.geolocalisation ?? null,
     },
     createdAt: o.createdAt.toISOString()
   }))
@@ -189,6 +200,7 @@ export default async function VendeurDashboard() {
           surface: Number(v.propriete.surface),
           createdAt: v.propriete.createdAt.toISOString(),
           nombreChambres: v.propriete.nombreChambres ?? undefined,
+          geolocalisation: v.propriete.geolocalisation ?? null,
         }
       : null,
     date: v.date instanceof Date ? v.date.toISOString() : v.date

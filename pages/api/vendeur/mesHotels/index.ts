@@ -1,6 +1,7 @@
 // pages/api/vendeur/mesHotels.ts
+
 import { NextApiRequest, NextApiResponse } from "next";
-import { prisma } from '@/lib/prisma';
+import { prisma } from "@/lib/prisma";
 import { Categorie, Statut } from "@prisma/client";
 import { getAuthSession } from "@/lib/auth";
 
@@ -9,11 +10,11 @@ interface ProprieteInput {
   description?: string;
   categorie: Categorie;
   statut?: Statut;
-  geolocalisation: string;
+  geolocalisation: { lat: number; lng: number }; // ✅ Corrigé
   nombreChambres: number;
   visiteVirtuelle?: string;
-  prix?: string; // on convertira en BigInt
-  surface?: string; // idem
+  prix?: string;
+  surface?: string;
   imageUrls?: string[];
 }
 
@@ -25,47 +26,39 @@ interface ChambreInput {
   disponible?: boolean;
 }
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse    
-) {
-  try {   
-    const session = await getAuthSession( req, res );
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  try {
+    const session = await getAuthSession(req, res);
     if (!session || !session.user) {
       return res.status(401).json({ message: "Non authentifié" });
     }
 
     const proprietaireId = Number(session.user.id);
 
-    function serializeBigInt<T>(obj: T): T {  
-      return JSON.parse(
+    const serializeBigInt = <T,>(obj: T): T =>
+      JSON.parse(
         JSON.stringify(obj, (_, value) =>
           typeof value === "bigint" ? value.toString() : value
         )
       );
-    }
 
-    // GET: Récupérer tous les hôtels du vendeur connecté
+    /* ===================== GET ===================== */
     if (req.method === "GET") {
       const hotels = await prisma.hotel.findMany({
         where: {
-          propriete: {
-            proprietaireId,
-          },
+          propriete: { proprietaireId },
         },
         include: {
-          propriete: true,
+          propriete: { include: { images: true, geolocalisation: true } },
           chambres: true,
           disponibilites: true,
         },
       });
 
-      const safeHotels = serializeBigInt(hotels);
-
-      return res.status(200).json({ data: safeHotels });
+      return res.status(200).json({ data: serializeBigInt(hotels) });
     }
 
-    // POST: Créer un nouvel hôtel
+    /* ===================== POST ===================== */
     if (req.method === "POST") {
       const {
         propriete,
@@ -73,59 +66,93 @@ export default async function handler(
         nombreChambresTotal,
         nombreVoyageursMax,
         politiqueAnnulation,
-        chambres,
+        chambres = [],
       }: {
         propriete: ProprieteInput;
         nombreEtoiles?: number;
         nombreChambresTotal?: number;
-        nombreVoyageursMax?: number;
+        nombreVoyageursMax?: number;   
         politiqueAnnulation?: string;
         chambres?: ChambreInput[];
       } = req.body;
 
-      // Validations
+      /* ----- Validations de base ----- */
       if (!propriete || propriete.categorie !== Categorie.HOTEL) {
         return res.status(400).json({ message: "Propriété de type HOTEL requise" });
       }
 
-      // --- Détermination du total de chambres ---    
-      const totalChambres = chambres?.length ?? 0;
-      // --- Calcul du nombre max de voyageurs ---
-      const maxVoyageurs = chambres?.reduce((acc, ch) => acc + ch.capacite, 0) ?? 1;
+      if (
+        !propriete.geolocalisation ||
+        typeof propriete.geolocalisation.lat === "undefined" ||
+        typeof propriete.geolocalisation.lng === "undefined"
+      ) {
+        return res.status(400).json({
+          message: "Géolocalisation invalide : { lat, lng } requis",
+        });
+      }
 
-      // --- Création de la propriété ---   
-      const createProprieteData = {
-        nom: propriete.nom,
-        description: propriete.description ?? null,
-        categorie: Categorie.HOTEL,
-        statut: propriete.statut ?? Statut.DISPONIBLE,
-        geolocalisation: propriete.geolocalisation,
-        visiteVirtuelle: propriete.visiteVirtuelle ?? null,
-        proprietaireId,
-        prix: propriete.prix ? BigInt(propriete.prix) : undefined,
-        surface: propriete.surface ? BigInt(propriete.surface) : undefined,
-        images: propriete.imageUrls?.length
-          ? { create: propriete.imageUrls.map((url, index) => ({ url, ordre: index })) }
-          : undefined,
-      };
+      /* ----- Calculs ----- */
+      const totalChambres = chambres.length;
+      const maxVoyageurs =
+        chambres.reduce((acc, ch) => acc + (ch.capacite || 0), 0) || 1;
 
-      // --- Création de l'hôtel ---
-      const nouvelHotel = await prisma.hotel.create({
+      /* ----- Création de la propriété ----- */
+      const proprieteCreated = await prisma.propriete.create({
         data: {
-          propriete: { create: createProprieteData },
-          nombreEtoiles: nombreEtoiles ?? 1,
-          nombreChambresTotal: totalChambres,
-          nombreVoyageursMax: maxVoyageurs,
-          politiqueAnnulation: politiqueAnnulation ?? null,
+          nom: propriete.nom,
+          description: propriete.description ?? "",
+          categorie: Categorie.HOTEL,
+          statut: propriete.statut ?? Statut.DISPONIBLE,
+          proprietaireId,
+          visiteVirtuelle: propriete.visiteVirtuelle ?? null,
+          prix: propriete.prix ? BigInt(Number(propriete.prix)) : undefined,
+          surface: propriete.surface ? BigInt(Number(propriete.surface)) : undefined,
+
+          geolocalisation: {
+            create: {
+              latitude: Number(propriete.geolocalisation.lat),
+              longitude: Number(propriete.geolocalisation.lng),
+            },
+          },
+
+          images: propriete.imageUrls?.length
+            ? {
+                create: propriete.imageUrls.map((url, i) => ({
+                  url,
+                  ordre: i,
+                })),
+              }
+            : undefined,
         },
         include: {
-          propriete: { include: { images: true } },
-          chambres: true,
-          disponibilites: true,
+          geolocalisation: true,
         },
       });
-      // Création chambres si fournies
-      if (chambres && chambres.length > 0) {
+
+      /* ----- Mise à jour PostGIS pour le champ geoPoint ----- */
+      await prisma.$queryRaw`
+        UPDATE "Geolocalisation"
+        SET "geoPoint" = ST_SetSRID(
+          ST_MakePoint(${propriete.geolocalisation.lng}, ${propriete.geolocalisation.lat}),
+          4326
+        )
+        WHERE id = ${proprieteCreated.geolocalisation!.id}
+      `;
+
+      /* ----- Création de l'hôtel ----- */
+      const hotelCreated = await prisma.hotel.create({
+        data: {
+          proprieteId: proprieteCreated.id,
+          nombreEtoiles: nombreEtoiles ?? 1,
+          nombreChambresTotal: nombreChambresTotal ?? totalChambres,
+          nombreVoyageursMax: nombreVoyageursMax ?? maxVoyageurs,
+          politiqueAnnulation: politiqueAnnulation ?? null,
+        },
+      });
+
+
+      /* ----- Création des chambres liées à l’hôtel ----- */
+      if (chambres.length > 0) {
         await prisma.chambre.createMany({
           data: chambres.map((ch) => ({
             nom: ch.nom,
@@ -133,39 +160,41 @@ export default async function handler(
             prixParNuit: ch.prixParNuit,
             capacite: ch.capacite,
             disponible: ch.disponible ?? true,
-            proprieteId: nouvelHotel.proprieteId,
-            hotelId: nouvelHotel.id,
+            proprieteId: hotelCreated.proprieteId,
           })),
         });
       }
-        
+
+      /* ----- Disponibilité par défaut ----- */
       await prisma.disponibilite.create({
         data: {
-          hotelId: nouvelHotel.id,
-          startDate: new Date(), // aujourd'hui
-          endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)), // +1 an
+          hotelId: hotelCreated.id,
+          startDate: new Date(),
+          endDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
           disponible: true,
-        }
+        },
       });
 
-
-      const safeNouvelHotel = serializeBigInt(await prisma.hotel.findUnique({
-        where: { id: nouvelHotel.id },
+      /* ----- Récupération complète ----- */
+      const finalHotel = await prisma.hotel.findUnique({
+        where: { id: hotelCreated.id },
         include: {
-          propriete: { include: { images: true } },
+          propriete: { include: { images: true, geolocalisation: true } },
           chambres: true,
           disponibilites: true,
         },
-      }));
+      });
 
-      return res.status(201).json({ data: safeNouvelHotel });
+      return res.status(201).json({ data: serializeBigInt(finalHotel) });
     }
 
+    /* Méthode non supportée */
     res.setHeader("Allow", ["GET", "POST"]);
-    res.status(405).end(`Méthode ${req.method} non autorisée`);
+    return res.status(405).end(`Méthode ${req.method} non autorisée`);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Erreur serveur";
     console.error(error);
-    res.status(500).json({ message });
+    return res.status(500).json({
+      message: error instanceof Error ? error.message : "Erreur serveur",
+    });
   }
 }

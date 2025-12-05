@@ -7,7 +7,7 @@ import Link from 'next/link'
 interface Ad {       
   id: number;
   title: string;
-  visibility: 'public' | 'private';
+  visibility: 'public' | 'private';   
   views: number;
 }
 

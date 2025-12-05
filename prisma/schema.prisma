@@ -1,22 +1,23 @@
-// prisma/schema.prisma
+// prisma/schema.prisma   
 
 datasource db {    
   provider = "postgresql" // ou "mysql", selon ta base
-  url      = env("DATABASE_URL")                 
+  url      = env("DATABASE_URL") 
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")                      
 }              
             
 generator client {    
   provider = "prisma-client-js"      
-}                          
+}                            
   
 enum Role {                 
-  ADMIN    
+  ADMIN       
   ACHETEUR
   VENDEUR         
   AGENT
   ENTREPRISE
 }    
-
+  
 enum Categorie {   
   VILLA
   MAISON   
@@ -98,7 +99,6 @@ enum Langue {
   DE
 }  
 
-
 model User {    
   id                Int             @id @default(autoincrement())
   role              Role?
@@ -137,22 +137,22 @@ model User {
   recherches        Recherche[] // 👈 Ajoute cette ligne
   vus               Vu[]
   signalements      Signalement[]
-}        
+}          
 
-model Propriete {   
+model Propriete {     
   id                Int             @id @default(autoincrement())
   nom               String        
-  description       String?  
+  description       String?    
   categorie         Categorie
   prix              BigInt?// ✅ permet des valeurs énormes
   surface           BigInt?// ✅ permet des valeurs énormes       
-  statut            Statut     
+  statut            Statut        
   
   images            ProprieteImage[]// 🖼️ Images multiples (UploadThing URLs)
 
   visiteVirtuelle   String?// 🎥 Lien unique ou optionnel vers la visite virtuelle (YouTube, Matterport, etc.)  
 
-  geolocalisation   String     
+  geolocalisation   Geolocalisation?     
   
   nombreChambres    Int?             @default(1)/// Nombre total de chambres disponibles (ex: 50 chambres dans un hôtel)
 
@@ -173,7 +173,21 @@ model Propriete {
   vus               Vu[]
   hotel             Hotel?          @relation("ProprieteHotel")
   signalements      Signalement[]
-}  
+}          
+  
+model Geolocalisation {
+  id          Int       @id @default(autoincrement())
+  propriete   Propriete @relation(fields: [proprieteId], references: [id], onDelete: Cascade)
+  proprieteId Int       @unique
+ 
+  latitude    Float
+  longitude   Float     
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt  
+
+  recherches  Recherche[]
+}     
 
 model ProprieteImage {
   id                Int             @id @default(autoincrement())
@@ -217,7 +231,7 @@ model Disponibilite {
   // optionnel: capacité restreinte pour cette plage
   capaciteDisponibilite Int? 
 
-  createdAt          DateTime        @default(now())
+  createdAt          DateTime        @default(now())   
 
   @@index([hotelId, startDate, endDate])   
 }
@@ -456,7 +470,10 @@ model Recherche {
   maxPrix        BigInt?
   minSurface     BigInt?
   maxSurface     BigInt?
-  geolocalisation  String?    // ex: "Lomé", "Adidogomé"...
+
+  geolocalisation  Geolocalisation? @relation(fields: [geolocalisationId], references: [id])
+  geolocalisationId Int?             // optionnel, pour la relation
+
   statut         Statut?    // DISPONIBLE, VENDU...
   nombreChambres Int?      // ex: 3
 

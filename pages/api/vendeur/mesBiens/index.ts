@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { Prisma, Role, Categorie, Statut } from "@prisma/client";
 import { getAuthSession } from "@/lib/auth"; 
    
-interface ChambreInput {
+interface ChambreInput {  
   nom: string;  
   description?: string;
   prixParNuit: number | string;   
@@ -47,7 +47,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // 2️⃣ Gestion des filtres depuis query
     const {
       categorie,
-      statut,
+      statut,  
       search,
       minPrix,
       maxPrix,
@@ -79,7 +79,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       where.OR = [
         { nom: { contains: String(search), mode: "insensitive" } },
         { description: { contains: String(search), mode: "insensitive" } },
-        { geolocalisation: { contains: String(search), mode: "insensitive"}},
       ];
     }
 
@@ -125,6 +124,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             images: {
               orderBy: { ordre: 'asc' } // ✅ Trier par ordre
             },
+            geolocalisation: true,
             chambres: true,
             avis: { include: { user: true } },
             offres: true,
@@ -163,7 +163,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         description = "",
         categorie,
         prix,
-        surface,
+        surface,    
         statut,
         geolocalisation,
         nombreChambres = 1,
@@ -172,8 +172,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         chambres = [] as ChambreInput[],
       } = req.body;
 
-      if (!nom || !categorie || !statut || !prix || !surface || !geolocalisation) {
+      if (!nom || !categorie || !statut || !prix || !surface) {
         return res.status(400).json({ message: 'Champs requis manquants' })
+      }
+
+      if (
+        !geolocalisation ||
+        typeof geolocalisation.lat === "undefined" ||
+        typeof geolocalisation.lng === "undefined"
+      ) {
+        return res.status(400).json({
+          message: "Géolocalisation invalide : { lat, lng } requis",
+        });
       }
 
       if (!Object.values(Categorie).includes(categorie as Categorie))
@@ -191,7 +201,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           prix: BigInt(Number(prix)), // ✅ stocké correctement,   
           surface,
           statut: statut as Statut,
-          geolocalisation,
+          // ⚠️ Géolocalisation avec PostGIS via UncheckedCreate
+          geolocalisation: {
+            create: {
+              latitude: Number(geolocalisation.lat),
+              longitude: Number(geolocalisation.lng),
+            },
+          },  
           nombreChambres,
           visiteVirtuelle,
           proprietaireId: userId,
@@ -218,8 +234,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
               }
             : undefined,
         },
-        include: { images: true },
+        include: {
+          images: true,
+          geolocalisation: true,
+        },
       });
+
+      await prisma.$executeRaw`
+        UPDATE "Geolocalisation"
+        SET "geoPoint" = ST_SetSRID(ST_MakePoint(${geolocalisation.lng}, ${geolocalisation.lat}), 4326)
+        WHERE "proprieteId" = ${propriete.id};
+      `;
+
 
       const safePropriete = serializeBigInt(propriete)
 

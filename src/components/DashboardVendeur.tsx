@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'    
+import { useState } from 'react'        
 import { motion, AnimatePresence } from 'framer-motion'   
 import {    
   Home, Building, Calendar, Settings, Bell, User, Eye, 
@@ -24,6 +24,11 @@ export interface User {
   email?: string;
 }
 
+interface Geolocalisation {
+  latitude: number | null;
+  longitude: number | null;
+}
+
 interface RecentProperty {
   id: number
   nom: string
@@ -33,7 +38,7 @@ interface RecentProperty {
   surface: number
   statut: Statut
   nombreChambres?: number
-  geolocalisation: string
+  geolocalisation: Geolocalisation | null
   createdAt: string
   images?: PropertyImage[]
   hotel?: {
@@ -82,7 +87,7 @@ interface FormDataProps {
   prix: string
   surface: string      
   statut: Statut
-  geolocalisation: string
+  geolocalisation: Geolocalisation | null
   nombreChambres?: string
   visiteVirtuelle: string
 }
@@ -120,6 +125,8 @@ interface VendeurDashboardClientProps {
   prochainesVisites: Visite[]
 }
 
+type AddressInput = string | null;
+
 export default function VendeurDashboardClient({
   user,
   stats,
@@ -139,6 +146,8 @@ export default function VendeurDashboardClient({
   const [propertiesData, setPropertiesData] = useState<RecentProperty[]>(recentProperties);
   const [hotelsData, setHotelsData] = useState<HotelFormData[]>([]);
   const [chambres, setChambres] = useState<Chambre[]>([])
+  const [address, setAddress] = useState<AddressInput>(null);
+  const [location, setLocation] = useState<Geolocalisation>({ latitude: null, longitude: null });
 
   const [formData, setFormData] = useState<FormDataProps>({
     nom: '',
@@ -147,7 +156,7 @@ export default function VendeurDashboardClient({
     prix: '',
     surface: '',
     statut: Statut.DISPONIBLE,
-    geolocalisation: '',
+    geolocalisation: null, // ✅ ici
     nombreChambres: '',
     visiteVirtuelle: '',
   })
@@ -160,7 +169,7 @@ export default function VendeurDashboardClient({
       prix: "",
       surface: "",
       statut: Statut.DISPONIBLE,
-      geolocalisation: "",
+      geolocalisation: null,
       nombreChambres: "",
       visiteVirtuelle: "",
     },
@@ -277,7 +286,7 @@ export default function VendeurDashboardClient({
         prix: '',
         surface: '',
         statut: Statut.DISPONIBLE,   
-        geolocalisation: '',
+        geolocalisation: null,
         nombreChambres: '',
         visiteVirtuelle: '',
       })
@@ -306,7 +315,11 @@ export default function VendeurDashboardClient({
       const payload = {
         propriete: {
           ...hotelData.propriete,
-          imageUrls: images.map(img => img.url),
+          geolocalisation: {
+            lat: location.latitude,
+            lng: location.longitude,
+          },
+          imageUrls: images.map(img => img.url),   
         },
         nombreEtoiles: hotelData.nombreEtoiles, // 
         politiqueAnnulation: hotelData.politiqueAnnulation,
@@ -340,7 +353,7 @@ export default function VendeurDashboardClient({
           prix: "",
           surface: "",
           statut: Statut.DISPONIBLE,
-          geolocalisation:  "",
+          geolocalisation:  null,
           nombreChambres:  "",
           visiteVirtuelle:  "",        
         },
@@ -361,6 +374,35 @@ export default function VendeurDashboardClient({
       setIsSubmitting(false);
     }
   };
+
+  const handleGeocode = async () => {
+    if (!address) return;
+
+    let lat: number | null = null;
+    let lon: number | null = null;
+
+    // Lien Google Maps
+    if (typeof address === "string") {
+      const googleMapsMatch = address.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+      if (googleMapsMatch) {
+        lat = parseFloat(googleMapsMatch[1]);
+        lon = parseFloat(googleMapsMatch[2]);
+      } else {
+        // Adresse texte => Nominatim
+        const encodedAddress = encodeURIComponent(address);
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodedAddress}&format=json&limit=1`);
+        const data = await res.json();
+
+        if (data.length > 0) {
+          lat = parseFloat(data[0].lat);
+          lon = parseFloat(data[0].lon);
+        }
+      }
+    }
+
+    setLocation({ latitude: lat, longitude: lon });
+  };
+
 
   const categories = Object.values(Categorie)
   const statuts = Object.values(Statut)
@@ -420,7 +462,7 @@ export default function VendeurDashboardClient({
           >
             + Ajouter un bien
           </button>
-
+  
           <button
             onClick={handleOpenHotelModal}
             className="w-full bg-sky-600 text-white rounded-lg py-2 px-4 text-sm font-medium mb-6 hover:bg-sky-700 transition-colors"
@@ -756,12 +798,19 @@ export default function VendeurDashboardClient({
                         <MapPin size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                         <input
                           type="text"
-                          value={formData.geolocalisation}
-                          onChange={(e) => setFormData({...formData, geolocalisation: e.target.value})}
+                          value={address ?? ""}
+                          onChange={(e) => setAddress(e.target.value)}
                           className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
                           placeholder="Lomé, Bè"
                         />
                       </div>
+                      <button
+                        type="button"
+                        onClick={handleGeocode}
+                        className="mt-2 px-4 py-2 bg-orange-500 text-white rounded"
+                      >
+                        Géocoder
+                      </button>
                     </div>
 
                     <div>
@@ -1048,18 +1097,55 @@ export default function VendeurDashboardClient({
                   </div>
 
                   {/* GEOLOCALISATION */}
-                  <input
-                    type="text"
-                    value={hotelData?.propriete?.geolocalisation}
-                    onChange={(e) =>
-                      setHotelData({
-                        ...hotelData,
-                        propriete: { ...hotelData?.propriete, geolocalisation: e.target.value },
-                      })
-                    }
-                    className="w-full px-4 py-3 border rounded-lg"
-                    placeholder="Géolocalisation *"
-                  />
+                  <div>
+  <label className="block text-sm font-medium text-gray-700 mb-2">
+    Géolocalisation *
+  </label>
+
+  {/* Champ texte où l'utilisateur entre une adresse ou un lien */}
+  <div className="relative mb-3">
+    <MapPin
+      size={20}
+      className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+    />
+    <input
+      type="text"
+      value={address ?? ""}
+      onChange={(e) => setAddress(e.target.value)}
+      className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
+      placeholder="Ex: Lome, Adidogomé, ou lien Google Maps"
+    />
+  </div>
+
+  {/* Bouton convertir -> remplit formData.geolocalisation */}
+  <Button
+    type="button"
+    variant="secondary"
+    onClick={handleGeocode}
+    className="w-full mb-3"
+  >
+    Convertir en coordonnées
+  </Button>
+
+  {/* Coordonnées verrouillées */}
+  {formData.geolocalisation && (
+    <div className="text-sm text-gray-700 mt-2">
+      <p>
+        Latitude :{" "}
+        <span className="font-semibold">
+          {formData.geolocalisation.latitude}
+        </span>
+      </p>
+      <p>
+        Longitude :{" "}
+        <span className="font-semibold">
+          {formData.geolocalisation.longitude}
+        </span>
+      </p>
+    </div>
+  )}
+</div>
+
 
                   {/* POLITIQUE ANNULATION */}
                   <textarea

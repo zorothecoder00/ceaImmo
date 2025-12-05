@@ -5,14 +5,14 @@ import { User, Lock, Bell, Eye, Palette, Globe, Clock, Save, Camera } from 'luci
 import Link from 'next/link'
 
 export default function BuyerSettingsPage() {
-  const [activeTab, setActiveTab] = useState('profil');
+  const [activeTab, setActiveTab] = useState('profil');   
   const [theme, setTheme] = useState('clair');
   const [language, setLanguage] = useState('fr');
   const [profileVisibility, setProfileVisibility] = useState('public');
   const [notifications, setNotifications] = useState({
     email: true,
     push: true,
-    messages: true,  
+    messages: true,     
     promotions: false
   });
   const [userData, setUserData] = useState({

@@ -9,6 +9,11 @@ export interface PropertyImage {
   url: string;   
   ordre: number;
 }
+
+interface Geolocalisation {
+  latitude: number | null;
+  longitude: number | null;
+}
   
 export interface Property {
   id: number;  
@@ -17,7 +22,7 @@ export interface Property {
   images?: PropertyImage[];
   statut: Statut;
   createdAt: string;
-  geolocalisation?: string;
+  geolocalisation?: Geolocalisation | null;
   nombreChambres?: number | null;
   surface?: number;
   nombreVu?: number;
@@ -94,10 +99,17 @@ export default function PropertyCard({ property }: PropertyCardProps) {
         {property.geolocalisation && (
           <div className="flex items-center text-gray-600 text-sm mb-3">
             <MapPin className="h-4 w-4 mr-1" />
-            {property.geolocalisation}
-          </div>   
+            <a
+              href={`https://www.google.com/maps?q=${property.geolocalisation.latitude},${property.geolocalisation.longitude}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline"
+            >
+              Voir sur Google Maps
+            </a>
+          </div>
         )}
-
+       
         {property.nombreEtoiles ? (
           <div className="flex items-center text-yellow-500 text-sm mb-2">
             {"★".repeat(property.nombreEtoiles)}

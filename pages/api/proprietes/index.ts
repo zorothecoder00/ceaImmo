@@ -1,7 +1,23 @@
-// /pages/api/proprietes.ts
 import type { NextApiRequest, NextApiResponse } from "next";
-import prisma from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { Categorie, Statut, Prisma } from "@prisma/client";
+
+// Type pour la propriété retournée par la requête SQL
+type ProprieteSQL = {
+  id: number;
+  nom: string;
+  description: string;
+  categorie: Categorie;
+  statut: Statut;
+  prix: string;      // stocké en bigint -> string après JSON.parse
+  surface: number;
+  nombreChambres: number;
+  visiteVirtuelle: string | null;
+  proprietaireId: number;
+  createdAt: Date;
+  updatedAt: Date;
+  // ajouter d'autres champs si nécessaire
+};
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   try {
@@ -9,7 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(405).json({ error: "Méthode non autorisée" });
     }
 
-    function serializeBigInt<T>(obj: T): T {  
+    function serializeBigInt<T>(obj: T): T {
       return JSON.parse(
         JSON.stringify(obj, (_, value) =>
           typeof value === "bigint" ? value.toString() : value
@@ -26,86 +42,116 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       chambresMin,
       chambresMax,
       statut,
-      geolocalisation,
+      geolocalisationLat,
+      geolocalisationLng,
+      radius,
       take,
       skip,
       search,
-      orderBy = "createdAt", // par défaut
-      order = "desc",        // par défaut
+      orderBy = "createdAt",
+      order = "desc",
     } = req.query;
 
-    // Construction dynamique du filtre
-    const filters: Prisma.ProprieteWhereInput = {
-      ...(categorie && Object.values(Categorie).includes(categorie as Categorie)
-        ? { categorie: categorie as Categorie }
-        : {}),
-      ...(statut && Object.values(Statut).includes(statut as Statut)
-        ? { statut: statut as Statut }
-        : {}),
-      ...(prixMin || prixMax
-        ? {
-            prix: {
-              ...(prixMin ? { gte: Number(prixMin) } : {}),
-              ...(prixMax ? { lte: Number(prixMax) } : {}),
-            },
-          }
-        : {}),
-      ...(surfaceMin || surfaceMax
-        ? {
-            surface: {
-              ...(surfaceMin ? { gte: Number(surfaceMin) } : {}),
-              ...(surfaceMax ? { lte: Number(surfaceMax) } : {}),
-            },
-          }
-        : {}),
-      ...(chambresMin || chambresMax
-        ? {
-            nombreChambres: {
-              ...(chambresMin ? { gte: Number(chambresMin) } : {}),
-              ...(chambresMax ? { lte: Number(chambresMax) } : {}),
-            },
-          }
-        : {}),
-      ...(geolocalisation
-        ? {
-            geolocalisation: {
-              contains: String(geolocalisation),
-              mode: "insensitive",
-            },
-          }
-        : {}),
-      ...(search
-        ? {
-            OR: [
-              { nom: { contains: String(search), mode: "insensitive" } },
-              { description: { contains: String(search), mode: "insensitive" } },
-            ],
-          }
-        : {}),
-    };
-
-    // sécuriser les champs triables
-    const allowedOrderBy = ["createdAt", "prix", "surface"];
-    const safeOrderBy = allowedOrderBy.includes(String(orderBy)) ? String(orderBy) : "createdAt";
-    const safeOrder = String(order).toLowerCase() === "asc" ? "asc" : "desc";
-
-    // pagination sécurisée
     const takeNumber = isNaN(Number(take)) ? 20 : Number(take);
     const skipNumber = isNaN(Number(skip)) ? 0 : Number(skip);
 
-    const [proprietes, total] = await Promise.all([
-      prisma.propriete.findMany({  
-        where: filters,
-        orderBy: { [safeOrderBy]: safeOrder },
-        skip: skipNumber,
-        take: takeNumber,     
-      }),
-      prisma.propriete.count({ where: filters }),
-    ]);
+    const allowedOrderBy = ["createdAt", "prix", "surface"];
+    const safeOrderBy = allowedOrderBy.includes(String(orderBy)) ? String(orderBy) : "createdAt";
+    const safeOrder = String(order).toLowerCase() === "asc" ? "ASC" : "DESC";
 
-    const safeProprietes = serializeBigInt(proprietes)
+    const filters: string[] = [];
+    const params: (string | number)[] = [];
 
-    return res.status(200).json({ total, data:  safeProprietes });
+    if (categorie && Object.values(Categorie).includes((Array.isArray(categorie) ? categorie[0] : categorie) as Categorie)) {
+      const cat = Array.isArray(categorie) ? categorie[0] : categorie;
+      filters.push(`categorie = $${params.length + 1}`);
+      params.push(cat);
+    }
+
+    if (statut && Object.values(Statut).includes((Array.isArray(statut) ? statut[0] : statut) as Statut)) {
+      const st = Array.isArray(statut) ? statut[0] : statut;
+      filters.push(`statut = $${params.length + 1}`);
+      params.push(st);
+    }
+
+    if (prixMin) {
+      filters.push(`prix >= $${params.length + 1}`);
+      params.push(Number(prixMin));
+    }
+
+    if (prixMax) {
+      filters.push(`prix <= $${params.length + 1}`);
+      params.push(Number(prixMax));
+    }
+
+    if (surfaceMin) {
+      filters.push(`surface >= $${params.length + 1}`);
+      params.push(Number(surfaceMin));
+    }
+
+    if (surfaceMax) {
+      filters.push(`surface <= $${params.length + 1}`);
+      params.push(Number(surfaceMax));
+    }
+
+    if (chambresMin) {
+      filters.push(`nombreChambres >= $${params.length + 1}`);
+      params.push(Number(chambresMin));
+    }
+
+    if (chambresMax) {
+      filters.push(`nombreChambres <= $${params.length + 1}`);
+      params.push(Number(chambresMax));
+    }
+
+    if (search) {
+      filters.push(`(nom ILIKE $${params.length + 1} OR description ILIKE $${params.length + 2})`);
+      const searchTerm = `%${search}%`;
+      params.push(searchTerm, searchTerm);
+    }
+
+    let geoFilter = "";
+    if (geolocalisationLat && geolocalisationLng) {
+      const lat = Number(geolocalisationLat);
+      const lng = Number(geolocalisationLng);
+      const dist = radius ? Number(radius) : 10000;
+      geoFilter = `ST_DWithin("geolocalisation"."geoPoint", ST_MakePoint(${lng}, ${lat})::geography, ${dist})`;
+    }
+
+    const whereClause = [...filters];
+    if (geoFilter) whereClause.push(geoFilter);
+    const whereSQL = whereClause.length > 0 ? `WHERE ${whereClause.join(" AND ")}` : "";
+
+    // ✅ Typé correctement au lieu de any
+    const proprietes = await prisma.$queryRaw<ProprieteSQL[]>(
+      Prisma.sql`
+        SELECT * FROM "Propriete"
+        ${whereClause.length > 0 ? Prisma.sql`WHERE ${Prisma.join(whereClause.map((f, i) => Prisma.raw(f)))}` : Prisma.sql``}
+        ORDER BY ${Prisma.raw(safeOrderBy)} ${Prisma.raw(safeOrder)}
+        LIMIT ${takeNumber}
+        OFFSET ${skipNumber}
+      `
+    );
+
+    const totalResult = await prisma.$queryRaw<{ count: string }[]>(
+      Prisma.sql`
+        SELECT COUNT(*) AS count FROM "Propriete"
+        ${whereClause.length > 0 ? Prisma.sql`WHERE ${Prisma.join(whereClause.map((f, i) => Prisma.raw(f)))}` : Prisma.sql``}
+      `
+    );
+
+
+    const total = totalResult[0] ? Number(totalResult[0].count) : 0;
+    const safeProprietes = serializeBigInt(proprietes);
+
+    return res.status(200).json({
+      total,
+      page: Math.floor(skipNumber / takeNumber) + 1,
+      limit: takeNumber,
+      orderBy: safeOrderBy,
+      order: safeOrder.toLowerCase(),
+      data: safeProprietes,
+    });
   } catch (error) {
     console.error("Erreur API proprietes:", error);
     return res.status(500).json({ error: "Erreur interne du serveur" });

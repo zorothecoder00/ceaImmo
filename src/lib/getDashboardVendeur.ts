@@ -1,15 +1,16 @@
-import { prisma } from "@/lib/prisma"
-import { OffreStatut, Statut, StatutTransaction } from "@prisma/client"
+// lib/vendeur.ts (mis à jour)
 
- 
+import { prisma } from "@/lib/prisma";
+import { OffreStatut, Statut, StatutTransaction } from "@prisma/client";
+
 export async function getMesProprietes(userId: string) {
-  const parsedUserId = parseInt(userId)
+  const parsedUserId = parseInt(userId);
 
   const myProperties = await prisma.propriete.findMany({
     where: { proprietaireId: parsedUserId },
     include: {
       offres: true, // pour compter les offres liées
-      images: { orderBy: { ordre: 'asc' } },
+      images: { orderBy: { ordre: "asc" } },
       hotel: {
         select: {
           nombreEtoiles: true,
@@ -20,35 +21,33 @@ export async function getMesProprietes(userId: string) {
       avis: {
         select: { note: true },
       },
+      geolocalisation: true, // ✅ ajouté
     },
     orderBy: { createdAt: "desc" },
-  })   
+  });
 
   // 🧮 Calcul des statistiques
   const activeProperties = myProperties.filter(
     (p) => p.statut === Statut.DISPONIBLE || p.statut === Statut.EN_NEGOCIATION
-  ).length
+  ).length;
 
-  const reservedProperties = myProperties.filter(
-    (p) => p.statut === Statut.RESERVE
-  ).length
+  const reservedProperties = myProperties.filter((p) => p.statut === Statut.RESERVE)
+    .length;
 
-  const soldProperties = myProperties.filter(
-    (p) => p.statut === Statut.VENDU   
-  ).length
+  const soldProperties = myProperties.filter((p) => p.statut === Statut.VENDU)
+    .length;
 
-  const totalViews = myProperties.reduce((sum, p) => sum + (p.nombreVu || 0), 0)
+  const totalViews = myProperties.reduce((sum, p) => sum + (p.nombreVu || 0), 0);
 
   // Nombre d’offres en attente sur mes propriétés
   const pendingOffers = myProperties.reduce((sum, p) => {
-    const pending = p.offres.filter(
-      (o) => o.statut === OffreStatut.EN_ATTENTE
-    ).length
-    return sum + pending
-  }, 0)
+    const pending = p.offres.filter((o) => o.statut === OffreStatut.EN_ATTENTE)
+      .length;
+    return sum + pending;
+  }, 0);
 
   // Retourne aussi les 3 plus récentes propriétés
-  const recentProperties = myProperties.slice(0, 3)
+  const recentProperties = myProperties.slice(0, 3);
 
   return {
     recentProperties,
@@ -59,46 +58,50 @@ export async function getMesProprietes(userId: string) {
       totalViews,
       pendingOffers,
     },
-  }
+  };
 }
 
-export async function getMesOffresRecus(userId: string)
-{
-	const parsedUserId = parseInt(userId)
+export async function getMesOffresRecus(userId: string) {
+  const parsedUserId = parseInt(userId);
 
-	const [offresRecentes, totalOffresEnAttente] = await Promise.all([
-		prisma.offre.findMany({
-			where: {
-				propriete: {
-					proprietaireId: parsedUserId,
-				},
-			},
-			include: {
-				user: true,
-				propriete: true,
-			},
-			orderBy: { createdAt: 'desc'},
-			take: 3,
-		}),
+  const [offresRecentes, totalOffresEnAttente] = await Promise.all([
+    prisma.offre.findMany({
+      where: {
+        propriete: {
+          proprietaireId: parsedUserId,
+        },
+      },
+      include: {
+        user: true,
+        propriete: {
+          include: {
+            images: { orderBy: { ordre: "asc" }, take: 1 },
+            geolocalisation: true, // ✅ ajouté
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 3,
+    }),
 
-		prisma.offre.count({
-			where: {
-				propriete: {
-					proprietaireId: parsedUserId,
-				},
-				statut: OffreStatut.EN_ATTENTE,
-			},
-		})
-	])
-   
-	return { offresRecentes, totalOffresEnAttente}
+    prisma.offre.count({
+      where: {
+        propriete: {
+          proprietaireId: parsedUserId,
+        },
+        statut: OffreStatut.EN_ATTENTE,
+      },
+    }),
+  ]);
+
+  return { offresRecentes, totalOffresEnAttente };
 }
 
 // Récupérer les prochaines visites de mes biens
-export async function getMesProchainesVisites(userId: string){
-	const parsedUserId = parseInt(userId)
+export async function getMesProchainesVisites(userId: string) {
+  const parsedUserId = parseInt(userId);
 
-	const prochainesVisites = await prisma.visite.findMany({
+  const prochainesVisites = await prisma.visite.findMany({
     where: {
       propriete: {
         proprietaireId: parsedUserId, // filtre sur les propriétés que je possède
@@ -106,9 +109,14 @@ export async function getMesProchainesVisites(userId: string){
       date: { gte: new Date() }, // uniquement les visites à venir
     },
     include: {
-      propriete: true, // infos de la propriété visitée
-      user: true,      // infos de l'utilisateur qui a demandé la visite
-      agent: true,     // si besoin, infos de l'agent assigné
+      propriete: {
+        include: {
+          images: { orderBy: { ordre: "asc" }, take: 1 },
+          geolocalisation: true, // ✅ ajouté
+        },
+      }, // infos de la propriété visitée
+      user: true, // infos de l'utilisateur qui a demandé la visite
+      agent: true, // si besoin, infos de l'agent assigné
     },
     orderBy: {
       date: "asc", // visites les plus proches en premier
@@ -116,7 +124,7 @@ export async function getMesProchainesVisites(userId: string){
     take: 10, // limite à 10 visites par exemple
   });
 
-  return prochainesVisites
+  return prochainesVisites;
 }
 
 // Ajoutez dans votre getDashboardVendeur.ts
@@ -130,25 +138,27 @@ export async function getTransactionsAFinaliser(userId: string) {
       // ❗ Optionnel : s'assurer que le transfert n'a pas encore été fait
       offre: {
         propriete: {
-          statut: { in: ['RESERVE'] }, // propriété réservée mais pas encore transférée
+          statut: { in: [Statut.RESERVE] }, // ✅ utilise l'enum Statut au lieu d'une string
         },
       },
     },
     include: {
-      user: { // infos acheteur
+      user: {
+        // infos acheteur
         select: { id: true, nom: true, prenom: true },
       },
       offre: {
         include: {
           propriete: {
             include: {
-              images: { orderBy: { ordre: 'asc' }, take: 1 },
+              images: { orderBy: { ordre: "asc" }, take: 1 },
+              geolocalisation: true, // ✅ ajouté
             },
           },
         },
       },
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { createdAt: "desc" },
     take: 5, // limit pour le dashboard
   });
 

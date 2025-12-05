@@ -7,7 +7,7 @@ import {
   Bell,    
   User,  
   Eye,     
-  Heart,
+  Heart,  
   MapPin,
   Bed,
   Square,
@@ -32,6 +32,16 @@ import SearchForm from '@/components/SearchForm'
 import SearchModal from '@/components/RechercheModal'
 
 // Types
+
+interface Geolocalisation {
+  id: number
+  proprieteId: number
+  latitude: number
+  longitude: number
+  createdAt: Date
+  updatedAt: Date
+}
+
 interface Image {
   id: number
   url: string
@@ -41,8 +51,8 @@ interface Image {
 interface Property {
   id: number
   nom: string
-  geolocalisation: string  
-  prix: number|bigint | null
+  geolocalisation: Geolocalisation | null  
+  prix: number | bigint | null
   nombreChambres: number | null  
   chambre?: string
   surface: number | bigint | null
@@ -85,7 +95,7 @@ interface Recherche {
   maxPrix?: number
   minSurface?: number
   maxSurface?: number
-  geolocalisation?: string
+  geolocalisation?: Geolocalisation
   nombreChambres?: number
   userId: number
 }
@@ -163,7 +173,9 @@ function PropertyCard({ property, userId }: { property: Property, userId: string
         <h3 className="font-semibold text-gray-900 mb-2 text-base sm:text-lg line-clamp-1">{property.nom}</h3>
         <div className="flex items-center text-gray-600 text-sm mb-3 truncate">
           <MapPin className="h-4 w-4 mr-1 flex-shrink-0" />
-          {property.geolocalisation}
+          {property.geolocalisation 
+            ? `${property.geolocalisation.latitude}, ${property.geolocalisation.longitude}`
+            : 'Localisation non disponible'}
         </div>
         
         <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
@@ -467,8 +479,16 @@ export default async function AcheteurDashboard() {
                     <div key={r.id} className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow duration-200">
                       <div className="flex items-center justify-between mb-3">
                         <h3 className="font-semibold text-gray-900 text-sm sm:text-base">
-                          {r.titre || `${r.categorie || 'Type inconnu'} à ${r.geolocalisation || 'Lieu inconnu'}`}
+                          {r.titre || (
+                            <>
+                              {r.categorie || 'Type inconnu'} à{' '}
+                              {r.geolocalisation 
+                                ? `${r.geolocalisation.latitude.toFixed(5)}, ${r.geolocalisation.longitude.toFixed(5)}`
+                                : 'Lieu inconnu'}
+                            </>
+                          )}
                         </h3>
+
                         <span className="text-sm text-gray-500">
                           {r.minPrix ? `${r.minPrix.toLocaleString()}€` : '∞'} -
                           {r.maxPrix ? `${r.maxPrix.toLocaleString()}€` : '∞'}

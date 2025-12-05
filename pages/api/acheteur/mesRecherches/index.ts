@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/lib/prisma";
-import { Prisma, Categorie, Statut } from "@prisma/client";
+import { Categorie, Statut } from "@prisma/client";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "GET") {
@@ -8,13 +8,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   function serializeBigInt<T>(obj: T): T {
-    return JSON.parse(
+    return JSON.parse(   
       JSON.stringify(obj, (_, value) =>
         typeof value === "bigint" ? value.toString() : value
       )
     );
   }
-
+     
   try {
     // Query params
     const {  
@@ -27,7 +27,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       maxSurface,
       minChambres,
       maxChambres,
-      geolocalisation,          
+      latitude,
+      longitude,
+      radius, // en mètres          
       minNote,
       page = "1",
       limit = "10",
@@ -46,119 +48,158 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       : "createdAt";
     const order = sortOrder === "asc" ? "asc" : "desc";
 
-    // Construction des filtres
-    const where: Prisma.ProprieteWhereInput = {};
+    const sqlParams: (string | number)[] = [];
+    let paramIndex = 1;
 
-    // 🔹 Recherche texte globale
-    const searchStr = search.toString().trim().toLowerCase();
-    if (searchStr) {
-      where.OR = [
-        { nom: { contains: searchStr, mode: "insensitive" } },
-        { description: { contains: searchStr, mode: "insensitive" } },
-        { geolocalisation: { contains: searchStr, mode: "insensitive" } },
-        {
-          proprietaire: {
-            OR: [
-              { nom: { contains: searchStr, mode: "insensitive" } },
-              { prenom: { contains: searchStr, mode: "insensitive" } },
-            ],
-          },
-        },
-      ];
+    const whereClauses: string[] = [];
+
+    // 🔵 Recherche textuelle globale
+    if (search) {
+      whereClauses.push(`
+        (p.nom ILIKE $${paramIndex}
+        OR p.description ILIKE $${paramIndex}
+        OR pr.nom ILIKE $${paramIndex}
+        OR pr.prenom ILIKE $${paramIndex})
+      `);
+      sqlParams.push(`%${search}%`);
+      paramIndex++;
     }
 
-    // 🔹 Filtrage par geolocalisation (optionnel)
-    if (geolocalisation) {
-      where.geolocalisation = { contains: geolocalisation.toString(), mode: "insensitive" };
+    // 🔵 Catégorie
+    if (categorie) {
+      const cat = Array.isArray(categorie) ? categorie[0] : categorie; // force string
+      if (Object.values(Categorie).includes(cat as Categorie)) {
+        whereClauses.push(`p.categorie = $${paramIndex}`);
+        sqlParams.push(cat);
+        paramIndex++;
+      }
     }
 
-    // 🔹 Filtrage par catégorie
-    if (categorie && Object.values(Categorie).includes(categorie as Categorie)) {
-      where.categorie = categorie as Categorie;
+    // 🔵 Statut
+    if (statut) {
+      const stat = Array.isArray(statut) ? statut[0] : statut; // force string
+      if (Object.values(Statut).includes(stat as Statut)) {
+        whereClauses.push(`p.statut = $${paramIndex}`);
+        sqlParams.push(stat);
+        paramIndex++;
+      }
     }
 
-    // 🔹 Filtrage par statut
-    if (statut && Object.values(Statut).includes(statut as Statut)) {
-      where.statut = statut as Statut;
+    // 🔵 Prix
+    if (minPrix) {
+      whereClauses.push(`p.prix >= $${paramIndex}`);
+      sqlParams.push(Number(minPrix));
+      paramIndex++;
+    }
+    if (maxPrix) {
+      whereClauses.push(`p.prix <= $${paramIndex}`);
+      sqlParams.push(Number(maxPrix));
+      paramIndex++;
     }
 
-    // 🔹 Filtres numériques avec objets séparés
-    if (minPrix || maxPrix) {
-      where.prix = {
-        ...(minPrix ? { gte: Number(minPrix) } : {}),
-        ...(maxPrix ? { lte: Number(maxPrix) } : {}),
-      };
+    // 🔵 Surface
+    if (minSurface) {
+      whereClauses.push(`p.surface >= $${paramIndex}`);
+      sqlParams.push(Number(minSurface));
+      paramIndex++;
+    }
+    if (maxSurface) {
+      whereClauses.push(`p.surface <= $${paramIndex}`);
+      sqlParams.push(Number(maxSurface));
+      paramIndex++;
     }
 
-    if (minSurface || maxSurface) {
-      where.surface = {
-        ...(minSurface ? { gte: Number(minSurface) } : {}),
-        ...(maxSurface ? { lte: Number(maxSurface) } : {}),
-      };
+    // 🔵 Chambres
+    if (minChambres) {
+      whereClauses.push(`p."nombreChambres" >= $${paramIndex}`);
+      sqlParams.push(Number(minChambres));
+      paramIndex++;
+    }
+    if (maxChambres) {
+      whereClauses.push(`p."nombreChambres" <= $${paramIndex}`);
+      sqlParams.push(Number(maxChambres));
+      paramIndex++;
     }
 
-    if (minChambres || maxChambres) {
-      where.nombreChambres = {
-        ...(minChambres ? { gte: Number(minChambres) } : {}),
-        ...(maxChambres ? { lte: Number(maxChambres) } : {}),
-      };
+    // ============================================
+    // 🟧 FILTRE SPATIAL (distance en mètres)
+    // ============================================
+    let spatialSelect = `NULL AS distance`;
+    let spatialWhere = ``;
+
+    if (latitude && longitude && radius) {
+      spatialSelect = `
+        ST_Distance(
+          g."geoPoint",
+          ST_SetSRID(ST_MakePoint($${paramIndex}, $${paramIndex + 1}), 4326)
+        ) AS distance
+      `;
+
+      spatialWhere = `
+        AND ST_DWithin(
+          g."geoPoint",
+          ST_SetSRID(ST_MakePoint($${paramIndex}, $${paramIndex + 1}), 4326),
+          $${paramIndex + 2}
+        )
+      `;
+
+      sqlParams.push(Number(longitude), Number(latitude), Number(radius));
+      paramIndex += 3;
     }
 
-    // 🔹 Récupération des résultats
-    const [proprietes, total] = await Promise.all([
-      prisma.propriete.findMany({
-        where,
-        include: {
-          images: true,
-          chambres: true,
-          proprietaire: {
-            select: { id: true, nom: true, prenom: true },
-          },
-          _count: { select: { avis: true } },
-          avis: { select: { note: true } },
-        },
-        orderBy: safeField !== "note" ? { [safeField]: order } : undefined,
-        skip,
-        take,
-      }),
-      prisma.propriete.count({ where }),
-    ]);
+    // ============================================
+    // 🟥 WHERE FINAL
+    // ============================================
+    const whereSQL = whereClauses.length > 0
+      ? `WHERE ${whereClauses.join(" AND ")}`
+      : "";
 
-    // 🔹 Ajout de la note moyenne
-    let data = proprietes.map((p) => {
-      const moyenne = p.avis.length
-        ? p.avis.reduce((s, n) => s + n.note, 0) / p.avis.length
-        : 0;
-      return { ...p, note: moyenne };
-    });
+    // ============================================
+    // 🟩 SQL FINAL
+    // ============================================
+    const sql = `
+      SELECT 
+        p.id,
+        p.nom,
+        p.description,
+        p.categorie,
+        p.statut,
+        p.prix,
+        p.surface,
+        p."nombreChambres",
+        p."createdAt",
+        pr.id AS "proprietaireId",
+        pr.nom AS "proprietaireNom",
+        pr.prenom AS "proprietairePrenom",
+        g.latitude,
+        g.longitude,
+        ${spatialSelect},
+        (
+          SELECT json_agg(json_build_object('id', img.id, 'url', img.url, 'ordre', img.ordre))
+          FROM "ProprieteImage" img 
+          WHERE img."proprieteId" = p.id
+          ORDER BY img.ordre ASC
+        ) AS images
+      FROM "Propriete" p  
+      LEFT JOIN "Geolocalisation" g ON g."proprieteId" = p.id
+      LEFT JOIN "Proprietaire" pr ON pr.id = p."proprietaireId"
+      ${whereSQL}
+      ${spatialWhere}
+      ORDER BY ${safeField} ${order}
+      LIMIT ${take} OFFSET ${skip};
+    `;
 
-    // 🔹 Filtrage par note
-    if (minNote) {
-      data = data.filter((p) => p.note >= Number(minNote));
-    }
+    // Exécution de la requête
+    const result = await prisma.$queryRawUnsafe(sql, ...sqlParams);
 
-    // recalcul du total après filtrage
-    const totalFiltre = data.length;
-
-    // 🔹 Tri manuel si sortField === "note"
-    if (safeField === "note") {
-      data.sort((a, b) =>
-        order === "asc" ? a.note - b.note : b.note - a.note
-      );
-    }
-
-    const safeData = serializeBigInt(data)
-
-    return res.status(200).json({  
-      data: safeData,
+    return res.status(200).json({
+      data: serializeBigInt(result),
       meta: {
-        totalAvantFiltre: total,
-        totalApresFiltre: totalFiltre,
         page: pageNum,
         limit: take,
-        totalPages: Math.ceil(totalFiltre / take),
       },
     });
+
   } catch (error) {
     console.error("Erreur API /recherches:", error);
     return res.status(500).json({ error: "Erreur serveur" });

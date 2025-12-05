@@ -13,10 +13,16 @@ import Link from "next/link"
 import { Role, Categorie } from '@prisma/client'
 import { useSession } from 'next-auth/react'; // 👈 Pour détecter la session utilisateur
 import { useRouter } from 'next/navigation';  // 👈 Pour les redirections dynamiques
+import Map from '@/components/MapWrapper';
+
+interface Geoloc {
+  latitude: number;
+  longitude: number;
+}
 
 interface PropertyImage {
   id: number;
-  url: string;  
+  url: string;    
 }     
 
 interface Property {
@@ -26,16 +32,19 @@ interface Property {
   categorie: Categorie;
   visiteVirtuelle?: string | null;
   images: PropertyImage[];
-  geolocalisation: string;
+  geolocalisation?: Geoloc | null;
 }
 
 interface PropertyFilters {
   nom?: string;
-  geolocalisation?: string;
   categorie?: string;
   prixMin?: string | number;
   prixMax?: string | number;
+  latitude?: number | null;
+  longitude?: number | null;
+  radius?: number | null;
 }
+
 
 export default function HomePage()
 {
@@ -43,8 +52,16 @@ export default function HomePage()
   const router = useRouter();
 
   const [properties, setProperties] = useState<Property[]>([]);
+  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [searchKeyword, setSearchKeyword] = useState('');
-  const [location, setLocation] = useState('');
+  
+  const [radius, setRadius] = useState(5000); // 5km par défaut
+  const [location, setLocation] = useState({
+    latitude: null as number | null,
+    longitude: null as number | null,
+  });
+  const [address, setAddress] = useState('');
+
   const [propertyType, setPropertyType] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
@@ -73,13 +90,16 @@ export default function HomePage()
 
   // 🔍 Gérer la recherche
   const handleSearch = () => {
-    const filters: PropertyFilters = {
+    const filters: PropertyFilters & { latitude?: number | null; longitude?: number | null; radius?: number } = {
       nom: searchKeyword || undefined,
-      geolocalisation: location || undefined,
       categorie: propertyType || undefined,
       prixMin: minPrice || undefined,
       prixMax: maxPrice || undefined,
+      latitude: location.latitude || undefined,
+      longitude: location.longitude || undefined,
+      radius: radius || undefined,
     };
+
     fetchProperties(filters);
   };
 
@@ -101,7 +121,6 @@ export default function HomePage()
     }
   };
 
-
   // 🔗 Redirection "Détails"
   const handleDetails = (id: number, e: React.MouseEvent) => {
     e.preventDefault();
@@ -116,6 +135,41 @@ export default function HomePage()
       router.push('/dashboard');
     }
   };
+
+  // 🔗 Gérer la géolocalisation avec Leaflet + Nominatim
+  const handleGeocode = async () => {
+    if (!address) return;
+
+    try {
+      // Si l'adresse est un lien Google Maps, on peut extraire lat/lng
+      const googleMapsMatch = address.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+      if (googleMapsMatch) {
+        const lat = parseFloat(googleMapsMatch[1]);
+        const lng = parseFloat(googleMapsMatch[2]);
+        setLocation({ latitude: lat, longitude: lng });
+        return;
+      }
+
+      // Sinon on utilise Nominatim pour géocoder l'adresse texte
+      const encodedAddress = encodeURIComponent(address);
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodedAddress}&format=json&limit=1`);
+      const data = await res.json();
+
+      if (data.length > 0) {
+        const lat = parseFloat(data[0].lat);
+        const lon = parseFloat(data[0].lon);
+        setLocation({ latitude: lat, longitude: lon });
+        console.log("Coordonnées géolocalisation :", lat, lon);
+      } else {
+        console.warn("Adresse introuvable");
+        setLocation({ latitude: null, longitude: null });
+      }
+    } catch (error) {
+      console.error("Erreur lors du géocodage :", error);
+      setLocation({ latitude: null, longitude: null });
+    }
+  };
+
 
   const testimonials = [
     { name: "Marie Diallo", text: "Excellent service, j'ai trouvé la maison de mes rêves grâce à CEA IMMO." },
@@ -186,36 +240,33 @@ export default function HomePage()
         </div>
       )}
 
-
-
-      {/* Hero Section avec recherche intégrée */}
       <div className="relative overflow-hidden">
         {/* Effet de fond animé */}
         <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 via-indigo-600/10 to-purple-600/10"></div>
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl"></div>
-          
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          {/* Titre Hero */}
-          <div className="text-center mb-12">
-            <div className="inline-flex items-center space-x-2 bg-blue-100 text-blue-700 px-4 py-2 rounded-full text-sm font-medium mb-6">
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          {/* Titre Hero - Plus compact */}
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center space-x-2 bg-blue-100 text-blue-700 px-4 py-2 rounded-full text-sm font-medium mb-4">
               <Sparkles className="h-4 w-4" />
               <span>Trouvez votre bien idéal</span>
             </div>
-            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-4">
-              Votre <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">nouveau chez-vous</span>
-              <br />commence ici
+            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-3">
+              Votre <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">nouveau chez-vous</span> commence ici
             </h1>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-                Découvrez des milliers de propriétés exceptionnelles et trouvez celle qui vous ressemble
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Découvrez des milliers de propriétés exceptionnelles et trouvez celle qui vous ressemble
             </p>
           </div>
 
-          {/* Formulaire de recherche modernisé */}
-          <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-2xl shadow-blue-500/10 p-8 border border-white/20">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+          {/* Formulaire de recherche modernisé - Plus compact */}
+          <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-2xl shadow-blue-500/10 p-6 border border-white/20">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+
               {/* Mot-clé */}
-              <div className="lg:col-span-2">
+              <div className="lg:col-span-1">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Mot-clé</label>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -224,84 +275,97 @@ export default function HomePage()
                     placeholder="Villa, appartement..."
                     value={searchKeyword}
                     onChange={(e) => setSearchKeyword(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
+                    className="w-full pl-10 pr-4 py-2.5 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                   />
                 </div>
               </div>
 
-              {/* Localisation */}
-              <div className="lg:col-span-2">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Localisation</label>
-                <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Ville, quartier..."
-                    value={location}
-                    onChange={(e) => setLocation(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
-                  />
-                </div>
-              </div>    
-
-              {/* Type de bien */}  
-              <div className="lg:col-span-2">
+              {/* Type de bien */}
+              <div className="lg:col-span-1">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Type de bien</label>
-                <div className="relative">
-                  <Building className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <select
-                    value={propertyType}
-                    onChange={(e) => setPropertyType(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all appearance-none bg-white"
-                  >
-                    <option value="">Tous les types</option>
-                    {Object.values(Categorie).map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat.charAt(0) + cat.slice(1).toLowerCase()}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <select
+                  value={propertyType}
+                  onChange={(e) => setPropertyType(e.target.value as Categorie)}
+                  className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                >
+                  <option value="">Tous</option>
+                  {Object.values(Categorie).map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}  
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {/* Prix min */}
-              <div className="lg:col-span-2">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Prix minimum</label>
+              <div className="lg:col-span-1">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Prix min</label>
                 <input
-                  type="text"
-                  placeholder="Ex: 10 000 000"
+                  type="number"
+                  placeholder="Ex: 1 000 000"
                   value={minPrice}
                   onChange={(e) => setMinPrice(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
+                  className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                 />
               </div>
 
               {/* Prix max */}
-              <div className="lg:col-span-2">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Prix maximum</label>
+              <div className="lg:col-span-1">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Prix max</label>
                 <input
-                  type="text"
-                  placeholder="Ex: 50 000 000"
+                  type="number"
+                  placeholder="Ex: 5 000 000"
                   value={maxPrice}
                   onChange={(e) => setMaxPrice(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all"
+                  className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                 />
               </div>
 
-              {/* Bouton rechercher */}
-              <div className="lg:col-span-2 flex items-end">
+              {/* Localisation - Plus compact */}
+              <div className="lg:col-span-3">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <MapPin className="h-4 w-4 inline mr-1" />
+                  Localisation
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    className="flex-1 border-2 border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                    placeholder="Adresse ou lien Google Maps"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                  />
+                  <input
+                    type="number"
+                    className="w-32 border-2 border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                    placeholder="Rayon (m)"
+                    value={radius}
+                    onChange={(e) => setRadius(Number(e.target.value) || 0)}
+                  />
+                  <button
+                    onClick={handleGeocode}
+                    className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl transition-all whitespace-nowrap"
+                  >
+                    Localiser
+                  </button>
+                </div>
+              </div>
+
+              {/* Bouton de recherche global */}
+              <div className="lg:col-span-1 flex items-end">
                 <button
                   onClick={handleSearch}
-                  className="w-full py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-4 focus:ring-blue-500/50 transform hover:scale-[1.02] transition-all shadow-lg shadow-blue-500/30 flex items-center justify-center space-x-2"
+                  className="w-full px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:shadow-xl hover:scale-[1.02] transition-all"
                 >
-                  <Search className="h-5 w-5" />
-                   <span>Rechercher</span>
+                  Rechercher
                 </button>
               </div>
+
             </div>
           </div>
         </div>
       </div>
+
 
         {/* Main Content */}
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -315,6 +379,7 @@ export default function HomePage()
                 <p className="text-gray-600">Découvrez notre sélection de biens d&apos;exception</p>
               </div>
               {properties.length > 0 && (
+
                 <button
                   onClick={handleVoirTout}
                   className="group flex items-center space-x-2 px-6 py-3 bg-white border-2 border-blue-600 text-blue-600 font-semibold rounded-xl hover:bg-blue-600 hover:text-white transition-all shadow-lg shadow-blue-500/10"
@@ -342,7 +407,7 @@ export default function HomePage()
                   className="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:shadow-xl transition-all"
                 >
                   Voir toutes les propriétés
-                </button>
+                </button>   
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -377,6 +442,12 @@ export default function HomePage()
                         >
                           Détails
                         </button>
+                        <button
+      onClick={() => setSelectedProperty(property)}
+      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+    >
+      Voir sur la carte
+    </button>
                       </div>
                     </div>
                     
@@ -389,7 +460,10 @@ export default function HomePage()
                       
                       <div className="flex items-center text-gray-500 text-sm mb-3">
                         <MapPin className="h-4 w-4 mr-1 flex-shrink-0" />
-                        <span className="line-clamp-1">{property.geolocalisation}</span>
+                        <span className="line-clamp-1">
+                          {property.geolocalisation ? `${property.geolocalisation.latitude}, ${property.geolocalisation.longitude}` : '-'}
+                        </span>
+
                       </div>
                       
                       <div className="flex items-center justify-between pt-3 border-t border-gray-100">
@@ -428,7 +502,7 @@ export default function HomePage()
                         {[...Array(5)].map((_, i) => (
                           <span key={i}>⭐</span>
                         ))}
-                      </div>
+                      </div>   
                     </div>
                   </div>
                   <p className="text-gray-600 italic leading-relaxed">

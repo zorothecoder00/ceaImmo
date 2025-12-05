@@ -1,5 +1,20 @@
 import { prisma } from '@/lib/prisma'
-import { Statut, Categorie, StatutTransaction, Prisma } from '@prisma/client'
+import { Statut, Categorie, StatutTransaction, Prisma, Geolocalisation } from '@prisma/client'
+
+// ========== UTILITY : calculer un carré autour d'un point ==========
+function getGeoBoundingBox(lat: number, lng: number, distanceKm = 10) {
+  const earthRadius = 6371
+
+  const latDelta = distanceKm / earthRadius * (180 / Math.PI)
+  const lngDelta = distanceKm / (earthRadius * Math.cos(lat * Math.PI / 180)) * (180 / Math.PI)
+
+  return {
+    minLat: lat - latDelta,
+    maxLat: lat + latDelta,
+    minLng: lng - lngDelta,
+    maxLng: lng + lngDelta
+  }
+}
  
 export async function getAvailableProprietes(userId?: string) {
   const proprietes = await prisma.propriete.findMany({
@@ -8,7 +23,8 @@ export async function getAvailableProprietes(userId?: string) {
       images: {  
         orderBy: { ordre: 'asc' },
         take: 1     
-      },
+      },  
+      geolocalisation: true,
       hotel: true,          
       avis: {
         select: { note: true } 
@@ -45,7 +61,7 @@ export async function getAvailableProprietes(userId?: string) {
 export async function filtrageProprietes(
   userId?: string,
   nom?: string,
-  geolocalisation?: string,
+  geo?: Geolocalisation,
   categorie?: Categorie,
   statut?: Statut,   
   minPrix?: number | bigint,
@@ -63,10 +79,24 @@ export async function filtrageProprietes(
   if (minSurface !== undefined && minSurface !== null) surfaceFilter.gte = minSurface;
   if (maxSurface !== undefined && maxSurface !== null) surfaceFilter.lte = maxSurface;
 
+  // === GESTION GÉO ===
+  let geoFilter = undefined
+
+  if (geo && geo.latitude && geo.longitude) {
+    const box = getGeoBoundingBox(geo.latitude, geo.longitude, 10) // rayon 10 km
+    
+    geoFilter = {
+      geolocalisation: {
+        latitude: { gte: box.minLat, lte: box.maxLat },
+        longitude: { gte: box.minLng, lte: box.maxLng }
+      }
+    }
+  }
+
   const proprietes = await prisma.propriete.findMany({
     where: {
       ...(nom ? { nom: { contains: nom, mode: 'insensitive' } } : {}),
-      ...(geolocalisation ? { geolocalisation: { contains: geolocalisation, mode: 'insensitive' } } : {}),
+      ...(geoFilter ?? {}),
       ...(categorie && Object.values(Categorie).includes(categorie) ? { categorie } : {}),
       ...(statut && Object.values(Statut).includes(statut) ? { statut } : {}),
       ...(Object.keys(prixFilter).length ? { prix: prixFilter } : {}),
@@ -75,7 +105,8 @@ export async function filtrageProprietes(
     },
     include: {
       images: { orderBy: { ordre: 'asc' }, take: 1 },
-      favoris: userId ? { where: { userId: parseInt(userId) } } : false
+      favoris: userId ? { where: { userId: parseInt(userId) } } : false,
+      geolocalisation: true,
     },
     orderBy: { createdAt: 'desc' },
     take: 3
@@ -104,14 +135,15 @@ export async function getMesProchainesVisites(userId: string){
             images: {
               orderBy: { ordre: 'asc' },
               take: 1
-            }
+            },
+            geolocalisation: true,
           }
         },
         agent: { 
          select:  { 
           nom: true ,
           prenom: true,
-         },
+         },  
         },
       },
       orderBy: {
@@ -147,7 +179,8 @@ export async function getMesFavoris(userId: string) {
             images: {
               orderBy: { ordre: 'asc' },
               take: 1
-            }
+            },
+            geolocalisation: true,
           }
         },
       },
@@ -214,7 +247,7 @@ export async function sauvegarderRecherche(
     categorie?: Categorie
     minPrix?: number
     maxPrix?: number
-    geolocalisation?: string
+    geolocalisation?: Geolocalisation
     nombreChambres?: number
   }
 ) {
@@ -225,16 +258,17 @@ export async function sauvegarderRecherche(
       categorie: data.categorie,
       minPrix: data.minPrix,
       maxPrix: data.maxPrix,
-      geolocalisation: data.geolocalisation,
+      geolocalisationId: data.geolocalisation?.id ?? undefined,
       nombreChambres: data.nombreChambres
     }
   })
-}
+}    
 
 // 🔥 Nouvelle fonction : Recherches + Résultats associés
 export async function getRecherchesSauvegardeesEtResultats(userId: string) {
   const recherches = await prisma.recherche.findMany({
     where: { userId: Number(userId) },
+    include: { geolocalisation: true }, // ✅ Ajouter ceci
     orderBy: { createdAt: 'desc' }
   })
 
@@ -270,9 +304,9 @@ export async function getRecherchesSauvegardeesEtResultats(userId: string) {
 export async function getRecherchesSauvegardees(userId: string) {
   const recherches = await prisma.recherche.findMany({
     where: { userId: Number(userId) },
-    orderBy: { createdAt: "desc" },
-    take: 2
-  });
+    include: { geolocalisation: true }, 
+    orderBy: { createdAt: 'desc' }
+  })
 
   return { recherches, total: recherches.length };
 }
@@ -296,6 +330,7 @@ export async function getMesTransactionsEnAttenteAcheteur(userId: string) {
               nom: true,
               statut: true,
               images: { orderBy: { ordre: 'asc' }, take: 1 },
+              geolocalisation: true,
             },
           },
         },
