@@ -1,7 +1,7 @@
 // src/app/dashboard/acheteur/page.tsx
 import {    
   Home, 
-  Calendar,      
+  Calendar,         
   FileText, 
   Settings,    
   Bell,    
@@ -31,7 +31,7 @@ import { Categorie, VisiteStatut, Statut } from '@prisma/client'
 import SearchForm from '@/components/SearchForm'
 import SearchModal from '@/components/RechercheModal'
 
-// Types
+// Types   
 
 interface Geolocalisation {
   id: number
@@ -438,7 +438,7 @@ export default async function AcheteurDashboard() {
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Recherche rapide</h2>
             <SearchForm />
           </div>
-
+   
           {/* Recommended Properties */}
           <div className="mb-10">
             <div className="flex items-center justify-between mb-5">
@@ -472,7 +472,7 @@ export default async function AcheteurDashboard() {
                   Voir tout
                 </Link>
               </div>
-
+  
               {recherches.length > 0 ? (
                 <div className="space-y-4">
                   {recherches.slice(0, 2).map((r) => (

@@ -14,7 +14,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       )
     );
   }
-     
+       
   try {
     // Query params
     const {  
@@ -44,8 +44,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Champs autorisés pour le tri
     const allowedFields = ["createdAt", "prix", "surface", "nombreChambres", "note"];
     const safeField = allowedFields.includes(sortField as string)
-      ? (sortField as string)
-      : "createdAt";
+      ? `"${sortField}"`  // <- ajoute les guillemets
+      : '"createdAt"';
     const order = sortOrder === "asc" ? "asc" : "desc";
 
     const sqlParams: (string | number)[] = [];
@@ -168,21 +168,24 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         p.surface,
         p."nombreChambres",
         p."createdAt",
-        pr.id AS "proprietaireId",
-        pr.nom AS "proprietaireNom",
-        pr.prenom AS "proprietairePrenom",
-        g.latitude,
-        g.longitude,
+        json_build_object('nom', u.nom, 'prenom', u.prenom) AS proprietaire,
+        json_build_object(
+          'latitude', g.latitude,
+          'longitude', g.longitude
+        ) AS geolocalisation,
         ${spatialSelect},
         (
-          SELECT json_agg(json_build_object('id', img.id, 'url', img.url, 'ordre', img.ordre))
-          FROM "ProprieteImage" img 
-          WHERE img."proprieteId" = p.id
-          ORDER BY img.ordre ASC
+          SELECT json_agg(img_data)
+          FROM (
+            SELECT json_build_object('id', img.id, 'url', img.url, 'ordre', img.ordre) AS img_data
+            FROM "ProprieteImage" img
+            WHERE img."proprieteId" = p.id
+            ORDER BY img.ordre ASC
+          ) AS sub
         ) AS images
       FROM "Propriete" p  
       LEFT JOIN "Geolocalisation" g ON g."proprieteId" = p.id
-      LEFT JOIN "Proprietaire" pr ON pr.id = p."proprietaireId"
+      LEFT JOIN "User" u ON u.id = p."proprietaireId"
       ${whereSQL}
       ${spatialWhere}
       ORDER BY ${safeField} ${order}

@@ -7,6 +7,11 @@ import toast from "react-hot-toast";
 import Image from 'next/image'
 import Link from 'next/link'
   
+interface Geolocalisation {
+  latitude: number | null;
+  longitude: number | null;
+}
+
 interface Visite {     
   id: number;
   date: string;
@@ -21,11 +26,11 @@ interface Propriete {
   nom: string;
   description?: string;
   categorie: Categorie;
-  prix: number;  
+  prix: number;     
   surface: number;
   statut: Statut;
   nombreChambres: number;
-  geolocalisation: string;
+  geolocalisation: Geolocalisation | null;
   images: { url: string; ordre: number }[];
   visiteVirtuelle?: string;
   proprietaire?: {
@@ -50,7 +55,7 @@ interface Offre {
   montant: number;
   message?: string;
   statut: OffreStatut;
-  mode?: Mode;
+  mode?: Mode;   
 }
 
 interface SearchFilters {
@@ -63,7 +68,9 @@ interface SearchFilters {
   maxSurface: string;
   minChambres: string;
   maxChambres: string;
-  geolocalisation: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  radius?: number | null;
   avecVisiteVirtuelle: boolean;
   minNote: string;
   page: string;           // <-- changer '1' en string
@@ -94,6 +101,14 @@ export default function RecherchesPage() {
   const [proprietes, setProprietes] = useState<Propriete[]>([]);
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
+
+  const [radius, setRadius] = useState(5000); // 5km par défaut
+  const [location, setLocation] = useState({
+    latitude: null as number | null,
+    longitude: null as number | null,
+  });
+  const [address, setAddress] = useState('');
+
   const [favoris, setFavoris] = useState<Set<number>>(new Set());
   const [showOffreModal, setShowOffreModal] = useState(false);
   const [selectedPropriete, setSelectedPropriete] = useState<Propriete | null>(null);
@@ -115,7 +130,9 @@ export default function RecherchesPage() {
     maxSurface: '',
     minChambres: '',
     maxChambres: '',
-    geolocalisation: '',
+    latitude: null,
+    longitude: null,
+    radius: 5000, // rayon par défaut,
     avecVisiteVirtuelle: false,
     minNote: '',
     page: '1',
@@ -123,6 +140,52 @@ export default function RecherchesPage() {
     sortField: 'createdAt',
     sortOrder: 'desc'
   });
+
+   // 🔹 Fonction pour convertir une adresse ou lien Maps en latitude/longitude
+  const handleGeocode = async () => {
+    if (!address) {
+      toast.error('Veuillez saisir une adresse ou un lien Google Maps.');
+      return;
+    }
+
+    try {
+      let lat: number | null = null;
+      let lng: number | null = null;
+
+      // Si l'utilisateur a fourni un lien Google Maps
+      const match = address.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+      if (match) {
+        lat = parseFloat(match[1]);
+        lng = parseFloat(match[2]);
+      } else {
+        // Sinon, on utilise Nominatim OpenStreetMap pour convertir le texte en coords
+        const res = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`
+        );
+        const data = await res.json();
+        if (data && data.length > 0) {
+          lat = parseFloat(data[0].lat);
+          lng = parseFloat(data[0].lon);
+        } else {
+          toast.error('Impossible de géolocaliser cette adresse.');
+          return;
+        }
+      }
+
+      // On met à jour le filtre
+      setFilters(prev => ({
+        ...prev,
+        latitude: lat,
+        longitude: lng,
+        radius
+      }));
+
+      toast.success('Localisation mise à jour !');
+    } catch (err) {
+      console.error('Erreur géocodage :', err);
+      toast.error('Erreur lors de la conversion de l’adresse.');
+    }
+  };
 
   // ✅ REMPLACEMENT DE LA SIMULATION PAR UN VRAI FETCH
   useEffect(() => {
@@ -196,7 +259,9 @@ export default function RecherchesPage() {
       maxSurface: '',
       minChambres: '',
       maxChambres: '',
-      geolocalisation: '',
+      latitude: null,
+      longitude: null,
+      radius: 5000, 
       avecVisiteVirtuelle: false,
       minNote: '',
       page: '1',
@@ -539,17 +604,35 @@ export default function RecherchesPage() {
               </div>
 
               {/* Localisation */}
-              <div>
+              <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Localisation
                 </label>
-                <input
-                  type="text"
-                  placeholder="Ville, quartier..."
-                  className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  value={filters.geolocalisation}
-                  onChange={(e) => handleFilterChange('geolocalisation', e.target.value)}
-                />
+
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Ville, quartier ou lien Google Maps"
+                    className="flex-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                  />
+
+                  <input
+                    type="number"
+                    placeholder="Rayon (mètres)"
+                    className="w-32 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    value={radius}
+                    onChange={(e) => setRadius(Number(e.target.value))}
+                  />
+
+                  <button
+                    type="button"
+                    onBlur={handleGeocode}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                      Localiser
+                  </button>
+                </div>
               </div>
 
               {/* Note minimum */}
@@ -716,7 +799,11 @@ export default function RecherchesPage() {
                       </div>
                       <div className="flex items-center gap-1">
                         <MapPin className="h-4 w-4" />
-                        <span className="truncate">{propriete.geolocalisation}</span>
+                        <span className="truncate">
+                          {propriete.geolocalisation
+                            ? `${propriete.geolocalisation.latitude?.toFixed(5)}, ${propriete.geolocalisation.longitude?.toFixed(5)}`
+                            : 'Non renseignée'}
+                        </span>
                       </div>
                     </div>
 
@@ -849,7 +936,11 @@ export default function RecherchesPage() {
                       </p>
                       <div className="flex items-center gap-1">
                         <MapPin className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm text-gray-600">{selectedPropriete.geolocalisation}</span>
+                        <span className="text-sm text-gray-600">
+                          {selectedPropriete.geolocalisation
+                            ? `${selectedPropriete.geolocalisation.latitude?.toFixed(5)}, ${selectedPropriete.geolocalisation.longitude?.toFixed(5)}`
+                            : 'Localisation non renseignée'}
+                        </span>
                       </div>
                     </div>
                   </div>

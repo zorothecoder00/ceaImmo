@@ -320,7 +320,7 @@ export default function HomePage()
                   className="w-full border-2 border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                 />
               </div>
-
+     
               {/* Localisation - Plus compact */}
               <div className="lg:col-span-3">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -335,15 +335,21 @@ export default function HomePage()
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                   />
-                  <input
-                    type="number"
-                    className="w-32 border-2 border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                    placeholder="Rayon (m)"
-                    value={radius}
-                    onChange={(e) => setRadius(Number(e.target.value) || 0)}
-                  />
+
+                  {/* Champ Rayon avec label et placeholder */}
+                  <div className="flex flex-col w-32">
+                    <label className="text-xs text-gray-500 mb-1">Rayon de recherche (m)</label>
+                    <input
+                      type="number"
+                      className="border-2 border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
+                      placeholder="Ex: 5000"
+                      value={radius}
+                      onChange={(e) => setRadius(Number(e.target.value) || 0)}
+                    />
+                  </div>
+
                   <button
-                    onClick={handleGeocode}
+                    onBlur={handleGeocode}
                     className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl transition-all whitespace-nowrap"
                   >
                     Localiser
