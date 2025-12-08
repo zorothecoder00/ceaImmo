@@ -55,6 +55,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       maxSurface,     
       minChambres,
       maxChambres,
+      longitude,
+      latitude,
+      radius,
       sortBy = "createdAt",
       order = "desc",
       page = "1",
@@ -178,11 +181,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       if (
         !geolocalisation ||
-        typeof geolocalisation.lat === "undefined" ||
-        typeof geolocalisation.lng === "undefined"
+        typeof geolocalisation.latitude === "undefined" ||
+        typeof geolocalisation.longitude === "undefined"
       ) {
         return res.status(400).json({
-          message: "Géolocalisation invalide : { lat, lng } requis",
+          message: "Géolocalisation invalide : { latitude, longitude } requis",
         });
       }
 
@@ -195,7 +198,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // 🧱 Création de la propriété + images liées
       const propriete = await prisma.propriete.create({
         data: {
-          nom,
+          nom,   
           description,
           categorie: categorie as Categorie,
           prix: BigInt(Number(prix)), // ✅ stocké correctement,   
@@ -203,9 +206,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           statut: statut as Statut,
           // ⚠️ Géolocalisation avec PostGIS via UncheckedCreate
           geolocalisation: {
-            create: {
-              latitude: Number(geolocalisation.lat),
-              longitude: Number(geolocalisation.lng),
+            create: {  
+              latitude: Number(geolocalisation.latitude),
+              longitude: Number(geolocalisation.longitude),
             },
           },  
           nombreChambres,
@@ -232,17 +235,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                   disponible: ch.disponible ?? true,
                 })),
               }
-            : undefined,
+            : undefined,    
         },
         include: {
-          images: true,
+          images: true,  
           geolocalisation: true,
         },
       });
 
       await prisma.$executeRaw`
         UPDATE "Geolocalisation"
-        SET "geoPoint" = ST_SetSRID(ST_MakePoint(${geolocalisation.lng}, ${geolocalisation.lat}), 4326)
+        SET "geoPoint" = ST_SetSRID(ST_MakePoint(${geolocalisation.longitude}, ${geolocalisation.latitude}), 4326)
         WHERE "proprieteId" = ${propriete.id};
       `;
 

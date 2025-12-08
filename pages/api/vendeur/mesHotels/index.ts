@@ -10,7 +10,7 @@ interface ProprieteInput {
   description?: string;
   categorie: Categorie;
   statut?: Statut;
-  geolocalisation: { lat: number; lng: number }; // ✅ Corrigé
+  geolocalisation: { latitude: number; longitude: number }; // ✅ Corrigé
   nombreChambres: number;
   visiteVirtuelle?: string;
   prix?: string;
@@ -83,11 +83,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       if (
         !propriete.geolocalisation ||
-        typeof propriete.geolocalisation.lat === "undefined" ||
-        typeof propriete.geolocalisation.lng === "undefined"
+        typeof propriete.geolocalisation.latitude === "undefined" ||
+        typeof propriete.geolocalisation.longitude === "undefined"
       ) {
         return res.status(400).json({
-          message: "Géolocalisation invalide : { lat, lng } requis",
+          message: "Géolocalisation invalide : { latitude, longitude } requis",
         });
       }
 
@@ -110,8 +110,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
           geolocalisation: {
             create: {
-              latitude: Number(propriete.geolocalisation.lat),
-              longitude: Number(propriete.geolocalisation.lng),
+              latitude: Number(propriete.geolocalisation.latitude),
+              longitude: Number(propriete.geolocalisation.longitude),
             },
           },
 
@@ -120,7 +120,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 create: propriete.imageUrls.map((url, i) => ({
                   url,
                   ordre: i,
-                })),
+                })),   
               }
             : undefined,
         },
@@ -133,7 +133,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       await prisma.$queryRaw`
         UPDATE "Geolocalisation"
         SET "geoPoint" = ST_SetSRID(
-          ST_MakePoint(${propriete.geolocalisation.lng}, ${propriete.geolocalisation.lat}),
+          ST_MakePoint(${propriete.geolocalisation.longitude}, ${propriete.geolocalisation.latitude}),
           4326
         )
         WHERE id = ${proprieteCreated.geolocalisation!.id}

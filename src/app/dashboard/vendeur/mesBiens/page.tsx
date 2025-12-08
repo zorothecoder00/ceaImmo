@@ -40,6 +40,13 @@ import Image from 'next/image'
 
 // === Types ===
 
+type AddressInput = string | null;
+
+interface Geolocalisation {
+  latitude: number | null;
+  longitude: number | null;
+}
+
 interface Chambre { 
   nom: string; 
   description: string; 
@@ -65,7 +72,7 @@ interface Bien {
   statut: Statut
   chambres?: Chambre[];
   nombreChambres: number;
-  geolocalisation: string;
+  geolocalisation?: Geolocalisation | null;
   images: PropertyImage[];
   visiteVirtuelle: string | null;
   createdAt: string;
@@ -90,7 +97,7 @@ interface FormData {
   prix: string;
   surface: string;
   statut: Statut;
-  geolocalisation: string;
+  geolocalisation?: Geolocalisation | null;
   nombreChambres: string;
   visiteVirtuelle: string;
 }
@@ -169,7 +176,14 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ bien, onEdit, onDelete, onV
                 <h3 className="text-lg font-semibold text-gray-900 mb-1">{bien.nom}</h3>
                 <p className="text-gray-600 text-sm flex items-center gap-1 mb-2">
                   <MapPin size={14} />
-                  {bien.geolocalisation}
+                  <a
+                    href={`https://www.google.com/maps?q=${bien?.geolocalisation?.latitude},${bien?.geolocalisation?.longitude}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline"
+                  >
+                    Voir sur Google Maps
+                  </a>
                 </p>
                 <p className="text-gray-600 text-sm line-clamp-2 mb-3">{bien.description}</p>
                 
@@ -292,7 +306,14 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ bien, onEdit, onDelete, onV
         
         <p className="text-gray-600 text-sm flex items-center gap-1 mb-3">
           <MapPin size={14} />
-          {bien.geolocalisation}
+          <a
+              href={`https://www.google.com/maps?q=${bien?.geolocalisation?.latitude},${bien?.geolocalisation?.longitude}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline"
+            >
+              Voir sur Google Maps
+            </a>
         </p>
         
         <p className="text-gray-600 text-sm mb-4 line-clamp-3">{bien.description}</p>
@@ -360,6 +381,7 @@ export default function MesBiens() {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [address, setAddress] = useState<AddressInput>(null);
 
   const [selectedCategorie, setSelectedCategorie] = useState('');
   const [selectedStatut, setSelectedStatut] = useState('');
@@ -376,7 +398,7 @@ export default function MesBiens() {
     prix: '',
     surface: '',
     statut: Statut.DISPONIBLE,
-    geolocalisation: '',
+    geolocalisation: null,
     nombreChambres: '1',
     visiteVirtuelle: ''
   });
@@ -413,7 +435,9 @@ export default function MesBiens() {
     const matchSearch =
       (bien.nom?.toLowerCase().includes(search) ?? false) ||
       (bien.description?.toLowerCase().includes(search) ?? false) ||
-      (bien.geolocalisation?.toLowerCase().includes(search) ?? false);
+      (bien.geolocalisation
+        ? `${bien.geolocalisation.latitude},${bien.geolocalisation.longitude}`.includes(search)
+        : false);
     const matchCategorie = !selectedCategorie || bien.categorie === selectedCategorie;
     const matchStatut = !selectedStatut || bien.statut === selectedStatut;
     
@@ -494,7 +518,7 @@ export default function MesBiens() {
       prix: '',
       surface: '',
       statut: Statut.DISPONIBLE,
-      geolocalisation: '',
+      geolocalisation: null,
       nombreChambres: '1',
       visiteVirtuelle: '',
     })
@@ -532,7 +556,9 @@ export default function MesBiens() {
 
     try {
       // ✅ Validation côté client
-      if (!form.nom || !form.categorie || !form.prix || !form.surface || !form.geolocalisation) {
+      if (!form.nom || !form.categorie || !form.prix || !form.surface)
+
+       {
         toast.error('Veuillez remplir tous les champs requis');
         return;
       }
@@ -608,7 +634,7 @@ export default function MesBiens() {
         prix: '',
         surface: '',
         statut: Statut.DISPONIBLE,
-        geolocalisation: '',
+        geolocalisation: null,
         nombreChambres: '1',
         visiteVirtuelle: '',
       });
@@ -630,7 +656,7 @@ export default function MesBiens() {
         form.categorie &&
         form.prix.trim() !== '' &&
         form.surface.trim() !== '' &&
-        form.geolocalisation.trim() !== ''
+        form.geolocalisation?.latitude != null && form.geolocalisation?.longitude != null
       );
     }
     if (currentStep === 2) {
@@ -639,10 +665,65 @@ export default function MesBiens() {
     return true;
   };
 
+    // Fonction pour géocoder l'adresse avec Nominatim
+    const handleGeocode = async () => {
+      if (!address || address.trim() === "") {
+        toast.error("Veuillez entrer une adresse ou une localisation");
+        return;
+      }
+
+      let lat: number | null = null;
+      let lon: number | null = null;
+
+      if (typeof address === "string") {
+        // --- 1. Extraire coordonnées depuis URL Google Maps ---
+        const googleMapsMatch = address.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+
+        if (googleMapsMatch) {
+          lat = parseFloat(googleMapsMatch[1]);
+          lon = parseFloat(googleMapsMatch[2]);
+        } 
+        else {
+          // --- 2. Utiliser Nominatim ---
+          const encodedAddress = encodeURIComponent(address);
+
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/search?q=${encodedAddress}&format=json&limit=1`
+          );
+          const data = await res.json();
+
+          if (data.length > 0) {
+            lat = parseFloat(data[0].lat);
+            lon = parseFloat(data[0].lon);
+          } else {
+            toast.error("Adresse introuvable");
+            return;
+          }
+        }
+      }
+
+      // --- 3. Vérification finale ---
+      if (lat === null || lon === null) {
+        toast.error("Impossible d'obtenir les coordonnées");
+        return;
+      }
+
+      // --- 4. Mise à jour correcte du state ---
+      setForm(prev => ({
+        ...prev,
+        geolocalisation: {
+          latitude: lat,
+          longitude: lon
+        }
+      }));
+
+      toast.success("Localisation détectée !");
+    };
+
+
   // Récupération des valeurs des enums Prisma
   const categories = Object.values(Categorie);
   const statuts = Object.values(Statut);
-
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -794,7 +875,7 @@ export default function MesBiens() {
           }>
             {filteredBiens.map(bien => (
               <PropertyCard
-                key={bien.id}
+                key={bien.id}      
                 bien={bien}
                 onView={handleView}
                 onEdit={handleEdit}
@@ -859,7 +940,16 @@ export default function MesBiens() {
                       <p><strong>Prix:</strong> {selectedBien.prix} €</p>
                     </div>
                     <div>
-                      <p><strong>Localisation:</strong> {selectedBien.geolocalisation}</p>
+                      <p><strong>Localisation:</strong> 
+                        <a
+                          href={`https://www.google.com/maps?q=${selectedBien?.geolocalisation?.latitude},${selectedBien?.geolocalisation?.longitude}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline"
+                        >
+                          Voir sur Google Maps
+                        </a>
+                      </p>
                       <p><strong>Nombre de chambres:</strong> {selectedBien.nombreChambres}</p>
                       <p><strong>Visite virtuelle:</strong> 
                         {selectedBien.visiteVirtuelle 
@@ -1041,12 +1131,19 @@ export default function MesBiens() {
                         <MapPin size={20} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                         <input
                           type="text"
-                          value={form.geolocalisation}
-                          onChange={(e) => setForm({...form, geolocalisation: e.target.value})}
+                          value={address ?? ""}
+                          onChange={(e) => setAddress(e.target.value)}
                           className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
                           placeholder="Lomé, Bè"
                         />
                       </div>
+                      <button
+                        type="button"
+                        onBlur={handleGeocode} // ou onClick si tu veux géocoder au clic
+                        className="mt-2 px-4 py-2 bg-orange-500 text-white rounded"
+                      >
+                        Géocoder
+                      </button>
                     </div>
 
                     <div>

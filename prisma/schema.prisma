@@ -172,9 +172,9 @@ model Propriete {
   avis              Avis[]
   vus               Vu[]
   hotel             Hotel?          @relation("ProprieteHotel")
-  signalements      Signalement[]
-}          
-  
+  signalements      Signalement[]        
+}            
+        
 model Geolocalisation {
   id          Int       @id @default(autoincrement())
   propriete   Propriete @relation(fields: [proprieteId], references: [id], onDelete: Cascade)

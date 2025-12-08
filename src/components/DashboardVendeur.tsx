@@ -1,12 +1,12 @@
 'use client'
-
+   
 import { useState } from 'react'        
 import { motion, AnimatePresence } from 'framer-motion'   
 import {    
   Home, Building, Calendar, Settings, Bell, User, Eye, 
   TrendingUp, Euro, X, Plus, Trash2, Loader2,    
   AlertCircle, MapPin, Bed, CheckCircle, Hotel as HotelIcon, Star      
-} from 'lucide-react'
+} from 'lucide-react'  
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'  
 import { Card } from '@/components/ui/card'
@@ -221,7 +221,8 @@ export default function VendeurDashboardClient({
           formData.categorie &&
           formData.prix &&
           formData.surface &&
-          formData.geolocalisation &&
+          formData.geolocalisation?.latitude != null &&
+          formData.geolocalisation?.longitude != null &&
           formData.nombreChambres
         )
       case 2:
@@ -258,11 +259,12 @@ export default function VendeurDashboardClient({
     setErrorMsg(null)
 
     try {
-      const payload = {
+      const payload = {  
         ...formData,
         prix: Number(formData.prix),
         surface: Number(formData.surface),
         nombreChambres: Number(formData.nombreChambres),
+        geolocalisation: formData.geolocalisation,
         imageUrls: images.map(img => img.url),
         chambres,
       }
@@ -375,7 +377,10 @@ export default function VendeurDashboardClient({
 
   // 1️⃣ Modifiez handleGeocode pour mettre à jour hotelData
   const handleGeocode = async () => {
-    if (!address) return;
+    if (!address || address.trim() === "") {
+      setErrorMsg("Veuillez entrer une adresse avant de géocoder.");
+      return;
+    }
 
     let lat: number | null = null;
     let lon: number | null = null;
