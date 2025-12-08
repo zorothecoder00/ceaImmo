@@ -699,7 +699,7 @@ export default function MesBiens() {
             toast.error("Adresse introuvable");
             return;
           }
-        }
+        }   
       }
 
       // --- 3. Vérification finale ---

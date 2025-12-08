@@ -55,7 +55,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       params.push(Number(prixMin))
     }
 
-    // 🔵 PRIX MAX
+    // 🔵 PRIX MAX     
     if (prixMax) {
       whereClauses.push(`p.prix <= $${paramIndex++}`)
       params.push(Number(prixMax))

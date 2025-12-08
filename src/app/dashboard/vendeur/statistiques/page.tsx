@@ -577,10 +577,7 @@ export default function VendeurDashboard() {
                   </span>
                 )}
               </button>
-              <button className="bg-indigo-600 text-white px-6 py-2.5 rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2 font-medium shadow-md">
-                <Plus size={20} />
-                Ajouter un bien
-              </button>
+
             </div>
           </div>
         </div>

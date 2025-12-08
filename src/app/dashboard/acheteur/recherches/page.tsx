@@ -37,7 +37,7 @@ interface Propriete {
     nom: string;
     prenom: string;
   };
-  avis: { note: number }[];
+  avis?: { note: number }[];
   _count: {
     avis: number;
   };
@@ -242,8 +242,8 @@ export default function RecherchesPage() {
     }).format(price);
   };
 
-  const calculateAverageNote = (avis: { note: number }[]) => {
-    if (avis.length === 0) return 0;
+  const calculateAverageNote = (avis?: { note: number }[]) => {
+    if (!avis || avis.length === 0) return 0;
     const sum = avis.reduce((acc, curr) => acc + curr.note, 0);
     return Math.round((sum / avis.length) * 10) / 10;
   };
@@ -812,10 +812,10 @@ export default function RecherchesPage() {
                       <div className="flex items-center gap-1">
                         <Star className="h-4 w-4 text-yellow-400 fill-current" />
                         <span className="text-sm text-gray-600">
-                          {calculateAverageNote(propriete.avis) || 'Pas de note'}
-                          {propriete.avis.length > 0 && (
+                          {calculateAverageNote(propriete?.avis) || 'Pas de note'}
+                          {(propriete?.avis?.length ?? 0) > 0 && (
                             <span className="text-xs text-gray-500 ml-1">
-                              ({propriete.avis.length})
+                              ({propriete?.avis?.length})
                             </span>
                           )}
                         </span>
