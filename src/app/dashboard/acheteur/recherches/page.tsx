@@ -8,7 +8,7 @@ import Image from 'next/image'
 import Link from 'next/link'
   
 interface Geolocalisation {
-  latitude: number | null;
+  latitude: number | null;    
   longitude: number | null;
 }
 
@@ -319,7 +319,7 @@ export default function RecherchesPage() {
     } else {
       // Nouvelle offre : pré-remplir avec le prix de la propriété
       setOffreData({
-        montant: propriete.prix.toString(),
+        montant: propriete?.prix?.toString(),
         message: '',
         mode: Mode.CASH
       });
@@ -698,7 +698,7 @@ export default function RecherchesPage() {
               </div>
             ))}
           </div>
-        ) : (
+        ) : (  
           <>
             <div className="flex justify-between items-center mb-6">
               <p className="text-gray-600">
@@ -814,6 +814,7 @@ export default function RecherchesPage() {
                         <span className="text-sm text-gray-600">
                           {calculateAverageNote(propriete?.avis) || 'Pas de note'}
                           {(propriete?.avis?.length ?? 0) > 0 && (
+
                             <span className="text-xs text-gray-500 ml-1">
                               ({propriete?.avis?.length})
                             </span>
@@ -962,7 +963,7 @@ export default function RecherchesPage() {
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="Ex: 120000"
                   />
-                  <p className="text-xs text-gray-500 mt-1">Le prix initial est de {selectedPropriete.prix.toLocaleString()} €</p>
+                  <p className="text-xs text-gray-500 mt-1">Le prix initial est de {selectedPropriete?.prix?.toLocaleString()} €</p>
                 </div>
 
                 {/* Message optionnel */}

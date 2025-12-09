@@ -583,7 +583,7 @@ export default function VendeurDashboardClient({
                       statut: p.statut,
                       nombreChambres: p.nombreChambres,
                       geolocalisation: p.geolocalisation,
-                      createdAt: p.createdAt,
+                      createdAt: p.createdAt,   
                       images: p.images?.map((img) => ({
                         id: img.id,
                         url: img.url,
@@ -591,6 +591,16 @@ export default function VendeurDashboardClient({
                       })) || [],
                       nombreEtoiles: p.hotel?.nombreEtoiles ?? null,
                       moyenneAvis: moyenneAvis,
+                      hotel: p.hotel ? {
+                        id: p.hotel.id,
+                        nombreVoyageursMax: p.hotel.nombreVoyageursMax,
+                        nombreEtoiles: p.hotel.nombreEtoiles,
+                        nombreChambresTotal: p.hotel.nombreChambresTotal,
+                        prixParNuitParDefaut: p.hotel.prixParNuitParDefaut,
+                      } : null,
+                      chambres: p.chambres?.map(c => ({
+                        prixParNuit: c.prixParNuit,
+                      })) ?? null,
                     }}
                   />
                 )

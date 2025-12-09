@@ -23,6 +23,12 @@ import { Mode, ReservationStatut, Type } from '@prisma/client'
 import Image from 'next/image';
 
 // 1. On définit le type des avis et galerie
+
+interface Geolocalisation {
+  latitude: number
+  longitude: number
+}
+
 interface Avis {
   nom: string
   note: number
@@ -65,11 +71,12 @@ interface Hotel {
   disponible?: boolean;
   equipements?: Equipement[];
   note?: number;
-  nombreAvis?: number;     
+  nombreAvis?: number;   
+  nombreChambresTotal?: number;  
   propriete: {
     id: number;
     nom: string;
-    geolocalisation: string;
+    geolocalisation: Geolocalisation;
     images: { id: number; url: string }[];
     description: string;
     avis?: Avis[];

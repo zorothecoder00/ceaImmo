@@ -19,7 +19,8 @@ interface SearchFilters {
   titre?: string;
   categorie?: Categorie;    
   statut?: Statut;
-  geolocalisation?: { latitude: number | null, longitude: number | null }
+  geolocalisation?: { latitude: number | null, longitude: number | null };
+  radius: number;
   nombreChambres?: number;
   minPrix?: number | null;
   maxPrix?: number | null;
@@ -77,38 +78,92 @@ export default function SearchForm() {
   const [statut, setStatut] = useState<Statut>(Statut.DISPONIBLE)  
   const [nombreChambres, setNombreChambres] = useState('')
   const [budget, setBudget] = useState('')
-  const [surface, setSurface] = useState('')
+  const [surface, setSurface] = useState('')   
   const [nom, setNom] = useState('')
   const [resultats, setResultats] = useState<ResultatPropriete[]>([]);
 
+  const [previewTriggered, setPreviewTriggered] = useState(false);
+  const [isGeocoding, setIsGeocoding] = useState(false);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+
   const handlePreview = async (filters: SearchFilters) => {
-    const res = await fetch("/api/acheteur/mesRecherchesSauvegardees?preview=true", {
+    setIsPreviewLoading(true);
+
+    const res = await fetch("/api/acheteur/mesRecherchesPrevisualisees?preview=true", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(filters),   
     });
     const data = await res.json();
     setResultats(data.resultats); // afficher les résultats en direct
+    setPreviewTriggered(true)
+
+    setIsPreviewLoading(false);
   };
 
   const handleGeocode = async () => {
-    if (!address) return
-    try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`
-      )
-      const data = await response.json()
-      if (data && data.length > 0) {
-        const { lat, lon } = data[0]
-        setGeolocalisation({ 
-          latitude: parseFloat(lat), 
-          longitude: parseFloat(lon) 
-        })
-      }
-    } catch (err) {
-      console.error('Erreur géolocalisation:', err)
+    if (!address.trim()) {
+      toast.error("Veuillez entrer une adresse.");
+      return;
     }
-  }
+
+    setIsGeocoding(true);
+
+    // 1️⃣ - Vérifier si l’input est déjà un format "lat, lon"
+    const coordRegex = /^(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)$/;
+    const directMatch = address.trim().match(coordRegex);
+
+    if (directMatch) {
+      const lat = parseFloat(directMatch[1]);
+      const lon = parseFloat(directMatch[3]);
+
+      setGeolocalisation({ latitude: lat, longitude: lon });
+      toast.success("📍 Coordonnées détectées et appliquées !");
+      setIsGeocoding(false);
+      return;
+    }
+
+    // 2️⃣ - Vérifier si c’est un lien Google Maps avec coordonnées
+    const googleRegex = /@(-?\d+\.\d+),(-?\d+\.\d+),/;
+    const urlMatch = address.match(googleRegex);
+
+    if (urlMatch) {
+      const lat = parseFloat(urlMatch[1]);
+      const lon = parseFloat(urlMatch[2]);
+
+      setGeolocalisation({ latitude: lat, longitude: lon });
+      toast.success("📍 Coordonnées extraites du lien Google Maps !");
+      setIsGeocoding(false);
+      return;
+    }
+
+    try {
+      // 3️⃣ - Sinon → géocodage via Nominatim
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`
+      );
+
+      const data = await response.json();
+
+      if (data && data.length > 0) {
+        const { lat, lon } = data[0];
+
+        setGeolocalisation({
+          latitude: parseFloat(lat),
+          longitude: parseFloat(lon),
+        });
+
+        toast.success("📍 Adresse géocodée avec succès !");
+      } else {
+        toast.error("❌ Aucune localisation trouvée.");
+      }
+    } catch (error) {
+      console.error("Erreur géocodage:", error);
+      toast.error("❌ Erreur lors du géocodage.");
+    }
+    setIsGeocoding(false);
+  };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -204,10 +259,16 @@ export default function SearchForm() {
         />
       </div>
       <button
-        onBlur={handleGeocode}
-        className="px-4 py-2 bg-gray-100 rounded-xl hover:bg-gray-200"
+        type="button"
+        onClick={handleGeocode}
+        disabled={isGeocoding}
+        className={`px-4 py-2 rounded-xl transition
+          ${isGeocoding
+            ? "bg-gray-300 cursor-not-allowed opacity-60"
+            : "bg-gray-100 hover:bg-gray-200"
+          }`}
       >
-        Localiser
+        {isGeocoding ? "Géocodage..." : "Géocoder"}
       </button>
 
         {/* Catégorie */}
@@ -218,9 +279,12 @@ export default function SearchForm() {
           disabled={isLoading}
         >
           <option value="">Catégorie</option>
-          {Object.entries(CATEGORIE_LABELS).map(([key, label]) => (
-            <option key={key} value={key}>{label}</option>
+          {Object.entries(CATEGORIE_LABELS)
+            .filter(([key]) => key !== 'HOTEL') // on enlève HOTEL
+            .map(([key, label]) => (
+              <option key={key} value={key}>{label}</option>
           ))}
+ 
         </select>
 
         {/* Statut */}
@@ -274,29 +338,47 @@ export default function SearchForm() {
 
         <button
           type="submit"
-          className="bg-green-600 text-white px-6 py-2 rounded-md font-medium hover:bg-green-700 transition"
-          disabled={isLoading}  
+          className={`px-6 py-2 rounded-md font-medium transition text-white
+            ${isLoading
+              ? "bg-green-300 cursor-not-allowed opacity-60"
+              : "bg-green-600 hover:bg-green-700"
+            }`}
+          disabled={isLoading}
         >
-          {isLoading ? 'Sauvegarde...' : 'Sauvegarder'}
+          {isLoading ? "Sauvegarde..." : "Sauvegarder"}
         </button>
+
         <button
           type="button"
           onClick={() => handlePreview({
-            titre: nom, // <-- ici
+            titre: nom,
             categorie: categorie || undefined,
             statut: statut || undefined,
             geolocalisation: geolocalisation || undefined,
+            radius,
             nombreChambres: nombreChambres ? Number(nombreChambres) : undefined,
             minPrix: budget === '0-300k€' ? 0 : budget === '300k-500k€' ? 300000 : 500000,
             maxPrix: budget === '0-300k€' ? 300000 : budget === '300k-500k€' ? 500000 : null,
             minSurface: surface === '0-100m²' ? 0 : surface === '100-200m²' ? 100 : 200,
             maxSurface: surface === '0-100m²' ? 100 : surface === '100-200m²' ? 200 : null
           })}
-          className="bg-blue-600 text-white px-6 py-2 rounded-md font-medium hover:bg-blue-700 transition"
-          disabled={isLoading}
+          disabled={
+            isLoading ||
+            isPreviewLoading ||
+            !geolocalisation.latitude ||
+            !geolocalisation.longitude
+          }
+          className={`px-6 py-2 rounded-md font-medium transition text-white
+            ${isPreviewLoading
+              ? "bg-blue-300 cursor-not-allowed opacity-60"
+              : !geolocalisation.latitude
+                ? "bg-blue-300 cursor-not-allowed opacity-60"   // pas encore géocodé
+                : "bg-blue-600 hover:bg-blue-700"
+            }`}
         >
-          Aperçu
+          {isPreviewLoading ? "Chargement..." : "Aperçu"}
         </button>
+
       </form>
       {resultats?.length > 0 && (
       <div className="mt-4">
@@ -345,6 +427,24 @@ export default function SearchForm() {
         </ul>
       </div>
       )}
+
+      {previewTriggered && resultats && resultats.length === 0 && (
+      <div className="mt-6 border border-gray-200 bg-gray-50 rounded-xl p-6 flex flex-col items-center text-center text-gray-600">
+        <Image
+          src="/icons/empty.png" // OU un emoji / autre icône
+          alt="Aucun résultat"
+          width={80}
+          height={80}
+          className="opacity-70 mb-3"
+        />
+        <h3 className="text-lg font-semibold mb-1">Aucun résultat trouvé</h3>
+        <p className="text-sm max-w-sm">
+          Aucun bien ne correspond à vos critères actuels.  
+          Ajustez peut-être la zone, le statut ou le budget pour élargir la recherche.
+        </p>
+      </div>
+    )}
+
     </>
   )  
 }

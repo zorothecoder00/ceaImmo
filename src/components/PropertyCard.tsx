@@ -1,10 +1,21 @@
 import React from "react";
 import Image from "next/image";
-import { MapPin, Bed, Square, Eye, Edit, Camera } from "lucide-react";
+import { MapPin, Bed, Square, Eye, Edit, Camera, Home, Users } from "lucide-react";
 import { Statut } from '@prisma/client'
 
+interface Hotel {
+  id: number;
+  nombreVoyageursMax?: number | null;
+  nombreEtoiles?: number | null;
+  nombreChambresTotal?: number | null;
+  prixParNuitParDefaut?: number | null;
+}
 
-export interface PropertyImage {
+interface Chambre {
+  prixParNuit?: number;
+}
+
+interface PropertyImage {
   id: number;
   url: string;   
   ordre: number;
@@ -15,7 +26,7 @@ interface Geolocalisation {
   longitude: number | null;
 }
   
-export interface Property {
+interface Property {
   id: number;  
   nom: string;
   description?: string;
@@ -30,6 +41,8 @@ export interface Property {
   categorie?: string;
   nombreEtoiles?: number | null; 
   moyenneAvis?: number | null;
+  hotel?: Hotel | null;
+  chambres?: Chambre[] | null;
 }
 
 interface PropertyCardProps {
@@ -75,7 +88,18 @@ export default function PropertyCard({ property }: PropertyCardProps) {
     (Date.now() - new Date(property.createdAt).getTime()) / (1000 * 60 * 60 * 24)
   );
 
+  const isHotel = property.hotel !== undefined && property.hotel !== null;
+
+  const prixMinChambre = isHotel
+    ? property?.chambres?.length
+        ? Math.min(...property.chambres.map(c => Number(c.prixParNuit)))
+        : property?.hotel?.prixParNuitParDefaut ?? null
+    : null;
+
   const mainImage = property.images?.[0]?.url || "/villapiscine.webp";
+
+  console.log(JSON.stringify(property, null, 2));
+
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
@@ -103,15 +127,15 @@ export default function PropertyCard({ property }: PropertyCardProps) {
               href={`https://www.google.com/maps?q=${property.geolocalisation.latitude},${property.geolocalisation.longitude}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="underline"
-            >
+              className="text-blue-600 hover:text-blue-800 underline transition-colors"
+            >   
               Voir sur Google Maps
             </a>
           </div>
         )}
        
         {property.nombreEtoiles ? (
-          <div className="flex items-center text-yellow-500 text-sm mb-2">
+          <div className="flex items-center text-yellow-500 text-sm mb-3">
             {"★".repeat(property.nombreEtoiles)}
           </div>
         ) : null}
@@ -121,6 +145,46 @@ export default function PropertyCard({ property }: PropertyCardProps) {
             ⭐ {property.moyenneAvis.toFixed(1)} / 5
           </div>
         ) : null}
+
+        {/* 🔵 INFOS SPÉCIFIQUES AUX HÔTELS - VERSION AMÉLIORÉE */}
+        {isHotel && property.hotel && (
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 mb-4 border border-blue-100">
+            <div className="space-y-3">
+              {property.hotel.nombreChambresTotal !== undefined && (
+                <div className="flex items-center text-gray-700">
+                  <div className="bg-white rounded-lg p-2 mr-3 shadow-sm">
+                    <Home className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500 font-medium">Chambres totales</div>
+                    <div className="font-semibold text-gray-900">{property.hotel.nombreChambresTotal} chambres</div>
+                  </div>
+                </div>
+              )}
+
+              {property.hotel.nombreVoyageursMax !== undefined && (
+                <div className="flex items-center text-gray-700">
+                  <div className="bg-white rounded-lg p-2 mr-3 shadow-sm">
+                    <Users className="h-5 w-5 text-indigo-600" />
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500 font-medium">Capacité maximale</div>
+                    <div className="font-semibold text-gray-900">{property.hotel.nombreVoyageursMax} voyageurs</div>
+                  </div>
+                </div>
+              )}
+
+              {prixMinChambre !== null && (
+                <div className="mt-4 pt-3 border-t border-blue-200">
+                  <div className="text-xs text-gray-600 mb-1">À partir de</div>
+                  <div className="text-2xl font-bold text-indigo-700">
+                    {Number(prixMinChambre).toLocaleString("fr-FR")} <span className="text-sm font-normal text-gray-600">FCFA/nuit</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
           {property.nombreChambres !== undefined && (

@@ -5,7 +5,7 @@ import { Prisma, Role, Categorie, Statut } from "@prisma/client";
 import { getAuthSession } from "@/lib/auth"; 
    
 interface ChambreInput {  
-  nom: string;  
+  nom: string;     
   description?: string;
   prixParNuit: number | string;   
   capacite: number | string;
@@ -127,6 +127,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             images: {
               orderBy: { ordre: 'asc' } // ✅ Trier par ordre
             },
+            hotel: true,
             geolocalisation: true,
             chambres: true,
             avis: { include: { user: true } },

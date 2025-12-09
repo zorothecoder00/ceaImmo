@@ -4,8 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { OffreStatut, Statut, StatutTransaction } from "@prisma/client";
 
 export async function getMesProprietes(userId: string) {
-  const parsedUserId = parseInt(userId);
-
+  const parsedUserId = parseInt(userId);   
+    
   const myProperties = await prisma.propriete.findMany({
     where: { proprietaireId: parsedUserId },
     include: {
@@ -13,9 +13,17 @@ export async function getMesProprietes(userId: string) {
       images: { orderBy: { ordre: "asc" } },
       hotel: {
         select: {
+          id: true,
           nombreEtoiles: true,
           nombreChambresTotal: true,
           nombreVoyageursMax: true,
+          prixParNuitParDefaut: true,
+        },
+      },
+      chambres: {
+        select: {
+          id: true,
+          prixParNuit: true,
         },
       },
       avis: {

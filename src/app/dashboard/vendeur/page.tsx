@@ -169,10 +169,14 @@ export default async function VendeurDashboard() {
     surface: Number(p.surface),
     createdAt: p.createdAt.toISOString(),
     hotel: p.hotel
-    ? {
-        nombreEtoiles: p.hotel.nombreEtoiles ?? 0   // <= corrige le type attendu
-      }
-    : null,
+      ? {
+          id: p.hotel.id,
+          nombreEtoiles: p.hotel.nombreEtoiles ?? 0,
+          nombreChambresTotal: p.hotel.nombreChambresTotal ?? 0,
+          nombreVoyageursMax: p.hotel.nombreVoyageursMax ?? 0,
+          prixParNuitParDefaut: p.hotel.prixParNuitParDefaut ?? 0
+        }
+      : null,
     nombreChambres: p.nombreChambres ?? undefined,
     geolocalisation: p.geolocalisation ?? null,
   }))
@@ -218,6 +222,6 @@ export default async function VendeurDashboard() {
       offresRecentes={offresRecentesConverted}
       prochainesVisites={prochainesVisitesConverted}
     />
-  )
+  )     
 }
   

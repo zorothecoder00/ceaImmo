@@ -5,7 +5,7 @@ import { sauvegarderRecherche, getRecherchesSauvegardees, filtrageProprietes } f
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // 🔒 Vérification de session utilisateur
   const session = await getAuthSession(req, res);  
-   
+      
   if (!session?.user) {
     return res.status(401).json({ error: "Non authentifié" });
   }
@@ -25,26 +25,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const safeData = serializeBigInt(data)
       return res.status(200).json(safeData);
-    }
-
-     // 🟨 2️⃣ Lancer une recherche instantanée (prévisualisation)
-    if (req.method === "POST" && req.query.preview === "true") {
-      const { titre, categorie, statut, geolocalisation, minPrix, maxPrix, minSurface, maxSurface,  nombreChambres } = req.body;
-
-      const resultats = await filtrageProprietes(
-        session.user.id,
-        titre ?? undefined,
-        geolocalisation ?? undefined,
-        categorie ?? undefined,
-        statut ?? undefined,
-        minPrix ? Number(minPrix) : undefined,
-        maxPrix ? Number(maxPrix) : undefined,
-        minSurface ? Number(minSurface) : undefined,
-        maxSurface ? Number(maxSurface) : undefined,
-        nombreChambres ? Number(nombreChambres) : undefined
-      );
-
-      return res.status(200).json({ resultats: serializeBigInt(resultats) });
     }
 
     // 🔹 Sauvegarde d'une nouvelle recherche

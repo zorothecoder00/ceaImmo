@@ -180,7 +180,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ bien, onEdit, onDelete, onV
                     href={`https://www.google.com/maps?q=${bien?.geolocalisation?.latitude},${bien?.geolocalisation?.longitude}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="underline"
+                    className="text-blue-600 hover:text-blue-800 underline transition-colors"
                   >
                     Voir sur Google Maps
                   </a>
@@ -310,7 +310,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ bien, onEdit, onDelete, onV
               href={`https://www.google.com/maps?q=${bien?.geolocalisation?.latitude},${bien?.geolocalisation?.longitude}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="underline"
+              className="text-blue-600 hover:text-blue-800 underline transition-colors"
             >
               Voir sur Google Maps
             </a>
@@ -945,7 +945,7 @@ export default function MesBiens() {
                           href={`https://www.google.com/maps?q=${selectedBien?.geolocalisation?.latitude},${selectedBien?.geolocalisation?.longitude}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="underline"
+                          className="text-blue-600 hover:text-blue-800 underline transition-colors"
                         >
                           Voir sur Google Maps
                         </a>

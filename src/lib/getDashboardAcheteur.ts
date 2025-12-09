@@ -2,11 +2,12 @@ import { prisma } from '@/lib/prisma'
 import { Statut, Categorie, StatutTransaction, Prisma, Geolocalisation } from '@prisma/client'
 
 // ========== UTILITY : calculer un carré autour d'un point ==========
-function getGeoBoundingBox(lat: number, lng: number, distanceKm = 10) {
-  const earthRadius = 6371
+function getGeoBoundingBox(lat: number, lng: number, radiusMeters: number) {
+  const distanceKm = radiusMeters / 1000;
+  const earthRadius = 6371;
 
-  const latDelta = distanceKm / earthRadius * (180 / Math.PI)
-  const lngDelta = distanceKm / (earthRadius * Math.cos(lat * Math.PI / 180)) * (180 / Math.PI)
+  const latDelta = distanceKm / earthRadius * (180 / Math.PI);
+  const lngDelta = distanceKm / (earthRadius * Math.cos(lat * Math.PI / 180)) * (180 / Math.PI);
 
   return {
     minLat: lat - latDelta,
@@ -15,7 +16,8 @@ function getGeoBoundingBox(lat: number, lng: number, distanceKm = 10) {
     maxLng: lng + lngDelta
   }
 }
- 
+
+
 export async function getAvailableProprietes(userId?: string) {
   const proprietes = await prisma.propriete.findMany({
     where: { statut: Statut.DISPONIBLE },
@@ -25,7 +27,8 @@ export async function getAvailableProprietes(userId?: string) {
         take: 1     
       },  
       geolocalisation: true,
-      hotel: true,          
+      hotel: true,    
+      chambres: true,      
       avis: {
         select: { note: true } 
       },      
@@ -61,13 +64,14 @@ export async function getAvailableProprietes(userId?: string) {
 export async function filtrageProprietes(
   userId?: string,
   nom?: string,
-  geo?: Geolocalisation,
+  geolocalisation?: { latitude: number; longitude: number } | null,
+  radius?: number,
   categorie?: Categorie,
   statut?: Statut,   
   minPrix?: number | bigint,
   maxPrix?: number | bigint,
-  minSurface?: number,
-  maxSurface?: number,
+  minSurface?: number | bigint,
+  maxSurface?: number | bigint,
   nombreChambres?: number
 ) {
 
@@ -76,22 +80,23 @@ export async function filtrageProprietes(
   if (maxPrix !== undefined && maxPrix !== null) prixFilter.lte = Number(maxPrix);
 
   const surfaceFilter: Prisma.IntFilter = {};
-  if (minSurface !== undefined && minSurface !== null) surfaceFilter.gte = minSurface;
-  if (maxSurface !== undefined && maxSurface !== null) surfaceFilter.lte = maxSurface;
+  if (minSurface !== undefined && minSurface !== null) surfaceFilter.gte = Number(minSurface);
+  if (maxSurface !== undefined && maxSurface !== null) surfaceFilter.lte = Number(maxSurface);
 
   // === GESTION GÉO ===
-  let geoFilter = undefined
+  let geoFilter = undefined;
 
-  if (geo && geo.latitude && geo.longitude) {
-    const box = getGeoBoundingBox(geo.latitude, geo.longitude, 10) // rayon 10 km
-    
+  if (geolocalisation?.latitude && geolocalisation?.longitude && radius) {
+    const box = getGeoBoundingBox(geolocalisation.latitude, geolocalisation.longitude, radius);
+
     geoFilter = {
       geolocalisation: {
         latitude: { gte: box.minLat, lte: box.maxLat },
-        longitude: { gte: box.minLng, lte: box.maxLng }
-      }
-    }
+        longitude: { gte: box.minLng, lte: box.maxLng },
+      },
+    };
   }
+
 
   const proprietes = await prisma.propriete.findMany({
     where: {
@@ -279,6 +284,7 @@ export async function getRecherchesSauvegardeesEtResultats(userId: string) {
         userId,
         r.titre ?? undefined,
         r.geolocalisation ?? undefined,
+        undefined,
         r.categorie ?? undefined,
         undefined, 
         r.minPrix !== null && r.minPrix !== undefined ? Number(r.minPrix) : undefined,

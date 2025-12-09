@@ -432,7 +432,7 @@ export default async function AcheteurDashboard() {
             <StatsCard title="Visites" value={totalVisites} subtitle="planifiées" icon={Calendar} color="purple" />
             <StatsCard title="Alertes" value={0} subtitle="nouvelles" icon={Bell} color="orange" />
           </div>
-
+   
           {/* Quick Search */}
           <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-5 mb-8">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">Recherche rapide</h2>
