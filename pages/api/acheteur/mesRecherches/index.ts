@@ -58,29 +58,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       whereClauses.push(`
         (p.nom ILIKE $${paramIndex}
         OR p.description ILIKE $${paramIndex}
-        OR pr.nom ILIKE $${paramIndex}
-        OR pr.prenom ILIKE $${paramIndex})
+        OR u.nom ILIKE $${paramIndex}
+        OR u.prenom ILIKE $${paramIndex})
       `);
       sqlParams.push(`%${search}%`);
       paramIndex++;
     }
 
-    // 🔵 Catégorie
+    // 🔵 Catégorie ENUM
     if (categorie) {
-      const cat = Array.isArray(categorie) ? categorie[0] : categorie; // force string
-      if (Object.values(Categorie).includes(cat as Categorie)) {
-        whereClauses.push(`p.categorie = $${paramIndex}`);
-        sqlParams.push(cat);
+      const catValue = Array.isArray(categorie) ? categorie[0] : categorie;
+
+      if (Object.values(Categorie).includes(catValue as Categorie)) {
+        whereClauses.push(`p.categorie = $${paramIndex}::"Categorie"`);
+        sqlParams.push(catValue);
         paramIndex++;
       }
     }
 
-    // 🔵 Statut
+    // 🔵 Statut ENUM
     if (statut) {
-      const stat = Array.isArray(statut) ? statut[0] : statut; // force string
-      if (Object.values(Statut).includes(stat as Statut)) {
-        whereClauses.push(`p.statut = $${paramIndex}`);
-        sqlParams.push(stat);
+      const statValue = Array.isArray(statut) ? statut[0] : statut;
+
+      if (Object.values(Statut).includes(statValue as Statut)) {
+        whereClauses.push(`p.statut = $${paramIndex}::"Statut"`);
+        sqlParams.push(statValue);
         paramIndex++;
       }
     }
@@ -125,23 +127,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // 🟧 FILTRE SPATIAL (distance en mètres)
     // ============================================
     let spatialSelect = `NULL AS distance`;
-    let spatialWhere = ``;
 
     if (latitude && longitude && radius) {
       spatialSelect = `
         ST_Distance(
           g."geoPoint",
-          ST_SetSRID(ST_MakePoint($${paramIndex}, $${paramIndex + 1}), 4326)
+          ST_SetSRID(ST_MakePoint($${paramIndex}, $${paramIndex + 1}), 4326)::geography
         ) AS distance
       `;
-
-      spatialWhere = `
-        AND ST_DWithin(
+      whereClauses.push(`
+        ST_Distance(
           g."geoPoint",
-          ST_SetSRID(ST_MakePoint($${paramIndex}, $${paramIndex + 1}), 4326),
-          $${paramIndex + 2}
-        )
-      `;
+          ST_SetSRID(ST_MakePoint($${paramIndex}, $${paramIndex + 1}), 4326)::geography
+        ) <= $${paramIndex + 2}
+      `);
 
       sqlParams.push(Number(longitude), Number(latitude), Number(radius));
       paramIndex += 3;
@@ -174,7 +173,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           'longitude', g.longitude
         ) AS geolocalisation,
         ${spatialSelect},
-        (
+        (  
           SELECT json_agg(img_data)
           FROM (
             SELECT json_build_object('id', img.id, 'url', img.url, 'ordre', img.ordre) AS img_data
@@ -182,12 +181,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             WHERE img."proprieteId" = p.id
             ORDER BY img.ordre ASC
           ) AS sub
-        ) AS images
+        ) AS images   
       FROM "Propriete" p  
       LEFT JOIN "Geolocalisation" g ON g."proprieteId" = p.id
       LEFT JOIN "User" u ON u.id = p."proprietaireId"
       ${whereSQL}
-      ${spatialWhere}
       ORDER BY ${safeField} ${order}
       LIMIT ${take} OFFSET ${skip};
     `;
@@ -203,7 +201,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
     });
 
-  } catch (error) {
+  } catch (error) {   
     console.error("Erreur API /recherches:", error);
     return res.status(500).json({ error: "Erreur serveur" });
   }

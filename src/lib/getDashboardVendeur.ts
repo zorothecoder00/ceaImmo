@@ -12,20 +12,11 @@ export async function getMesProprietes(userId: string) {
       offres: true, // pour compter les offres liées
       images: { orderBy: { ordre: "asc" } },
       hotel: {
-        select: {
-          id: true,
-          nombreEtoiles: true,
-          nombreChambresTotal: true,
-          nombreVoyageursMax: true,
-          prixParNuitParDefaut: true,
-        },
+        include: {
+          chambres: true, // récupère les chambres associées à l'hôtel
+        }
       },
-      chambres: {
-        select: {
-          id: true,
-          prixParNuit: true,
-        },
-      },
+      chambres: true,
       avis: {
         select: { note: true },
       },

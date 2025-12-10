@@ -9,10 +9,16 @@ interface Hotel {
   nombreEtoiles?: number | null;
   nombreChambresTotal?: number | null;
   prixParNuitParDefaut?: number | null;
+  chambres?: Chambre[]
 }
 
 interface Chambre {
-  prixParNuit?: number;
+  id: number;
+  nom?: string;
+  description?: string;
+  prixParNuit?: number;  // string pour matcher ce que tu envoies
+  capacite?: string;
+  disponible?: boolean;
 }
 
 interface PropertyImage {

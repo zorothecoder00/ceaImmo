@@ -1,18 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/lib/prisma";
-import { Categorie, Statut, Prisma } from "@prisma/client";
-
-// Typage minimal pour le résultat du $queryRaw sur Hotel
-type HotelRaw = {
-  id: number;
-  proprieteId: number;
-  nombreEtoiles: number;
-  nombreChambresTotal: number;
-  nombreVoyageursMax: number;
-  politiqueAnnulation: string | null;
-  createdAt: Date;
-  updatedAt: Date;
-};
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
@@ -22,72 +9,85 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const { destination, arrivee, depart, voyageurs } = req.body;
 
+    if (!voyageurs) return res.status(400).json({ error: "Nombre de voyageurs manquant." });
+    if (!arrivee || !depart) return res.status(400).json({ error: "Dates manquantes." });
+
     const dateArrivee = new Date(arrivee);
     const dateDepart = new Date(depart);
 
-    if (dateArrivee >= dateDepart) {
+    if (isNaN(dateArrivee.getTime()) || isNaN(dateDepart.getTime())) {
       return res.status(400).json({ error: "Dates invalides." });
     }
 
-    let lat: number | undefined;
-    let lng: number | undefined;
-    let radius: number | undefined;
-
-    if (destination && destination.latitude && destination.longitude) {
-      lat = Number(destination.latitude);
-      lng = Number(destination.longitude);
-      radius = Number(destination.radius ?? 10000); // par défaut 10 km
-      if (isNaN(lat) || isNaN(lng)) {
-        return res.status(400).json({ error: "Coordonnées invalides." });
-      }
+    if (dateArrivee >= dateDepart) {
+      return res.status(400).json({ error: "La date d'arrivée doit être avant la date de départ." });
+    }
+    
+    if (!destination?.latitude || !destination?.longitude) {
+      return res.status(400).json({ error: "Destination invalide." });
     }
 
-    // Construction dynamique de la requête SQL pour PostGIS
-    let geoFilter = "";
-    if (lat !== undefined && lng !== undefined && radius !== undefined) {
-      geoFilter = `
-        AND ST_DWithin(
-          "Propriete"."geoPoint",
-          ST_MakePoint(${lng}, ${lat})::geography,
-          ${radius}
-        )
-      `;
-    }
+    const lat = Number(destination.latitude);
+    const lng = Number(destination.longitude);
+    const radius = Number(destination.radius ?? 10000);
 
-    // Filtre voyageurs
-    const voyageursFilter = voyageurs ? `AND "nombreVoyageursMax" >= ${Number(voyageurs)}` : "";
+    const dateArriveeISO = dateArrivee.toISOString();
+    const dateDepartISO = dateDepart.toISOString();
 
-    // Requête principale
-    // ✅ Typage correct pour $queryRaw
-    const hotels = (await prisma.$queryRaw<HotelRaw[]>`
-      SELECT h.*
-      FROM "Hotel" h
-      INNER JOIN "Propriete" p ON p.id = h."proprieteId"
-      WHERE p.categorie = 'HOTEL'
-        AND p.statut = 'DISPONIBLE'
-        ${Prisma.sql([geoFilter])}
-        ${Prisma.sql([voyageursFilter])}
-    `) as HotelRaw[];
+    const hotels = await prisma.$queryRaw<{
+      id: number;
+      nom: string;
+      latitude: number;
+      longitude: number;
+      distance: number;
+    }[]>`
+SELECT 
+  h.id,
+  p.nom,
+  g.latitude,
+  g.longitude,
+  ST_Distance(
+    ST_MakePoint(${lng}, ${lat})::geography,
+    ST_MakePoint(g.longitude, g.latitude)::geography
+  ) AS distance
+FROM "Hotel" h
+JOIN "Propriete" p ON p.id = h."proprieteId"
+JOIN "Geolocalisation" g ON g."proprieteId" = p.id
+WHERE 
+  h."nombreVoyageursMax" >= ${voyageurs}
+  AND ST_DWithin(
+    ST_MakePoint(${lng}, ${lat})::geography,
+    ST_MakePoint(g.longitude, g.latitude)::geography,
+    ${radius}
+  )
+  AND EXISTS (
+    SELECT 1 
+    FROM "Chambre" c
+    WHERE c."hotelId" = h.id
+      AND c.capacite >= ${voyageurs}
+      AND NOT EXISTS (
+        SELECT 1
+        FROM "Reservation" r
+        WHERE r."chambreId" = c.id
+          AND r."dateArrivee" < ${dateDepartISO}
+          AND r."dateDepart" > ${dateArriveeISO}
+      )
+  )
+ORDER BY distance ASC;
+`;
 
-    if (hotels.length === 0) {
-      return res.status(404).json({ message: "Aucun hôtel trouvé à proximité." });
-    }
+    if (hotels.length === 0) return res.status(404).json({ message: "Aucun hôtel disponible." });
 
-    // Récupérer les relations via Prisma
     const hotelsWithRelations = await Promise.all(
-      hotels.map(async (hotel) => {
-        const hotelFull = await prisma.hotel.findUnique({
+      hotels.map((hotel) =>
+        prisma.hotel.findUnique({
           where: { id: hotel.id },
           include: {
-            propriete: {
-              include: { images: true, geolocalisation: true },
-            },
-            chambres: true,
-            disponibilites: true,
+            propriete: { include: { images: true, geolocalisation: true } },
+            chambres: { include: { reservations: true } },
           },
-        });
-        return hotelFull;
-      })
+        })
+      )
     );
 
     return res.status(200).json({

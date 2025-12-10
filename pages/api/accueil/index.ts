@@ -31,7 +31,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const params: unknown[] = []
     let paramIndex = 1
 
-    // 🔵 NOM
+    // 🔵 NOM   
     if (nom) {
       whereClauses.push(`p.nom ILIKE $${paramIndex++}`)
       params.push(`%${nom}%`)

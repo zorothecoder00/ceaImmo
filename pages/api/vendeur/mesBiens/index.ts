@@ -244,12 +244,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         },
       });
 
-      await prisma.$executeRaw`
+      await prisma.$queryRaw`
         UPDATE "Geolocalisation"
         SET "geoPoint" = ST_SetSRID(ST_MakePoint(${geolocalisation.longitude}, ${geolocalisation.latitude}), 4326)
-        WHERE "proprieteId" = ${propriete.id};
+        WHERE id = ${propriete.geolocalisation!.id};
       `;
-
 
       const safePropriete = serializeBigInt(propriete)
 

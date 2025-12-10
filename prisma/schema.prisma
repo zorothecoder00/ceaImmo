@@ -132,8 +132,8 @@ model User {
   offresAgent       Offre[]         @relation("AgentOffre")
   favoris           Favori[]
   logs              Log[]
-  notifications     Notification[]  
-  avis              Avis[]
+  notifications     Notification[]    
+  avis              Avis[]    
   recherches        Recherche[] // 👈 Ajoute cette ligne
   vus               Vu[]
   signalements      Signalement[]
@@ -173,7 +173,7 @@ model Propriete {
   vus               Vu[]
   hotel             Hotel?          @relation("ProprieteHotel")
   signalements      Signalement[]        
-}            
+}              
         
 model Geolocalisation {
   id          Int       @id @default(autoincrement())
@@ -186,7 +186,7 @@ model Geolocalisation {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt  
 
-  recherches  Recherche[]
+  recherches  Recherche[]    
 }     
 
 model ProprieteImage {
@@ -198,8 +198,8 @@ model ProprieteImage {
   propriete         Propriete       @relation(fields: [proprieteId], references: [id], onDelete: Cascade)  
 
   createdAt         DateTime         @default(now())     
-}
-
+}     
+   
 model Hotel {
   id                 Int            @id @default(autoincrement())
   proprieteId        Int            @unique

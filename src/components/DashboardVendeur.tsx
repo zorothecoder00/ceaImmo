@@ -41,8 +41,14 @@ interface RecentProperty {
   geolocalisation: Geolocalisation | null
   createdAt: string
   images?: PropertyImage[]
+  chambres?: Chambre[];
   hotel?: {
-    nombreEtoiles: number
+    id: number;
+    nombreEtoiles: number;
+    nombreVoyageursMax: number;
+    nombreChambresTotal: number;
+    prixParNuitParDefaut: number;
+    chambres?: Chambre[];
   } | null
   avis?: {   
     note: number
@@ -73,11 +79,12 @@ interface Visite {
 }
 
 interface Chambre {
-  nom: string
+  id: number;
+  nom?: string
   description?: string
-  prixParNuit: string
-  capacite: string
-  disponible: boolean
+  prixParNuit: number
+  capacite?: string
+  disponible?: boolean
 }
 
 interface FormDataProps {
@@ -196,7 +203,7 @@ export default function VendeurDashboardClient({
   const addChambre = () => {
     setChambres(prev => [
       ...prev,
-      { nom: '', description: '', prixParNuit: '', capacite: '', disponible: true },
+      { id: Date.now(), nom: '', description: '', prixParNuit: 0, capacite: '', disponible: true },
     ])
   }
 
@@ -204,12 +211,15 @@ export default function VendeurDashboardClient({
     setChambres(prev => prev.filter((_, i) => i !== index))
   }
 
-  const updateChambre = (index: number, field: keyof Chambre, value: string | boolean) => {
+  const updateChambre = (index: number, field: keyof Chambre, value: string | boolean | number) => {
     setChambres(prev => {
-      const updated = [...prev]
-      updated[index] = { ...updated[index], [field]: value }
-      return updated
-    })
+      const updated = [...prev];
+      updated[index] = { 
+        ...updated[index], 
+        [field]: field === 'prixParNuit' ? Number(value) : value // for number fields
+      };
+      return updated;
+    });
   }
 
   // 🔹 Validation d’étape
@@ -585,7 +595,7 @@ export default function VendeurDashboardClient({
                       geolocalisation: p.geolocalisation,
                       createdAt: p.createdAt,   
                       images: p.images?.map((img) => ({
-                        id: img.id,
+                        id: img.id,  
                         url: img.url,
                         ordre: img.ordre,
                       })) || [],
@@ -597,9 +607,22 @@ export default function VendeurDashboardClient({
                         nombreEtoiles: p.hotel.nombreEtoiles,
                         nombreChambresTotal: p.hotel.nombreChambresTotal,
                         prixParNuitParDefaut: p.hotel.prixParNuitParDefaut,
+                        chambres: p.hotel.chambres?.map(c => ({
+                          id: c.id,
+                          nom: c.nom ?? `Chambre ${c.id}`,
+                          description: c.description ?? "",
+                          prixParNuit: Number(c.prixParNuit ?? 0),
+                          capacite: String(c.capacite ?? 1),
+                          disponible: c.disponible ?? true,
+                        })) ?? []
                       } : null,
                       chambres: p.chambres?.map(c => ({
-                        prixParNuit: c.prixParNuit,
+                        id: c.id,
+                        nom: c.nom,
+                        description: c.description,
+                        prixParNuit: Number(c.prixParNuit),
+                        capacite: c.capacite,
+                        disponible: c.disponible,
                       })) ?? null,
                     }}
                   />

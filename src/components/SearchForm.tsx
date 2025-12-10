@@ -276,7 +276,7 @@ export default function SearchForm() {
           className="border border-gray-300 rounded-md px-3 py-2"
           value={categorie}
           onChange={(e) => setCategorie(e.target.value as Categorie)}
-          disabled={isLoading}
+          disabled={isLoading}   
         >
           <option value="">Catégorie</option>
           {Object.entries(CATEGORIE_LABELS)

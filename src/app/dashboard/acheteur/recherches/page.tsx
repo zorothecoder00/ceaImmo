@@ -1,4 +1,4 @@
-'use client';
+'use client';  
 
 import { useState, useEffect } from 'react';
 import { Search, Filter, MapPin, Home, Maximize, Users, Star, Heart, Eye, X, Send } from 'lucide-react';
@@ -9,8 +9,8 @@ import Link from 'next/link'
   
 interface Geolocalisation {
   latitude: number | null;    
-  longitude: number | null;
-}
+  longitude: number | null;    
+}     
 
 interface Visite {     
   id: number;
@@ -205,7 +205,12 @@ export default function RecherchesPage() {
 
         if (!res.ok) throw new Error(data.error || "Erreur lors du chargement des propriétés");
 
-        setProprietes(data.data || []);
+        // 🟦 EXCLURE ICI toutes les propriétés de catégorie HOTEL
+        const filtered = (data.data || []).filter(
+          (p: Propriete) => p.categorie !== "HOTEL"
+        );
+
+        setProprietes(filtered);
         setMeta(data.meta || { total: 0, page: 1, limit: 10, totalPages: 1 });
       } catch (error) {
         console.error('Erreur fetch propriétés :', error);
@@ -499,10 +504,10 @@ export default function RecherchesPage() {
       {showFilters && (
         <div className="bg-white border-b shadow-sm">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {/* Catégorie */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+              <div className="w-full">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Catégorie
                 </label>
                 <select
@@ -511,15 +516,17 @@ export default function RecherchesPage() {
                   onChange={(e) => handleFilterChange('categorie', e.target.value)}
                 >
                   <option value="">Toutes catégories</option>
-                  {CATEGORIES.map(cat => (
-                    <option key={cat.value} value={cat.value}>{cat.label}</option>
-                  ))}
+                  {CATEGORIES
+                    .filter(cat => cat.value !== "HOTEL")
+                    .map(cat => (
+                      <option key={cat.value} value={cat.value}>{cat.label}</option>
+                    ))}
                 </select>
               </div>
 
               {/* Statut */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+              <div className="w-full">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Statut
                 </label>
                 <select
@@ -534,110 +541,9 @@ export default function RecherchesPage() {
                 </select>
               </div>
 
-              {/* Prix */}
-              <div className="col-span-1 md:col-span-2 lg:col-span-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Prix (FCFA)
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="number"
-                    placeholder="Min"
-                    className="flex-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    value={filters.minPrix}
-                    onChange={(e) => handleFilterChange('minPrix', e.target.value)}
-                  />
-                  <input
-                    type="number"
-                    placeholder="Max"
-                    className="flex-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    value={filters.maxPrix}
-                    onChange={(e) => handleFilterChange('maxPrix', e.target.value)}
-                  />
-                </div>
-              </div>
-
-              {/* Surface */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Surface (m²)
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="number"
-                    placeholder="Min"
-                    className="flex-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    value={filters.minSurface}
-                    onChange={(e) => handleFilterChange('minSurface', e.target.value)}
-                  />
-                  <input
-                    type="number"
-                    placeholder="Max"
-                    className="flex-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    value={filters.maxSurface }
-                    onChange={(e) => handleFilterChange('maxSurface', e.target.value)}
-                  />
-                </div>
-              </div>
-
-              {/* Chambres */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Chambres
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="number"
-                    placeholder="Min"
-                    className="flex-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    value={filters.minChambres}
-                    onChange={(e) => handleFilterChange('minChambres', e.target.value)}
-                  />
-                  <input
-                    type="number"
-                    placeholder="Max"
-                    className="flex-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    value={filters.maxChambres}
-                    onChange={(e) => handleFilterChange('maxChambres', e.target.value)}
-                  />
-                </div>
-              </div>
-
-              {/* Localisation */}
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Localisation
-                </label>
-
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="Ville, quartier ou lien Google Maps"
-                    className="flex-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                  />
-
-                  <input
-                    type="number"
-                    placeholder="Rayon (mètres)"
-                    className="w-32 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    value={radius}
-                    onChange={(e) => setRadius(Number(e.target.value))}
-                  />
-
-                  <button
-                    type="button"
-                    onBlur={handleGeocode}
-                    className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
-                      Localiser
-                  </button>
-                </div>
-              </div>
-
               {/* Note minimum */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+              <div className="w-full">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
                   Note minimum
                 </label>
                 <select
@@ -651,6 +557,105 @@ export default function RecherchesPage() {
                   <option value="2">2+ étoiles</option>
                   <option value="1">1+ étoiles</option>
                 </select>
+              </div>
+
+              {/* Prix */}
+              <div className="w-full">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Prix (FCFA)
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    placeholder="Min"
+                    className="w-1/2 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    value={filters.minPrix}
+                    onChange={(e) => handleFilterChange('minPrix', e.target.value)}
+                  />
+                  <input
+                    type="number"
+                    placeholder="Max"
+                    className="w-1/2 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    value={filters.maxPrix}
+                    onChange={(e) => handleFilterChange('maxPrix', e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Surface */}
+              <div className="w-full">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Surface (m²)
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    placeholder="Min"
+                    className="w-1/2 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    value={filters.minSurface}
+                    onChange={(e) => handleFilterChange('minSurface', e.target.value)}
+                  />
+                  <input
+                    type="number"
+                    placeholder="Max"
+                    className="w-1/2 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    value={filters.maxSurface}
+                    onChange={(e) => handleFilterChange('maxSurface', e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Chambres */}
+              <div className="w-full">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Chambres
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    placeholder="Min"
+                    className="w-1/2 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    value={filters.minChambres}
+                    onChange={(e) => handleFilterChange('minChambres', e.target.value)}
+                  />
+                  <input
+                    type="number"
+                    placeholder="Max"
+                    className="w-1/2 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    value={filters.maxChambres}
+                    onChange={(e) => handleFilterChange('maxChambres', e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Localisation */}
+              <div className="w-full md:col-span-2 lg:col-span-3 xl:col-span-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Localisation
+                </label>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <input
+                    type="text"
+                    placeholder="Ville, quartier ou lien Google Maps"
+                    className="flex-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                  />
+                  <input
+                    type="number"
+                    placeholder="Rayon (m)"
+                    className="w-full sm:w-32 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    value={radius}
+                    onChange={(e) => setRadius(Number(e.target.value))}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleGeocode}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 whitespace-nowrap"
+                  >
+                    Géocoder
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -674,9 +679,6 @@ export default function RecherchesPage() {
                 className="px-4 py-2 text-gray-600 bg-gray-100 rounded-md hover:bg-gray-200"
               >
                 Effacer les filtres
-              </button>
-              <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-                Appliquer les filtres
               </button>
             </div>
           </div>

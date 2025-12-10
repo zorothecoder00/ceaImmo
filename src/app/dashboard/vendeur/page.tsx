@@ -46,7 +46,7 @@ interface Property {
   geolocalisation: Geolocalisation | null  
   prix: number|bigint
   nombreChambres: number  
-  chambre?: string 
+  chambres?: Chambre[]
   surface: number | bigint
   categorie: Categorie
   images: PropertyImage[]
@@ -54,6 +54,7 @@ interface Property {
   agent?: string
   avis?: Avis[]
   isFavorite?: boolean
+  hotel?: HotelFormData
   nombreVu: number
   createdAt: Date           // ✅ ajouté
   statut: Statut            // ✅ ajouté
@@ -111,11 +112,12 @@ interface PropertyImage {
 }
 
 interface Chambre {
-  nom: string
-  description: string
-  prixParNuit: string
-  capacite: string
-  disponible: boolean  
+  id: number;
+  nom?: string
+  description?: string
+  prixParNuit: number
+  capacite?: string
+  disponible?: boolean  
 }
 
 interface FormData {
@@ -123,7 +125,7 @@ interface FormData {
   description?: string
   categorie: Categorie
   prix: string
-  surface: string
+  surface: string  
   statut: Statut
   geolocalisation: Geolocalisation
   nombreChambres: string
@@ -137,6 +139,7 @@ interface HotelFormData {
   nombreVoyageursMax: string;
   politiqueAnnulation: string;
   visiteVirtuelle: string;
+  chambres: Chambre[];
 }
 
 // Main Dashboard Component
@@ -174,11 +177,28 @@ export default async function VendeurDashboard() {
           nombreEtoiles: p.hotel.nombreEtoiles ?? 0,
           nombreChambresTotal: p.hotel.nombreChambresTotal ?? 0,
           nombreVoyageursMax: p.hotel.nombreVoyageursMax ?? 0,
-          prixParNuitParDefaut: p.hotel.prixParNuitParDefaut ?? 0
+          prixParNuitParDefaut: Number(p.hotel.prixParNuitParDefaut ?? 0),
+          chambres: p.hotel.chambres?.map(c => ({
+            id: c.id ?? Date.now(),
+            nom: c.nom,
+            description: c.description ?? "", // <-- on transforme null en string vide
+            prixParNuit: Number(c.prixParNuit ?? 0),
+            capacite: String(c.capacite),     // si c.capacite est un number
+            disponible: c.disponible
+          })) ?? []
         }
       : null,
+    chambres: p.chambres?.map(c => ({
+      id: c.id ?? Date.now(),
+      nom: c.nom ?? `Chambre ${c.id}`,
+      description: c.description ?? "",
+      prixParNuit: Number(c.prixParNuit ?? 0),
+      capacite: String(c.capacite ?? 1),
+      disponible: c.disponible ?? true,
+    })) ?? [],
     nombreChambres: p.nombreChambres ?? undefined,
     geolocalisation: p.geolocalisation ?? null,
+
   }))
 
   const offresRecentesConverted = offresRecentes.map(o => ({
