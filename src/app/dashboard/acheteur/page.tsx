@@ -10,10 +10,10 @@ import {
   Heart,  
   MapPin,
   Bed,
-  Square,
+  Square,   
   Search,   
   Star,
-  Phone,
+  Phone,    
   Mail,
   ConciergeBell,
 } from 'lucide-react'
@@ -30,7 +30,7 @@ import FavoriteButton from '@/components/FavoriteButton'
 import { Categorie, VisiteStatut, Statut } from '@prisma/client'
 import SearchForm from '@/components/SearchForm'
 import SearchModal from '@/components/RechercheModal'
-
+  
 // Types   
 
 interface Geolocalisation {
@@ -451,7 +451,7 @@ export default async function AcheteurDashboard() {
                 {proprietes.map((property) => (
                   <PropertyCard key={property.id} property={property} userId={userId} />
                 ))}
-              </div>
+              </div>  
             ) : (
               <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
                 <p className="text-gray-500 text-sm sm:text-base">

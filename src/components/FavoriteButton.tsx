@@ -13,7 +13,13 @@ export default function FavoriteButton({ userId, proprieteId, initialFavorite }:
   const [isFavorite, setIsFavorite] = useState(initialFavorite)
   const [isPending, startTransition] = useTransition()
 
-  const toggleFavori = async () => {
+  const toggleFavori = () => {   
+    // On capture la valeur précédente pour rollback si besoin
+    const previous = isFavorite
+
+    // ✅ Optimistic update immédiat
+    setIsFavorite(prev => !prev)
+
     startTransition(async () => {
       try {
         const res = await fetch('/api/favoris/toggle', {
@@ -22,14 +28,20 @@ export default function FavoriteButton({ userId, proprieteId, initialFavorite }:
           body: JSON.stringify({ userId, proprieteId }),
         })
 
+        if (!res.ok) throw new Error("Erreur serveur")
+
         const data = await res.json()
-        if (data.success) {
-          setIsFavorite(data.isFavorite)
-        } else {
-          console.error('Erreur:', data.error)
+
+        if (!data.success) {
+          // ❌ Rollback si erreur côté serveur
+          setIsFavorite(previous)
+          console.error("Erreur toggle favori :", data.error)
         }
+
       } catch (error) {
-        console.error('Erreur réseau:', error)
+        // ❌ Rollback si erreur réseau
+        setIsFavorite(previous)
+        console.error("Erreur réseau :", error)
       }
     })
   }

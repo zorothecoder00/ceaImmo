@@ -7,7 +7,7 @@ interface Hotel {
   id: number;
   nombreVoyageursMax?: number | null;
   nombreEtoiles?: number | null;
-  nombreChambresTotal?: number | null;
+  nombreChambresTotal?: number | null;  
   prixParNuitParDefaut?: number | null;
   chambres?: Chambre[]
 }

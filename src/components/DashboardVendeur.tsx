@@ -16,6 +16,7 @@ import StatCards from '@/components/StatCard';
 import PropertyCard from '@/components/PropertyCard';
 import OfferCard from '@/components/OfferCard'   
 import VisitCard from '@/components/VisitCard';
+import toast from 'react-hot-toast';
 
 export interface User {
   id: number;
@@ -388,7 +389,7 @@ export default function VendeurDashboardClient({
   // 1️⃣ Modifiez handleGeocode pour mettre à jour hotelData
   const handleGeocode = async () => {
     if (!address || address.trim() === "") {
-      setErrorMsg("Veuillez entrer une adresse avant de géocoder.");
+      toast.error("Veuillez entrer une adresse avant de géocoder."); // ❌ Toast si adresse vide
       return;
     }
 
@@ -402,19 +403,29 @@ export default function VendeurDashboardClient({
         lon = parseFloat(googleMapsMatch[2]);
       } else {
         const encodedAddress = encodeURIComponent(address);
-        const res = await fetch(
-          `https://nominatim.openstreetmap.org/search?q=${encodedAddress}&format=json&limit=1`
-        );
-        const data = await res.json();
+        try {
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/search?q=${encodedAddress}&format=json&limit=1`
+          );
+          const data = await res.json();
 
-        if (data.length > 0) {
-          lat = parseFloat(data[0].lat);
-          lon = parseFloat(data[0].lon);
+          if (data.length > 0) {
+            lat = parseFloat(data[0].lat);
+            lon = parseFloat(data[0].lon);
+          }
+        } catch (error) {
+          console.error("Erreur géocodage :", error);
+          toast.error("Erreur lors du géocodage."); // ❌ Toast si fetch échoue
         }
       }
     }
 
-    // ✅ Mettez à jour hotelData au lieu de location
+    if (lat === null || lon === null) {
+      toast.error("Impossible de géocoder l'adresse. Veuillez vérifier l'adresse saisie."); // ❌ toast si pas de coordonnées
+      return;
+    }
+
+    // ✅ Mettre à jour hotelData ou formData selon le modal ouvert
     if (showHotelModal) {
       setHotelData(prev => ({
         ...prev,
@@ -424,12 +435,13 @@ export default function VendeurDashboardClient({
         }
       }));
     } else {
-      // Pour le formulaire propriété classique
       setFormData(prev => ({
         ...prev,
         geolocalisation: { latitude: lat, longitude: lon }
       }));
     }
+
+    toast.success("Adresse géocodée avec succès !"); // ✅ Optional : confirmation
   };
 
   const categories = Object.values(Categorie)

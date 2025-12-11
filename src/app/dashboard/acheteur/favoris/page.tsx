@@ -10,10 +10,16 @@ import CategoryButton from "@/components/CategoryButton";
 import MobileAccordionFilter from "@/components/MobileAccordionFilter";
 import Link from 'next/link'
 
-// 🧩 Types corrigés
+// 🧩 Types corrigés   
+
+interface Geolocalisation {
+  latitude: number | null;    
+  longitude: number | null;    
+} 
+
 interface ProprieteImage {  
   url: string
-  ordre: number   
+  ordre: number       
 }
 
 interface Favori {
@@ -32,7 +38,7 @@ interface Property {
   statut: Statut;
   nombreChambres: number;
   chambres?: string
-  geolocalisation: string;
+  geolocalisation: Geolocalisation | null
   images: ProprieteImage[];
   visiteVirtuelle?: string;
   proprietaire?: {
@@ -110,7 +116,7 @@ export default function FavorisPage() {
           sortField: filters.sortField,
           sortOrder: filters.sortOrder,
         })
-
+  
         const res = await fetch(`/api/acheteur/mesFavoris?${params.toString()}`)
         const data = await res.json()
 
@@ -201,7 +207,7 @@ export default function FavorisPage() {
     e.preventDefault()
     if (!selectedProperty) return
     try {
-      const res = await fetch('/api/acheteur/mesOffres', {
+      const res = await fetch('/api/acheteur/mesOffres', {    
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -444,7 +450,18 @@ export default function FavorisPage() {
                     </h3>
                     <div className="flex items-center text-gray-600 text-sm">
                       <MapPin className="w-4 h-4 mr-1" />
-                      {property.geolocalisation}
+                      {property.geolocalisation ? (   
+                        <a
+                          href={`https://www.google.com/maps?q=${property.geolocalisation.latitude},${property.geolocalisation.longitude}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 underline text-xs ml-1"
+                        >
+                          Voir sur la carte
+                        </a>
+                      ) : (
+                        "Non définie"
+                      )}
                     </div>
                   </div>
 
@@ -536,7 +553,9 @@ export default function FavorisPage() {
               </h3>
               <div className="flex items-center text-sm text-gray-600 mb-2">
                 <MapPin className="w-4 h-4 mr-1" />
-                {selectedProperty.geolocalisation}
+                {selectedProperty.geolocalisation
+                  ? `Lat: ${selectedProperty.geolocalisation.latitude}, Lng: ${selectedProperty.geolocalisation.longitude}`
+                  : "Non renseignée"}
               </div>
               <div className="text-lg font-bold text-blue-600">
                 Prix demandé: {selectedProperty.prix}

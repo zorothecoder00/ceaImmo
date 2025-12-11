@@ -4,8 +4,8 @@ import { prisma } from "@/lib/prisma";
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Méthode non autorisée" });
-  }
-
+  }  
+    
   try {
     const { destination, arrivee, depart, voyageurs } = req.body;
 
@@ -36,59 +36,64 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const hotels = await prisma.$queryRaw<{
       id: number;
-      nom: string;
+      nom: string;   
       latitude: number;
       longitude: number;
       distance: number;
     }[]>`
-SELECT 
-  h.id,
-  p.nom,
-  g.latitude,
-  g.longitude,
-  ST_Distance(
-    ST_MakePoint(${lng}, ${lat})::geography,
-    ST_MakePoint(g.longitude, g.latitude)::geography
-  ) AS distance
-FROM "Hotel" h
-JOIN "Propriete" p ON p.id = h."proprieteId"
-JOIN "Geolocalisation" g ON g."proprieteId" = p.id
-WHERE 
-  h."nombreVoyageursMax" >= ${voyageurs}
-  AND ST_DWithin(
-    ST_MakePoint(${lng}, ${lat})::geography,
-    ST_MakePoint(g.longitude, g.latitude)::geography,
-    ${radius}
-  )
-  AND EXISTS (
-    SELECT 1 
-    FROM "Chambre" c
-    WHERE c."hotelId" = h.id
-      AND c.capacite >= ${voyageurs}
-      AND NOT EXISTS (
-        SELECT 1
-        FROM "Reservation" r
-        WHERE r."chambreId" = c.id
-          AND r."dateArrivee" < ${dateDepartISO}
-          AND r."dateDepart" > ${dateArriveeISO}
+    SELECT 
+      h.id,
+      p.nom,
+      g.latitude,
+      g.longitude,
+      ST_Distance(
+        ST_MakePoint(${lng}, ${lat})::geography,
+        ST_MakePoint(g.longitude, g.latitude)::geography
+      ) AS distance
+    FROM "Hotel" h
+    JOIN "Propriete" p ON p.id = h."proprieteId"
+    JOIN "Geolocalisation" g ON g."proprieteId" = p.id
+    WHERE 
+      h."nombreVoyageursMax" >= ${voyageurs}
+      AND ST_DWithin(
+        ST_MakePoint(${lng}, ${lat})::geography,
+        ST_MakePoint(g.longitude, g.latitude)::geography,
+        ${radius}
       )
-  )
-ORDER BY distance ASC;
-`;
+      AND (
+        SELECT COALESCE(SUM(c.capacite), 0)
+        FROM "Chambre" c
+        WHERE c."hotelId" = h.id
+          AND NOT EXISTS (
+            SELECT 1
+            FROM "Reservation" r
+            WHERE r."chambreId" = c.id
+              AND r."dateArrivee" < ${dateDepartISO}::timestamp
+              AND r."dateDepart" > ${dateArriveeISO}::timestamp
+          )
+      ) >= ${voyageurs}
+    ORDER BY distance ASC;
+    `;
 
     if (hotels.length === 0) return res.status(404).json({ message: "Aucun hôtel disponible." });
 
     const hotelsWithRelations = await Promise.all(
-      hotels.map((hotel) =>
-        prisma.hotel.findUnique({
+      hotels.map(async (hotel) => {
+        const fullHotel = await prisma.hotel.findUnique({
           where: { id: hotel.id },
           include: {
             propriete: { include: { images: true, geolocalisation: true } },
             chambres: { include: { reservations: true } },
           },
-        })
-      )
+        });   
+
+        return {
+          ...fullHotel!,
+          distance: hotel.distance, // 👉 On remet la distance dans la réponse !
+        };
+      })
     );
+
 
     return res.status(200).json({
       success: true,

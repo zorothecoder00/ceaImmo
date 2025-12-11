@@ -1,15 +1,15 @@
 // prisma/schema.prisma   
 
-datasource db {    
+datasource db {      
   provider = "postgresql" // ou "mysql", selon ta base
   url      = env("DATABASE_URL") 
   shadowDatabaseUrl = env("SHADOW_DATABASE_URL")                      
-}              
+}                 
             
 generator client {    
   provider = "prisma-client-js"      
 }                            
-  
+    
 enum Role {                 
   ADMIN       
   ACHETEUR
@@ -131,7 +131,7 @@ model User {
   offres            Offre[]         @relation("AcheteurOffre")
   offresAgent       Offre[]         @relation("AgentOffre")
   favoris           Favori[]
-  logs              Log[]
+  logs              Log[]   
   notifications     Notification[]    
   avis              Avis[]    
   recherches        Recherche[] // 👈 Ajoute cette ligne
@@ -306,9 +306,7 @@ model Reservation {
   user           User?              @relation("UserReservation", fields: [userId], references: [id], onDelete: Cascade)
 
   agentId        Int?
-  agent          User?              @relation("AgentReservation", fields: [agentId], references: [id], onDelete: Cascade)
-
-     
+  agent          User?              @relation("AgentReservation", fields: [agentId], references: [id], onDelete: Cascade)  
 
   offres         Offre[]            @relation("OffreReservation")
 

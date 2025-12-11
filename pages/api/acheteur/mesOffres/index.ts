@@ -35,7 +35,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         where: whereClause,
         include: {
           propriete: {
-            include: { images: true, proprietaire: { select: { id: true, nom: true, prenom: true } } },
+            include: {
+              geolocalisation: true, // 🔹 Inclut latitude & longitude
+              images: true,
+              proprietaire: { select: { id: true, nom: true, prenom: true } },
+            },
           },
           reservation: true,
           agent: { select: { id: true, nom: true, prenom: true } },
@@ -69,10 +73,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // 🟡 Vérification : l'utilisateur a-t-il déjà fait une offre sur cette propriété ?
       const existingOffre = await prisma.offre.findFirst({
         where: { proprieteId: Number(proprieteId), userId },
-        include: {
-          propriete: true,
-          agent: true,
-        },
+        include: { propriete: { include: { geolocalisation: true } }, agent: true },
       });
 
       if (existingOffre) {
@@ -93,10 +94,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           userId,
           statut: OffreStatut.EN_ATTENTE, // par défaut
         },
-        include: {
-          propriete: true,
-          agent: true,
-        }, 
+        include: { propriete: { include: { geolocalisation: true } }, agent: true }, 
       });
      
       const safeOffre = serializeBigInt(offre)

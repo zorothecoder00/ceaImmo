@@ -50,6 +50,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           include: {
             propriete: {
               include: {
+                geolocalisation: true, // 🔹 inclut latitude/longitude
                 images: true,
                 chambres: true,
                 proprietaire: { select: { id: true, nom: true, prenom: true } },
@@ -111,7 +112,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const favori = await prisma.favori.create({
         data: { userId, proprieteId },
-        include: { propriete: true },
+        include: { propriete: { include: { geolocalisation: true } } },
       });
 
       return res.status(201).json({ message: "Favori ajouté avec succès", favori });

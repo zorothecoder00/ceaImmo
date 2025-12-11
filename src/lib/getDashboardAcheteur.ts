@@ -11,7 +11,7 @@ function getGeoBoundingBox(lat: number, lng: number, radiusMeters: number) {
 
   return {
     minLat: lat - latDelta,
-    maxLat: lat + latDelta,
+    maxLat: lat + latDelta,    
     minLng: lng - lngDelta,
     maxLng: lng + lngDelta
   }
@@ -114,7 +114,7 @@ export async function filtrageProprietes(
       geolocalisation: true,
     },
     orderBy: { createdAt: 'desc' },
-    take: 3
+    take: 3  
   });
 
   return proprietes.map(prop => ({

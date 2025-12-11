@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import {   
   MapPin,    
   Calendar,     
-  Users,     
+  Users,       
   Search,   
   Star,      
   User,
@@ -29,6 +29,10 @@ interface Geolocalisation {
   latitude: number
   longitude: number
   radius: number;
+}
+
+interface Reservation {
+  id: number
 }
 
 interface Avis {
@@ -83,17 +87,15 @@ interface Hotel {
     nom: string;
     geolocalisation: Geolocalisation | null;
     images: { id: number; url: string }[];
-    description: string;
-    avis?: Avis[];
-    prix?: number;
   };
   chambres: {
     id: number;
     nom: string;
     prixParNuit: number;
     capacite: number;
+    reservations?: Reservation[];
   }[];
-  disponibilites: {
+  disponibilites?: {
     id: number;
     startDate: string;
     endDate: string;
@@ -255,7 +257,7 @@ export default function ReservationHotelPage() {
     destination: null,
     arrivee: "",
     depart: "",
-    voyageurs: 2,
+    voyageurs: 2,    
   });
 
   const [paymentData, setPaymentData] = useState<PaymentData>({
@@ -272,6 +274,13 @@ export default function ReservationHotelPage() {
     setLoading(true);
     setIsSearching(true)
     setError(null);
+
+    if (!searchParams.arrivee || !searchParams.depart) {
+      toast.error("Veuillez sélectionner les dates d'arrivée et de départ.");
+      setLoading(false);
+      setIsSearching(false);
+      return;
+    }
     try {
       const res = await fetch('/api/acheteur/rechercheHotels', {
         method: 'POST',
@@ -524,7 +533,7 @@ export default function ReservationHotelPage() {
                       </span>   
                     </div>
                     
-                    <p className="text-gray-700 mb-4 line-clamp-2">{hotel.propriete.description}</p>
+                    {/*<p className="text-gray-700 mb-4 line-clamp-2">{hotel.propriete.description}</p>*/}
                     
                     <div className="flex items-center gap-4 mb-4">
                       
@@ -664,10 +673,10 @@ export default function ReservationHotelPage() {
               </div>
               
               {/* Description */}
-              <div className="bg-white rounded-2xl shadow-lg p-6">
+              {/*<div className="bg-white rounded-2xl shadow-lg p-6">
                 <h2 className="text-2xl font-bold text-gray-900 mb-4">Description</h2>
                 <p className="text-gray-700 leading-relaxed">{selectedHotel?.propriete?.description}</p>
-              </div>
+              </div>*/}
               
               {/* Équipements */}
               <div className="bg-white rounded-2xl shadow-lg p-6">
@@ -686,7 +695,7 @@ export default function ReservationHotelPage() {
               </div>
                  
               {/* Avis clients */}
-              <div className="bg-white rounded-2xl shadow-lg p-6">
+              {/*<div className="bg-white rounded-2xl shadow-lg p-6">
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">Avis clients</h2>
                 <div className="space-y-4">
                   {selectedHotel?.propriete?.avis?.map((avis: Avis, index: number) => (
@@ -697,19 +706,19 @@ export default function ReservationHotelPage() {
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <h4 className="font-medium text-gray-900">{avis.nom}</h4>
+                            <h4 className="font-medium text-gray-900">{avis?.nom}</h4>
                             <span className="text-sm text-gray-500">{avis.date}</span>
                           </div>
                           <div className="flex items-center gap-1 mb-2">
-                            {renderStars(avis.note)}
+                            {renderStars(avis?.note)}
                           </div>
-                          <p className="text-gray-700 text-sm">{avis.commentaire}</p>
+                          <p className="text-gray-700 text-sm">{avis?.commentaire}</p>
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
-              </div>
+              </div>*/}
             </div>
             
             {/* Sidebar réservation */}
@@ -905,10 +914,10 @@ export default function ReservationHotelPage() {
                 <span className="text-gray-600">Voyageurs</span>
                 <span className="font-medium">{searchParams.voyageurs} personne{searchParams.voyageurs > 1 ? 's' : ''}</span>
               </div>
-              <div className="flex justify-between">
+              {/*<div className="flex justify-between">
                 <span className="text-gray-600">Total</span>
                 <span className="font-medium">{selectedHotel?.propriete?.prix}</span>
-              </div>
+              </div>*/}
             </div>   
           </div>
         </div>

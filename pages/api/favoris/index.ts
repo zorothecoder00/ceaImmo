@@ -59,8 +59,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         include: {
           propriete: {
             include: {
-              images: true, // on récupère aussi les images
-              avis: true,   // éventuellement les avis
+              geolocalisation: true, // 🔹 inclut latitude/longitude
+              images: true,
+              avis: true,
               chambres: true,
             },
           },

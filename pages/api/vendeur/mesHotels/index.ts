@@ -153,17 +153,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       /* ----- Création des chambres liées à l’hôtel ----- */
       if (chambres.length > 0) {
-        await prisma.chambre.createMany({
+        await prisma.chambre.createMany({   
           data: chambres.map((ch) => ({
             nom: ch.nom,
             description: ch.description ?? "",
             prixParNuit: ch.prixParNuit,
             capacite: ch.capacite,
             disponible: ch.disponible ?? true,
+            hotelId: hotelCreated.id,
             proprieteId: hotelCreated.proprieteId,
           })),
         });
       }
+
+      await prisma.propriete.update({
+        where: { id: proprieteCreated.id },
+        data: { nombreChambres: totalChambres },
+      });
 
       /* ----- Disponibilité par défaut ----- */
       await prisma.disponibilite.create({
