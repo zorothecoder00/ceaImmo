@@ -5,18 +5,23 @@ import { Calendar, MapPin, Clock } from 'lucide-react';
 import { VisiteStatut } from '@prisma/client'
 import Link from "next/link" 
 
+interface Geolocalisation {
+  latitude: number | null;    
+  longitude: number | null;    
+}   
+
 interface Proprietaire {
   id: number  
   prenom: string
   nom: string
 }
-
+   
 interface Propriete {
   id: number 
   nom: string
   prix: number
   surface: number 
-  geolocalisation: string 
+  geolocalisation: Geolocalisation | null
   nombreChambres: number
   proprietaire?: Proprietaire
 }
@@ -144,7 +149,21 @@ const MesVisites = () => {
             </h3>
             <p className="text-gray-600 text-sm mb-2 flex items-center">
               <MapPin className="w-4 h-4 mr-1" />
-              {visite.propriete?.geolocalisation ?? 'Adresse non spécifiée'}
+              <p className="text-gray-600 text-sm mb-2 flex items-center">
+                <MapPin className="w-4 h-4 mr-1" />
+                {visite.propriete?.geolocalisation ? (
+                  <a
+                    href={`https://www.google.com/maps?q=${visite.propriete.geolocalisation.latitude},${visite.propriete.geolocalisation.longitude}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline"
+                  >
+                    Voir sur la carte
+                  </a>
+                ) : (
+                  'Adresse non spécifiée'
+                )}
+              </p>
             </p>
             <div className="text-sm text-gray-600">
                🛏️{visite.propriete?.nombreChambres ?? 0 } chambres — 📐{visite.propriete?.surface ?? 0} m²

@@ -8,7 +8,7 @@ import Link from 'next/link'
  interface Geolocalisation {
   id: number  
   proprieteId: number
-  latitude: number
+  latitude: number   
   longitude: number
   createdAt: Date
   updatedAt: Date

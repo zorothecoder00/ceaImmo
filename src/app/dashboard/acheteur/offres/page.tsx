@@ -5,7 +5,12 @@ import { Home, Search, Heart, Calendar, Briefcase, Settings } from 'lucide-react
 import { OffreStatut } from '@prisma/client'
 import Link from "next/link"; // assure-toi d'importer Link en haut du fichier
 
-interface Proprietaire {
+interface Geolocalisation {
+  latitude: number | null;    
+  longitude: number | null;    
+}
+
+interface Proprietaire {    
   id: number       
   prenom: string     
   nom: string
@@ -16,7 +21,7 @@ interface Propriete {
   nom: string
   prix?: number
   surface?: number
-  geolocalisation?: string
+  geolocalisation?: Geolocalisation | null
   nombreChambres?: number
   proprietaire?: Proprietaire
 }
@@ -269,8 +274,21 @@ const MesOffres = () => {
                       {offre.propriete.nom}
                     </h3>
                     <p className="text-gray-600 text-sm mb-3 flex items-center">
-                      📍 {offre.propriete.geolocalisation}
+                      📍{' '}
+                      {offre.propriete.geolocalisation && offre.propriete.geolocalisation.latitude !== null
+                        ? (
+                          <a
+                            href={`https://www.google.com/maps?q=${offre.propriete.geolocalisation.latitude},${offre.propriete.geolocalisation.longitude}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline"
+                          >
+                            Voir sur la carte
+                          </a>
+                        )
+                        : 'Adresse non spécifiée'}
                     </p>
+
                     <p className="text-sm text-gray-700">
                       🏠 {(offre.propriete.surface ?? '?').toString()} m² — 💰{' '}
                       {Number(offre.propriete.prix ?? 0).toLocaleString()} €

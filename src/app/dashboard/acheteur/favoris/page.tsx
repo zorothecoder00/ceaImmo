@@ -549,7 +549,7 @@ export default function FavorisPage() {
 
             <div className="p-6 bg-gray-50 border-b border-gray-200">
               <h3 className="font-semibold text-gray-900 mb-2">
-                {selectedProperty.nom}
+                {selectedProperty.nom}   
               </h3>
               <div className="flex items-center text-sm text-gray-600 mb-2">
                 <MapPin className="w-4 h-4 mr-1" />

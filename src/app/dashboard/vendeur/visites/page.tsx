@@ -4,15 +4,20 @@ import React, { useState, useEffect } from 'react';
 import { Home, Search, Heart, Calendar, Briefcase, Settings, MapPin, Clock } from 'lucide-react';
 import { VisiteStatut } from '@prisma/client'  
 import { toast } from 'react-hot-toast';
-import Link from "next/link";
-  
+import Link from "next/link";   
+
+interface Geolocalisation {
+  latitude: number | null;    
+  longitude: number | null;    
+}   
+
 interface Propriete {  
   id: number    
   nom: string  
   prix: number
   surface: number 
-  geolocalisation: string 
-  nombreChambres: number
+  geolocalisation: Geolocalisation | null 
+  nombreChambres: number   
 }
 
 interface Acheteur {
@@ -179,8 +184,20 @@ const MesVisites = () => {
             <h3 className="text-lg font-semibold text-gray-900 mb-2">🏠 {visit.propriete?.nom ?? 'Propriété inconnue'}</h3>
             <p className="text-gray-600 text-sm mb-3 flex items-center">
               <MapPin className="w-4 h-4 mr-1" />
-              {visit.propriete?.geolocalisation ?? 'Adresse non spécifiée'}
+              {visit.propriete?.geolocalisation && visit.propriete.geolocalisation.latitude !== null
+                ? (
+                  <a
+                    href={`https://www.google.com/maps?q=${visit.propriete.geolocalisation.latitude},${visit.propriete.geolocalisation.longitude}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 hover:underline"
+                  >
+                    Voir sur la carte
+                  </a>
+                )
+                : 'Adresse non spécifiée'}
             </p>
+
             <div className="flex gap-4 text-sm text-gray-600 mb-3">
               🛏️ {visit.propriete?.nombreChambres ?? 0} chambres — 📐 {visit.propriete?.surface ?? 0} m²
             </div>
