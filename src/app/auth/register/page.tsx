@@ -6,7 +6,7 @@ import Link from "next/link"
 import { useRouter } from 'next/navigation'
 import { signIn } from 'next-auth/react'
 import { Role } from "@prisma/client"
-
+     
 // Définition du type pour nos erreurs
 type Errors = {  
   nom?: string
@@ -178,7 +178,9 @@ const RegisterPage = () => {
                 Vous êtes :
               </label>
               <div className="grid grid-cols-1 gap-2">
-                {roles.map((role) => (
+                {roles
+                  .filter(role => role.value !== Role.AGENT && role.value !== Role.ENTREPRISE)
+                  .map((role) => (
                   <label key={role.value} className="flex items-center">
                     <input
                       type="radio"
