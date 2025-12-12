@@ -466,20 +466,24 @@ export default function MesBiens() {
       const res = await fetch(`/api/vendeur/mesBiens/${bien.id}`);
       if (!res.ok) throw new Error("Impossible de charger le bien pour modification");
       const data = await res.json();
-
+    
       const bienData = data.data;
 
       setForm({
         nom: bienData.nom,
         description: bienData.description,
         categorie: bienData.categorie,
-        prix: bienData.prix.toString(),
-        surface: bienData.surface.toString(),
+        prix: bienData.prix != null ? bienData.prix.toString() : '',
+        surface: bienData.surface != null ? bienData.surface.toString() : '',
         statut: bienData.statut,
-        geolocalisation: bienData.geolocalisation,
-        nombreChambres: bienData.nombreChambres.toString(),
+        geolocalisation: {
+          latitude: bienData.geolocalisation?.latitude ?? null,
+          longitude: bienData.geolocalisation?.longitude ?? null,
+        },
+        nombreChambres: bienData.nombreChambres != null ? bienData.nombreChambres.toString() : '0',
         visiteVirtuelle: bienData.visiteVirtuelle || '',
       });
+
       setImages(bienData.images || []);
       setChambres(bienData.chambres || []);
       setCurrentStep(1);

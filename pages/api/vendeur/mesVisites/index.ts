@@ -5,10 +5,10 @@ import { getAuthSession } from '@/lib/auth'
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
 
   function serializeBigInt<T>(obj: T): T {  
-    return JSON.parse(
+    return JSON.parse(   
       JSON.stringify(obj, (_, value) =>
         typeof value === "bigint" ? value.toString() : value
-      )
+      )   
     );
   }
 

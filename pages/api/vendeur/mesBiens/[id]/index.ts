@@ -46,6 +46,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           avis: { include: { user: true } },
           offres: true,
           reservations: true,
+          geolocalisation: true,
         },
       });
 
@@ -65,6 +66,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (req.method === "PUT" || req.method === "PATCH") {
       const proprieteExistante = await prisma.propriete.findUnique({
         where: { id: proprieteId },
+        include: { geolocalisation: true }, // pour savoir si elle existe déjà
       });
 
       if (!proprieteExistante) {
@@ -96,7 +98,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(400).json({ message: "Statut invalide" });
 
       // ✅ Mise à jour principale
-      const propriete = await prisma.propriete.update({
+      const updated = await prisma.propriete.update({
         where: { id: proprieteId },
         data: {
           nom,
@@ -105,14 +107,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           prix: prix ? BigInt(Number(prix)) : undefined,
           surface: surface ? BigInt(Number(surface)) : undefined,
           statut,
-          geolocalisation,
           nombreChambres: nombreChambres ? Number(nombreChambres) : undefined,
           visiteVirtuelle,
           updatedAt: new Date(),
-          // 🔁 On remplace complètement les images si un tableau est fourni
+
           ...(imageUrls.length > 0 && {
             images: {
-              deleteMany: {}, // Supprime toutes les anciennes images
+              deleteMany: {},
               create: imageUrls.map((url: string, index: number) => ({
                 url,
                 ordre: index,
@@ -120,10 +121,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             },
           }),
         },
-        include: { images: true },
       });
 
-      const safePropriete = serializeBigInt(propriete);
+      // ================= UPDATE GEOPOINT (PostGIS) =================
+      if (geolocalisation?.latitude && geolocalisation?.longitude) {
+        const lat = Number(geolocalisation.latitude);
+        const lng = Number(geolocalisation.longitude);
+
+        if (!proprieteExistante.geolocalisation) {
+          // CREATE + SET POINT
+          await prisma.$queryRaw`
+            INSERT INTO "Geolocalisation" ("proprieteId", latitude, longitude, geopoint)
+            VALUES (${proprieteId}, ${lat}, ${lng},
+            ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326))
+          `;
+        } else {
+          // UPDATE + SET POINT
+          await prisma.$queryRaw`
+            UPDATE "Geolocalisation"
+            SET latitude = ${lat},
+                longitude = ${lng},
+                geopoint = ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)
+            WHERE "proprieteId" = ${proprieteId}
+          `;
+        }
+      }
+
+      const safePropriete = serializeBigInt(updated);
       return res.status(200).json({ message: "Propriété mise à jour", data: safePropriete });
     }
 

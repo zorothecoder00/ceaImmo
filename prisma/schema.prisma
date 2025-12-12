@@ -6,12 +6,12 @@ datasource db {
   shadowDatabaseUrl = env("SHADOW_DATABASE_URL")                      
 }                 
             
-generator client {    
+generator client {      
   provider = "prisma-client-js"      
 }                            
     
 enum Role {                 
-  ADMIN       
+  ADMIN          
   ACHETEUR
   VENDEUR         
   AGENT
@@ -246,15 +246,15 @@ model Chambre {
   disponible        Boolean          @default(true)
   proprieteId       Int
   propriete         Propriete        @relation("ProprieteChambre", fields: [proprieteId], references: [id], onDelete: Cascade)
-
+  
   // si tu veux lier explicitement à Hotel (pratique pour hôtels multi-chambres par propriété)
   hotelId           Int?             // facultatif
   hotel             Hotel?           @relation(fields: [hotelId], references: [id], onDelete: Cascade)
 
   reservations      Reservation[]    @relation("ChambreReservation")
 
-  createdAt         DateTime         @default(now())
-  updatedAt         DateTime         @updatedAt
+  createdAt         DateTime         @default(now())  
+  updatedAt         DateTime         @updatedAt   
 }
 
 model Favori {  

@@ -9,8 +9,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(401).json({ message: "Non authentifié" });
   }
 
-  const userId = Number(session.user.id);
-
+  const userId = Number(session.user.id);   
+  
   // Vérifier que l'utilisateur est VENDEUR
   const user = await prisma.user.findUnique({ 
     where: { id: userId },
