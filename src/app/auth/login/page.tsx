@@ -107,6 +107,16 @@ const LoginPage = () => {
           return;
         }
 
+        // 🔥 Cas : retour à la réservation d’hôtel
+        if (redirect === "reservation-hotel") {
+          if (id) {
+            router.push(`/dashboard/acheteur/reservationsHotel/${id}`);
+          } else {
+            router.push("/dashboard/acheteur/reservationsHotel");
+          }
+          return;
+        }
+
         // ⭐ Sinon, redirection classique selon le rôle
         if(role === 'ACHETEUR'){  
           router.push('/dashboard/acheteur') 

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Home, MapPin, Building, User, Sparkles, Search, ChevronRight } from 'lucide-react';
-import Image from 'next/image'
+import Image from 'next/image'    
 // 👉 Swiper
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Pagination, Autoplay } from "swiper/modules";
@@ -14,6 +14,7 @@ import { Role, Categorie } from '@prisma/client'
 import { useSession } from 'next-auth/react'; // 👈 Pour détecter la session utilisateur
 import { useRouter } from 'next/navigation';  // 👈 Pour les redirections dynamiques
 import Map from '@/components/MapWrapper';
+import toast from 'react-hot-toast';
 
 interface Geoloc {
   latitude: number;
@@ -61,6 +62,7 @@ export default function HomePage()
     longitude: null as number | null,
   });
   const [address, setAddress] = useState('');
+  const [geocoding, setGeocoding] = useState(false);
 
   const [propertyType, setPropertyType] = useState('');
   const [minPrice, setMinPrice] = useState('');
@@ -136,17 +138,35 @@ export default function HomePage()
     }
   };
 
+  const handleReservationHotel = (e: React.MouseEvent) => {
+    e.preventDefault();
+
+    if (status === "loading") return;
+
+    if (status === "unauthenticated" || !session) {
+      router.push("/auth/login?redirect=reservation-hotel");
+    } else {
+      router.push("/reservationsHotel");
+    }
+  };
+
   // 🔗 Gérer la géolocalisation avec Leaflet + Nominatim
   const handleGeocode = async () => {
-    if (!address) return;
+    if (!address) {
+      toast.error("Veuillez entrer une adresse ou un lien Google Maps !");
+      return;
+    }
 
     try {
+      setGeocoding(true);
+
       // Si l'adresse est un lien Google Maps, on peut extraire lat/lng
       const googleMapsMatch = address.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
       if (googleMapsMatch) {
         const lat = parseFloat(googleMapsMatch[1]);
         const lng = parseFloat(googleMapsMatch[2]);
         setLocation({ latitude: lat, longitude: lng });
+        toast.success("Géolocalisation prête !");
         return;
       }
 
@@ -159,14 +179,18 @@ export default function HomePage()
         const lat = parseFloat(data[0].lat);
         const lon = parseFloat(data[0].lon);
         setLocation({ latitude: lat, longitude: lon });
-        console.log("Coordonnées géolocalisation :", lat, lon);
+        toast.success("Géolocalisation prête !")
       } else {
         console.warn("Adresse introuvable");
         setLocation({ latitude: null, longitude: null });
+        toast.error("Adresse introuvable !");
       }
     } catch (error) {
       console.error("Erreur lors du géocodage :", error);
       setLocation({ latitude: null, longitude: null });
+      toast.error("Erreur lors du géocodage !");
+    } finally {
+      setGeocoding(false);
     }
   };
 
@@ -217,9 +241,13 @@ export default function HomePage()
               <Link href="proprietes" className="px-4 py-2 rounded-lg text-gray-700 font-medium hover:bg-white/80 hover:text-blue-600 transition-all">
                 Biens
               </Link>
-              <Link href="/reservationsHotel" className="px-4 py-2 rounded-lg text-gray-700 font-medium hover:bg-white/80 hover:text-blue-600 transition-all">
+              <button
+                onClick={handleReservationHotel}
+                className="px-4 py-2 rounded-lg text-gray-700 font-medium hover:bg-white/80 hover:text-blue-600 transition-all"
+              >
                 Réservation hôtel
-              </Link>
+              </button>
+
               <Link href="/auth/login" className="px-5 py-2 rounded-lg border-2 border-blue-600 text-blue-600 font-medium hover:bg-blue-600 hover:text-white transition-all ml-2">
                 Connexion
               </Link>
@@ -233,9 +261,13 @@ export default function HomePage()
         <div className="md:hidden bg-white shadow-lg border-b border-gray-200 px-6 py-4 space-y-4 z-50">
           <Link href="/" className="block text-gray-800 font-medium py-2">Accueil</Link>
           <Link href="/proprietes" className="block text-gray-800 font-medium py-2">Biens</Link>
-          <Link href="/reservationsHotel" className="block text-gray-800 font-medium py-2">
+          <button
+            onClick={handleReservationHotel}
+            className="block text-gray-800 font-medium py-2 text-left w-full"
+          >
             Réservation hôtel
-          </Link>
+          </button>
+
           <Link href="/auth/login" className="block text-gray-800 font-medium py-2">Connexion</Link>
         </div>
       )}
@@ -349,10 +381,15 @@ export default function HomePage()
                   </div>
 
                   <button
-                    onBlur={handleGeocode}
-                    className="px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-xl transition-all whitespace-nowrap"
-                  >
-                    Localiser
+                    onClick={handleGeocode}
+                    disabled={geocoding}
+                    className={`px-4 py-2.5 rounded-xl font-medium text-white transition-all whitespace-nowrap 
+                        ${geocoding 
+                          ? 'bg-green-400 cursor-not-allowed hover:bg-green-400' // état géocodage
+                          : 'bg-green-600 hover:bg-green-700' // état normal
+                        }`}
+                    >
+                    {geocoding ? "Géocodage..." : "Géocoder"}
                   </button>
                 </div>
               </div>
@@ -449,11 +486,11 @@ export default function HomePage()
                           Détails
                         </button>
                         <button
-      onClick={() => setSelectedProperty(property)}
-      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-    >
-      Voir sur la carte
-    </button>
+                          onClick={() => setSelectedProperty(property)}
+                          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                        >
+                          Voir sur la carte
+                        </button>
                       </div>
                     </div>
                     

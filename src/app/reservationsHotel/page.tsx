@@ -1,14 +1,14 @@
 'use client'
 
 import React, { useState } from 'react';
-import {   
+import {     
   MapPin,    
   Calendar,     
-  Users,     
+  Users,                            
   Search,   
   Star,      
   User,
-  Heart,
+  Heart,     
   Share2,
   ChevronLeft,
   ChevronRight,
@@ -17,12 +17,24 @@ import {
   Eye
 } from 'lucide-react';  
 import { useSession } from 'next-auth/react';
-import { useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";    
+import toast from "react-hot-toast";
 import Link from "next/link";
 import { Mode, ReservationStatut, Type } from '@prisma/client'
 import Image from 'next/image';
 
 // 1. On définit le type des avis et galerie
+
+interface Geolocalisation {
+  latitude: number
+  longitude: number
+  radius: number;
+}
+
+interface Reservation {
+  id: number
+}
+
 interface Avis {
   nom: string
   note: number
@@ -42,18 +54,21 @@ interface Equipement {
 
 interface SearchFormProps {
   searchParams: {
-    destination: string;
+    destination: Geolocalisation | null;
     arrivee: string;
     depart: string;
     voyageurs: number;
   };
   setSearchParams: React.Dispatch<React.SetStateAction<{
-    destination: string;
+    destination: Geolocalisation | null;
     arrivee: string;
     depart: string;
     voyageurs: number;
   }>>;
   handleSearch: () => void;
+  address: string;
+  setAddress: React.Dispatch<React.SetStateAction<string>>;
+  handleGeoCode: (input: string) => void;
 }
 
 
@@ -65,23 +80,22 @@ interface Hotel {
   disponible?: boolean;
   equipements?: Equipement[];
   note?: number;
-  nombreAvis?: number;     
+  nombreAvis?: number;   
+  nombreChambresTotal?: number;  
   propriete: {
     id: number;
     nom: string;
-    geolocalisation: string;
+    geolocalisation: Geolocalisation | null;
     images: { id: number; url: string }[];
-    description: string;
-    avis?: Avis[];
-    prix?: number;
   };
   chambres: {
     id: number;
     nom: string;
     prixParNuit: number;
     capacite: number;
+    reservations?: Reservation[];
   }[];
-  disponibilites: {
+  disponibilites?: {
     id: number;
     startDate: string;
     endDate: string;
@@ -102,7 +116,7 @@ interface PaymentData {
 }
 
 // ✅ Déplace ton composant SearchForm ici
-const SearchForm: React.FC<SearchFormProps & { isSearching: boolean }> = ({ searchParams, setSearchParams, handleSearch, isSearching }) => (
+const SearchForm: React.FC<SearchFormProps & { isSearching: boolean }> = ({ searchParams, setSearchParams, handleSearch, isSearching, address, setAddress, handleGeoCode }) => (
   <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-blue-800 flex items-center justify-center p-4">
     <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-4xl">
       <div className="text-center mb-8">
@@ -117,17 +131,45 @@ const SearchForm: React.FC<SearchFormProps & { isSearching: boolean }> = ({ sear
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="space-y-2">
+        <div className="md:col-span-2 space-y-2">
           <label className="block text-sm font-medium text-gray-700">Destination</label>
-          <div className="relative">
-            <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              type="text"
-              value={searchParams.destination}
-              onChange={(e) => setSearchParams({ ...searchParams, destination: e.target.value })}
-              placeholder="Où souhaitez-vous aller ?"
-              className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                type="text"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder="Adresse ou lien Google Maps"
+                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+            <div className="relative w-32">
+              <input
+                type="number"
+                value={searchParams.destination?.radius || 10000}
+                onChange={(e) => {
+                  setSearchParams({
+                    ...searchParams,
+                    destination: {
+                      latitude: searchParams.destination?.latitude ?? 0,
+                      longitude: searchParams.destination?.longitude ?? 0,
+                      radius: parseInt(e.target.value) || 10000,
+                    },
+                  });  
+                }}
+
+                placeholder="Rayon (m)"
+                className="w-full px-3 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={() => handleGeoCode(address)}
+              className="px-4 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
+            >
+              📍
+            </button>
           </div>
         </div>
 
@@ -203,11 +245,19 @@ export default function ReservationHotelPage() {
   const [error, setError] = useState<string | null>(null);
   const [selectedHotel, setSelectedHotel] = useState<Hotel | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [searchParams, setSearchParams] = useState({
-    destination: "",
+
+  const [address, setAddress] = useState('');
+
+  const [searchParams, setSearchParams] = useState<{
+    destination: Geolocalisation | null;
+    arrivee: string;
+    depart: string;
+    voyageurs: number;
+  }>({
+    destination: null,
     arrivee: "",
-    depart: "",  
-    voyageurs: 2,
+    depart: "",
+    voyageurs: 2,    
   });
 
   const [paymentData, setPaymentData] = useState<PaymentData>({
@@ -224,6 +274,13 @@ export default function ReservationHotelPage() {
     setLoading(true);
     setIsSearching(true)
     setError(null);
+
+    if (!searchParams.arrivee || !searchParams.depart) {
+      toast.error("Veuillez sélectionner les dates d'arrivée et de départ.");
+      setLoading(false);
+      setIsSearching(false);
+      return;
+    }
     try {
       const res = await fetch('/api/acheteur/rechercheHotels', {
         method: 'POST',
@@ -262,6 +319,51 @@ export default function ReservationHotelPage() {
     } finally {
       setLoading(false);
       setIsSearching(false)
+    }
+  };
+
+  const handleGeoCode = async (input: string) => {
+    if (!address) {
+      toast.error('Veuillez saisir une adresse ou un lien Google Maps.');
+      return;
+    }
+
+    try {
+      let lat: number | null = null;
+      let lng: number | null = null;
+
+      // Si l'utilisateur colle un lien Google Maps
+      const mapMatch = input.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+      if (mapMatch) {
+        lat = parseFloat(mapMatch[1]);
+        lng = parseFloat(mapMatch[2]);
+      } else {
+        // Sinon, c'est une adresse -> on utilise Nominatim
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(input)}&format=json&limit=1`);
+        const data = await res.json();
+        if (data && data.length > 0) {
+          lat = parseFloat(data[0].lat);
+          lng = parseFloat(data[0].lon);
+        } else {
+          toast.error('Impossible de géolocaliser cette adresse.');
+          return;
+        }
+      }
+
+      setSearchParams(prev => ({
+        ...prev,
+        destination: {
+          latitude: lat!,
+          longitude: lng!,
+          radius: prev.destination?.radius ?? 10000, // valeur par défaut
+        },
+      }));
+
+      toast.success('Localisation mise à jour !');
+
+    } catch (error) {
+      console.error("Erreur géocodage:", error);
+      toast.error('Erreur lors de la conversion de l’adresse.');
     }
   };
 
@@ -357,7 +459,7 @@ export default function ReservationHotelPage() {
 
   // ✅ Rendu conditionnel selon l’étape
   if (currentStep === 'search')
-    return <SearchForm {...{ searchParams, setSearchParams, handleSearch, isSearching }} />;
+    return <SearchForm {...{ searchParams, setSearchParams, handleSearch, isSearching, address, setAddress, handleGeoCode }} />;
 
   // Composant des résultats
   const ResultsList = () => (
@@ -372,7 +474,13 @@ export default function ReservationHotelPage() {
             Modifier la recherche
           </button>
           <div className="flex items-center gap-4 text-gray-600">
-            <span><MapPin className="w-4 h-4 inline mr-1" />{searchParams.destination || "Lomé"}</span>
+            <span>
+              <MapPin className="w-4 h-4 inline mr-1" />
+              {searchParams.destination
+                ? `Lat: ${searchParams.destination.latitude}, Lng: ${searchParams.destination.longitude}`
+                : "Lomé"}
+            </span>
+
             <span><Calendar className="w-4 h-4 inline mr-1" />{searchParams.arrivee || "Date d'arrivée"}</span>
             <span><Calendar className="w-4 h-4 inline mr-1" />{searchParams.depart || "Date de départ"}</span>
             <span><Users className="w-4 h-4 inline mr-1" />{searchParams.voyageurs} voyageur{searchParams.voyageurs > 1 ? 's' : ''}</span>
@@ -418,10 +526,14 @@ export default function ReservationHotelPage() {
                     
                     <div className="flex items-center text-gray-600 mb-3">
                       <MapPin className="w-4 h-4 mr-2" />
-                      <span>{hotel.propriete.geolocalisation}</span>
+                      <span>
+                        {hotel?.propriete?.geolocalisation
+                          ? `${hotel?.propriete?.geolocalisation.latitude?.toFixed(5)}, ${hotel?.propriete?.geolocalisation.longitude?.toFixed(5)}`
+                          : 'Non renseignée'}
+                      </span>   
                     </div>
                     
-                    <p className="text-gray-700 mb-4 line-clamp-2">{hotel.propriete.description}</p>
+                    {/*<p className="text-gray-700 mb-4 line-clamp-2">{hotel.propriete.description}</p>*/}
                     
                     <div className="flex items-center gap-4 mb-4">
                       
@@ -561,10 +673,10 @@ export default function ReservationHotelPage() {
               </div>
               
               {/* Description */}
-              <div className="bg-white rounded-2xl shadow-lg p-6">
+              {/*<div className="bg-white rounded-2xl shadow-lg p-6">
                 <h2 className="text-2xl font-bold text-gray-900 mb-4">Description</h2>
                 <p className="text-gray-700 leading-relaxed">{selectedHotel?.propriete?.description}</p>
-              </div>
+              </div>*/}
               
               {/* Équipements */}
               <div className="bg-white rounded-2xl shadow-lg p-6">
@@ -583,7 +695,7 @@ export default function ReservationHotelPage() {
               </div>
                  
               {/* Avis clients */}
-              <div className="bg-white rounded-2xl shadow-lg p-6">
+              {/*<div className="bg-white rounded-2xl shadow-lg p-6">
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">Avis clients</h2>
                 <div className="space-y-4">
                   {selectedHotel?.propriete?.avis?.map((avis: Avis, index: number) => (
@@ -594,19 +706,19 @@ export default function ReservationHotelPage() {
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <h4 className="font-medium text-gray-900">{avis.nom}</h4>
+                            <h4 className="font-medium text-gray-900">{avis?.nom}</h4>
                             <span className="text-sm text-gray-500">{avis.date}</span>
                           </div>
                           <div className="flex items-center gap-1 mb-2">
-                            {renderStars(avis.note)}
+                            {renderStars(avis?.note)}
                           </div>
-                          <p className="text-gray-700 text-sm">{avis.commentaire}</p>
+                          <p className="text-gray-700 text-sm">{avis?.commentaire}</p>
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
-              </div>
+              </div>*/}
             </div>
             
             {/* Sidebar réservation */}
@@ -621,7 +733,10 @@ export default function ReservationHotelPage() {
                 
                 <div className="flex items-center text-gray-600 mb-6">
                   <MapPin className="w-5 h-5 mr-2" />
-                  <span>{selectedHotel?.propriete?.geolocalisation}</span>
+                  <span>{selectedHotel?.propriete?.geolocalisation
+                          ? `${selectedHotel?.propriete?.geolocalisation.latitude?.toFixed(5)}, ${selectedHotel?.propriete?.geolocalisation.longitude?.toFixed(5)}`
+                          : 'Non renseignée'}
+                  </span>
                 </div>
                 
                 <div className="text-3xl font-bold text-blue-600 mb-2">
@@ -722,7 +837,7 @@ export default function ReservationHotelPage() {
                   />
                 </div>
               </div>
-              
+                 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Téléphone</label>
                 <input     
@@ -733,7 +848,7 @@ export default function ReservationHotelPage() {
                   placeholder="06 12 34 56 78"
                 />
               </div>
-              
+                 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">Numéro de carte</label>
                 <div className="relative">
@@ -799,10 +914,10 @@ export default function ReservationHotelPage() {
                 <span className="text-gray-600">Voyageurs</span>
                 <span className="font-medium">{searchParams.voyageurs} personne{searchParams.voyageurs > 1 ? 's' : ''}</span>
               </div>
-              <div className="flex justify-between">
+              {/*<div className="flex justify-between">
                 <span className="text-gray-600">Total</span>
                 <span className="font-medium">{selectedHotel?.propriete?.prix}</span>
-              </div>
+              </div>*/}
             </div>   
           </div>
         </div>

@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import {   
   MapPin,    
   Calendar,     
-  Users,       
+  Users,                            
   Search,   
   Star,      
   User,
