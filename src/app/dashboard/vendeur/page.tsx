@@ -150,13 +150,13 @@ export default async function VendeurDashboard() {
       <div className="p-10 text-center text-gray-600">
         Vous devez être connecté pour accéder à ce tableau de bord.
       </div>
-    )
+    )  
   }
 
   const userId = session?.user?.id.toString()
  
   // 🔹 Appels serveurs
-  const [proprietesData, offresData, visitesData] = await Promise.all([
+  const [proprietesData, offresData, visitesData, notificationsData] = await Promise.all([
     getMesProprietes(userId),
     getMesOffresRecus(userId),
     getMesProchainesVisites(userId),

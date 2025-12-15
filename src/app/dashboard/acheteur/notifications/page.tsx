@@ -109,6 +109,8 @@ export default function NotificationsPage() {
       ? notifications
       : notifications.filter(n => n.systeme === filter)
 
+  const types = ['TOUS', 'SMS', 'MAIL', 'PUSH'] as const;
+  
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center h-[80vh] gap-4">
@@ -166,20 +168,22 @@ export default function NotificationsPage() {
           animate={{ opacity: 1, y: 0 }}
           className="flex gap-2 flex-wrap"
         >
-          {['TOUS', 'SMS', 'MAIL', 'PUSH'].map((type) => (
-            <button
-              key={type}
-              onClick={() => setFilter(type)}
-              className={clsx(
-                'px-4 py-2 rounded-full text-sm font-medium transition-all duration-200',
-                filter === type
-                  ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-md scale-105'
-                  : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
-              )}
-            >
-              {type === 'TOUS' ? `Tous (${notifications.length})` : `${type} (${notifications.filter(n => n.systeme === type).length})`}
-            </button>
-          ))}
+          {types.map((type) => (
+          <button
+            key={type}
+            onClick={() => setFilter(type)}
+            className={clsx(
+              'px-4 py-2 rounded-full text-sm font-medium transition-all duration-200',
+              filter === type
+                ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-md scale-105'
+                : 'bg-white text-gray-600 hover:bg-gray-50 border border-gray-200'
+            )}
+          >
+            {type === 'TOUS'
+              ? `Tous (${notifications.length})`
+              : `${type} (${notifications.filter(n => n.systeme === type).length})`}
+          </button>
+        ))}
         </motion.div>
       )}
 

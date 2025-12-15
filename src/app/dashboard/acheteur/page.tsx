@@ -319,10 +319,10 @@ export default async function AcheteurDashboard() {
   const userId = session?.user?.id.toString()
 
   // ✅ Chargement parallèle des données
-  const [proprietes, visitesData, favorisData] = await Promise.all([
+  const [proprietes, visitesData, favorisData, notificationsData] = await Promise.all([
     getAvailableProprietes(userId),
     getMesProchainesVisites(userId),
-    getMesFavoris(userId),
+    getMesFavoris(userId),   
     getNotificationsNonVues(userId),
   ])
 

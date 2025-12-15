@@ -142,6 +142,7 @@ export default function VendeurDashboardClient({
   recentProperties,
   offresRecentes,
   prochainesVisites,
+  totalNotifications,
 }: VendeurDashboardClientProps) {
   const [showModal, setShowModal] = useState(false)
   const [showHotelModal, setShowHotelModal] = useState(false);
