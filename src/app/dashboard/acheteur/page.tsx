@@ -24,7 +24,8 @@ import {
   getAvailableProprietes,
   getMesProchainesVisites,
   getMesFavoris,
-  getRecherchesSauvegardeesEtResultats
+  getRecherchesSauvegardeesEtResultats,
+  getNotificationsNonVues,
 } from '@/lib/getDashboardAcheteur'
 import FavoriteButton from '@/components/FavoriteButton'
 import { Categorie, VisiteStatut, Statut } from '@prisma/client'
@@ -175,7 +176,7 @@ function PropertyCard({ property, userId }: { property: Property, userId: string
           <MapPin className="h-4 w-4 mr-1 flex-shrink-0" />
           {property.geolocalisation 
             ? `${property.geolocalisation.latitude}, ${property.geolocalisation.longitude}`
-            : 'Localisation non disponible'}
+            : 'Localisation non disponible'}  
         </div>
         
         <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
@@ -321,11 +322,13 @@ export default async function AcheteurDashboard() {
   const [proprietes, visitesData, favorisData] = await Promise.all([
     getAvailableProprietes(userId),
     getMesProchainesVisites(userId),
-    getMesFavoris(userId)
+    getMesFavoris(userId),
+    getNotificationsNonVues(userId),
   ])
 
   const { visites, total: totalVisites } = visitesData
   const { total: totalFavoris } = favorisData
+  const { total: totalNotifications } = notificationsData
 
   const recherchesData = await getRecherchesSauvegardeesEtResultats(userId)
   const { recherches, total: totalRecherches } = recherchesData
@@ -344,13 +347,17 @@ export default async function AcheteurDashboard() {
                 <a href="#" className="text-gray-600 hover:text-gray-900">Favoris</a>
                 <a href="#" className="text-gray-600 hover:text-gray-900">Visites</a>
               </div>
-            </div>
+            </div>    
             
             <div className="flex items-center space-x-4">
               <Link href="/dashboard/acheteur/notifications" className="p-2 text-gray-400 hover:text-gray-600 relative transition-colors"
               >
                 <Bell className="h-5 w-5" />
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">3</span>
+                {totalNotifications > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                    {totalNotifications}
+                  </span>
+                )}
               </Link>
               <button className="flex items-center space-x-2 text-gray-700">
                 <User className="h-5 w-5" />
@@ -415,7 +422,7 @@ export default async function AcheteurDashboard() {
         {/* Main Content */}
         <main className="flex-1 p-6">
 
-          {/* Header */}
+          {/* Header */}   
           <div className="mb-6">
             <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-1">
               Bonjour {session.user.name ?? 'cher utilisateur'} !
@@ -430,7 +437,13 @@ export default async function AcheteurDashboard() {
             <StatsCard title="Biens favoris" value={totalFavoris} subtitle="sauvegardés" icon={Heart} color="green" />
             <StatsCard title="Recherches" value={totalRecherches} subtitle="actives" icon={Search} color="blue" />
             <StatsCard title="Visites" value={totalVisites} subtitle="planifiées" icon={Calendar} color="purple" />
-            <StatsCard title="Alertes" value={0} subtitle="nouvelles" icon={Bell} color="orange" />
+            <StatsCard
+              title="Alertes"
+              value={totalNotifications}
+              subtitle="nouvelles"
+              icon={Bell}
+              color="orange"
+            />
           </div>
    
           {/* Quick Search */}

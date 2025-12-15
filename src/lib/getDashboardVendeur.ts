@@ -166,3 +166,27 @@ export async function getTransactionsAFinaliser(userId: string) {
     total: transactions.length,
   };
 }
+
+// 🔔 Compter les notifications non vues d'un utilisateur
+export async function getNotificationsNonVues(userId: string) {
+  const parsedUserId = Number(userId)
+
+  const notifications = await prisma.notification.findMany({
+    where: {
+      userId: parsedUserId,
+      vu: false,
+    },
+    include: {
+      emetteur: {
+        select: { id: true, nom: true, prenom: true },
+      },
+    },
+    orderBy: { dateNotification: 'desc' },
+    take: 10,
+  })
+
+  return {
+    notifications,
+    total: notifications.length,
+  }
+}

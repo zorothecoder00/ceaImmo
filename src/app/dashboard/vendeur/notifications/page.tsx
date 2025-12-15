@@ -2,31 +2,41 @@
 
 import { useEffect, useState } from 'react'
 import { Bell, Trash2, Eye, Loader2, CheckCheck, Mail, MessageSquare, X, AlertCircle } from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'   
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import clsx from 'clsx'
+import clsx from 'clsx'   
+import { Systeme } from '@prisma/client'
+
+interface User {
+  id: number
+  nom: string
+  prenom: string
+}
 
 interface Notification {
-  id: number
+  id: number  
   contenu: string
-  systeme: string
-  createdAt: string
+  systeme: Systeme
+  lien?: string | null
+  dateNotification: string
+  user: User
+  emetteur?: User | null
 }
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<Notification | null>(null)
-  const [filter, setFilter] = useState<string>('TOUS')
+  const [filter, setFilter] = useState<'TOUS' | Systeme>('TOUS')
   const [deleting, setDeleting] = useState<number | null>(null)
 
   useEffect(() => {
     async function fetchNotifications() {
       try {
-        const res = await fetch('/api/vendeur/notifications')
+        const res = await fetch('/api/notifications')
         const data = await res.json()
-        setNotifications(data)
+        setNotifications(data.data)
       } catch (error) {
         console.error('Erreur de chargement des notifications', error)
       } finally {
@@ -39,8 +49,13 @@ export default function NotificationsPage() {
   async function deleteNotification(id: number) {
     setDeleting(id)
     try {
-      await fetch(`/api/vendeur/notifications/${id}`, { method: 'DELETE' })
-      setNotifications((prev) => prev.filter((n) => n.id !== id))
+      await fetch('/api/notifications', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notificationId: id }), // ✅
+      })
+
+      setNotifications(prev => prev.filter(n => n.id !== id))
       if (selected?.id === id) setSelected(null)
     } catch (error) {
       console.error('Erreur de suppression', error)
@@ -51,7 +66,11 @@ export default function NotificationsPage() {
 
   async function deleteAll() {
     try {
-      await fetch('/api/vendeur/notifications', { method: 'DELETE' })
+      await fetch('/api/notifications', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+      })
+
       setNotifications([])
       setSelected(null)
     } catch (error) {
@@ -59,35 +78,36 @@ export default function NotificationsPage() {
     }
   }
 
-  const getSystemIcon = (systeme: string) => {
+  const getSystemIcon = (systeme: Systeme) => {
     switch (systeme) {
-      case 'SMS':
+      case Systeme.SMS:
         return <MessageSquare className="w-4 h-4" />
-      case 'MAIL':
+      case Systeme.MAIL:
         return <Mail className="w-4 h-4" />
-      case 'PUSH':
+      case Systeme.PUSH:
         return <Bell className="w-4 h-4" />
       default:
         return <AlertCircle className="w-4 h-4" />
     }
   }
 
-  const getSystemColor = (systeme: string) => {
+  const getSystemColor = (systeme: Systeme) => {
     switch (systeme) {
-      case 'SMS':
+      case Systeme.SMS:
         return 'bg-blue-50 text-blue-600 border-blue-200'
-      case 'MAIL':
+      case Systeme.MAIL:
         return 'bg-purple-50 text-purple-600 border-purple-200'
-      case 'PUSH':
+      case Systeme.PUSH:
         return 'bg-orange-50 text-orange-600 border-orange-200'
       default:
         return 'bg-gray-50 text-gray-600 border-gray-200'
     }
   }
 
-  const filteredNotifications = filter === 'TOUS'
-    ? notifications
-    : notifications.filter((n) => n.systeme === filter)
+  const filteredNotifications =
+    filter === 'TOUS'
+      ? notifications
+      : notifications.filter(n => n.systeme === filter)
 
   if (loading) {
     return (
@@ -236,24 +256,32 @@ export default function NotificationsPage() {
                     <div className="flex items-center justify-between pt-2 border-t border-gray-100">
                       <span className="text-xs text-gray-400 flex items-center gap-1">
                         <div className="w-1.5 h-1.5 bg-orange-400 rounded-full animate-pulse" />
-                        {new Date(notif.createdAt).toLocaleDateString('fr-FR', {
+                        {new Date(notif.dateNotification).toLocaleDateString('fr-FR', {
                           day: 'numeric',
                           month: 'short',
                           hour: '2-digit',
                           minute: '2-digit'
                         })}
                       </span>
+
+                      {notif.emetteur && (
+                        <span className="text-xs text-gray-500">
+                          De {notif.emetteur.prenom} {notif.emetteur.nom}
+                        </span>
+                      )}
                       
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          setSelected(notif)
-                        }}
-                        className="text-xs text-orange-500 hover:text-orange-600 font-medium flex items-center gap-1 hover:gap-2 transition-all"
+                      {notif.lien && (
+                      <a
+                        href={notif.lien}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-xs text-orange-500 hover:underline"
                       >
-                        Voir détails
-                        <Eye className="w-3 h-3" />
-                      </button>
+                        Ouvrir
+                      </a>
+                    )}
+
                     </div>
                   </CardContent>
                 </Card>
@@ -309,7 +337,7 @@ export default function NotificationsPage() {
 
                   <div className="flex items-center gap-2 text-sm text-gray-500">
                     <div className="w-2 h-2 bg-orange-400 rounded-full" />
-                    Reçue le {new Date(selected.createdAt).toLocaleDateString('fr-FR', {
+                    Reçue le {new Date(selected.dateNotification).toLocaleDateString('fr-FR', {
                       weekday: 'long',
                       day: 'numeric',
                       month: 'long',

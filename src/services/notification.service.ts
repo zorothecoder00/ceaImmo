@@ -47,7 +47,7 @@ export async function notify({
       userId: recepteurId,
       emetteurId,
       lien,
-    },
+    },  
   });  
 }
 

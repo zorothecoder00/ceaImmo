@@ -131,6 +131,7 @@ interface VendeurDashboardClientProps {
   recentProperties: RecentProperty[]
   offresRecentes: Offre[]
   prochainesVisites: Visite[]
+  totalNotifications: number
 }
 
 type AddressInput = string | null;
@@ -469,9 +470,11 @@ export default function VendeurDashboardClient({
               className="p-2 text-gray-400 hover:text-gray-600 relative transition-colors"
             >
               <Bell className="h-5 w-5" />
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                {stats.pendingOffers}
-              </span>
+              {totalNotifications > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                  {totalNotifications}
+                </span>
+              )}
             </Link>
             <button className="flex items-center space-x-2 text-gray-700">
               <User className="h-5 w-5" />

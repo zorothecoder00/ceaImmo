@@ -10,7 +10,7 @@ function getGeoBoundingBox(lat: number, lng: number, radiusMeters: number) {
   const lngDelta = distanceKm / (earthRadius * Math.cos(lat * Math.PI / 180)) * (180 / Math.PI);
 
   return {
-    minLat: lat - latDelta,
+    minLat: lat - latDelta,  
     maxLat: lat + latDelta,    
     minLng: lng - lngDelta,
     maxLng: lng + lngDelta
@@ -354,4 +354,30 @@ export async function getMesTransactionsEnAttenteAcheteur(userId: string) {
     total: transactions.length,
   };
 }
+
+// 🔔 Compter les notifications non vues d'un utilisateur
+export async function getNotificationsNonVues(userId: string) {
+  const parsedUserId = Number(userId)
+
+  const notifications = await prisma.notification.findMany({
+    where: {
+      userId: parsedUserId,
+      vu: false,
+    },
+    include: {
+      emetteur: {
+        select: { id: true, nom: true, prenom: true },
+      },
+    },
+    orderBy: { dateNotification: 'desc' },
+    take: 10,
+  })
+
+  return {
+    notifications,
+    total: notifications.length,
+  }
+}
+
+
 

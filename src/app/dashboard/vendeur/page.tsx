@@ -27,7 +27,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import Image from 'next/image'
 import { Categorie, VisiteStatut, Statut, OffreStatut } from '@prisma/client'
-import { getMesProprietes, getMesOffresRecus, getMesProchainesVisites } from '@/lib/getDashboardVendeur'
+import { getMesProprietes, getMesOffresRecus, getMesProchainesVisites, getNotificationsNonVues } from '@/lib/getDashboardVendeur'
 import VendeurDashboardClient from '@/components/DashboardVendeur'
 
 // Types   
@@ -160,11 +160,13 @@ export default async function VendeurDashboard() {
     getMesProprietes(userId),
     getMesOffresRecus(userId),
     getMesProchainesVisites(userId),
+    getNotificationsNonVues(userId),
   ])
    
   const { recentProperties, stats } = proprietesData
   const { offresRecentes, totalOffresEnAttente } = offresData
   const prochainesVisites = visitesData
+  const { total: totalNotifications } = notificationsData
 
   const recentPropertiesConverted = recentProperties.map(p => ({
     ...p,
@@ -241,7 +243,8 @@ export default async function VendeurDashboard() {
       recentProperties={recentPropertiesConverted}
       offresRecentes={offresRecentesConverted}
       prochainesVisites={prochainesVisitesConverted}
+      totalNotifications={totalNotifications}
     />
-  )     
+  )        
 }
   

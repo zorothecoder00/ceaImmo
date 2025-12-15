@@ -33,7 +33,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const notifications = await prisma.notification.findMany({
         where: whereClause,
         include: {
-          emetteur: { select: { id: true, nom: true, prenom: true, photo: true } },
+          emetteur: { select: { id: true, nom: true, prenom: true } },
         },
         orderBy: { dateNotification: "desc" },
       });
@@ -53,7 +53,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const updated = await prisma.notification.update({
         where: { id: Number(notificationId) },
         data: { vu: true },
-      });
+      });     
 
       const safeUpdated = serializeBigInt(updated);
       return res.status(200).json({ data: safeUpdated });
