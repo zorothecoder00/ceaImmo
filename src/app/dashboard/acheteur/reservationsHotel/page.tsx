@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react';
-import {   
+import {     
   MapPin,    
   Calendar,     
   Users,                            
@@ -156,7 +156,7 @@ const SearchForm: React.FC<SearchFormProps & { isSearching: boolean }> = ({ sear
                       longitude: searchParams.destination?.longitude ?? 0,
                       radius: parseInt(e.target.value) || 10000,
                     },
-                  });
+                  });  
                 }}
 
                 placeholder="Rayon (m)"

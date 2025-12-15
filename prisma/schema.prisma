@@ -1,5 +1,5 @@
-// prisma/schema.prisma   
-
+// prisma/schema.prisma       
+    
 datasource db {      
   provider = "postgresql" // ou "mysql", selon ta base
   url      = env("DATABASE_URL") 
@@ -8,14 +8,14 @@ datasource db {
             
 generator client {      
   provider = "prisma-client-js"      
-}                            
-    
+}                                         
+       
 enum Role {                 
   ADMIN          
   ACHETEUR
   VENDEUR         
   AGENT
-  ENTREPRISE
+  ENTREPRISE   
 }    
   
 enum Categorie {   
@@ -132,7 +132,8 @@ model User {
   offresAgent       Offre[]         @relation("AgentOffre")
   favoris           Favori[]
   logs              Log[]   
-  notifications     Notification[]    
+  notifications     Notification[]  @relation("NotificationsRecues")
+  notificationsEmises Notification[] @relation("NotificationsEmises")    
   avis              Avis[]    
   recherches        Recherche[] // 👈 Ajoute cette ligne
   vus               Vu[]
@@ -447,9 +448,17 @@ model Notification {
   contenu        String             // message à afficher/envoyer
 
   userId         Int?
-  user           User?              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User?              @relation("NotificationsRecues", fields: [userId], references: [id], onDelete: Cascade)
+
+  emetteurId     Int?               
+  emetteur       User?              @relation("NotificationsEmises", fields: [emetteurId], references: [id], onDelete: Cascade)
+
+  vu               Boolean          @default(false)
+  dateNotification DateTime         @default(now())
+  lien            String?
+
   createdAt      DateTime           @default(now())
-  updatedAt      DateTime           @updatedAt
+  updatedAt      DateTime           @updatedAt       
 }         
   
 model Config {
