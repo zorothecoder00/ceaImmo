@@ -5,7 +5,7 @@ import { getAuthSession } from "@/lib/auth"; // 👈 ta fonction d'auth
 import { Prisma } from "@prisma/client";
 
 // Optionnel : fonction pour gérer les BigInt côté JSON
-function serializeBigInt<T>(obj: T): T {
+function serializeBigInt<T>(obj: T): T {  
   return JSON.parse(
     JSON.stringify(obj, (_, value) =>
       typeof value === "bigint" ? value.toString() : value
@@ -18,7 +18,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (!session || !session.user) {
     return res.status(401).json({ error: "Non autorisé" });
   }
-
+  
   const userId = Number(session.user.id);
 
   try {

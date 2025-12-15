@@ -132,7 +132,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       /* ----- Mise à jour PostGIS pour le champ geoPoint ----- */
       await prisma.$queryRaw`
         UPDATE "Geolocalisation"
-        SET "geoPoint" = ST_SetSRID(
+        SET "geopoint" = ST_SetSRID(
           ST_MakePoint(${propriete.geolocalisation.longitude}, ${propriete.geolocalisation.latitude}),
           4326
         )

@@ -246,7 +246,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       await prisma.$queryRaw`
         UPDATE "Geolocalisation"
-        SET "geoPoint" = ST_SetSRID(ST_MakePoint(${geolocalisation.longitude}, ${geolocalisation.latitude}), 4326)
+        SET "geopoint" = ST_SetSRID(ST_MakePoint(${geolocalisation.longitude}, ${geolocalisation.latitude}), 4326)
         WHERE id = ${propriete.geolocalisation!.id};
       `;
 

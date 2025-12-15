@@ -873,7 +873,7 @@ export default function VendeurDashboardClient({
                       </div>  
                       <button
                         type="button"
-                        onBlur={handleGeocode}
+                        onClick={handleGeocode}
                         className="mt-2 px-4 py-2 bg-orange-500 text-white rounded"
                       >
                         Géocoder
