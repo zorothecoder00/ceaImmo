@@ -1,12 +1,13 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import prisma from "@/lib/prisma";  
 import { StatutTransaction, Statut } from "@prisma/client";
+import { notify } from "@/services/notification.service";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "PATCH") {
     res.setHeader("Allow", ["PATCH"]);
     return res.status(405).json({ error: "Méthode non autorisée" });
-  }
+  }   
 
   try {
     const { transactionId, acheteurId, provider, providerTransactionId } = req.body;
@@ -68,6 +69,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return paid;
     });
+
+    // 🔔 Notifications après paiement réussi
+    await notify({
+      type: "PAIEMENT_FINALISE",
+      recepteurId: acheteurId,
+      emetteurId: Number(ancienProprietaireId), // si tu veux que ce soit le vendeur qui envoie
+      data: {
+        type: "PAIEMENT_FINALISE",
+        montant: transaction.amount,
+      },
+      lien: `/dashboard/acheteur/offres`,
+    });
+
+    if (ancienProprietaireId) {
+      await notify({
+        type: "PAIEMENT_FINALISE",
+        recepteurId: ancienProprietaireId,
+        emetteurId: acheteurId,
+        data: {
+          type: "PAIEMENT_FINALISE",
+          montant: transaction.amount,
+        },
+        lien: `/dashboard/vendeur/offres`,
+      });
+    }
 
     return res.status(200).json({
       message: "Transaction finalisée et propriété transférée.",

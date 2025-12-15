@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/lib/prisma";
 import { getAuthSession } from "@/lib/auth";     
 import { VisiteStatut } from "@prisma/client";
+import { notify } from "@/services/notification.service";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getAuthSession(req, res);
@@ -78,6 +79,28 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         },
       });
 
+      // 🔔 notifier le propriétaire
+      const propriete = await prisma.propriete.findUnique({
+        where: { id: proprieteId },
+        select: {
+          nom: true,
+          proprietaireId: true,
+        },
+      });
+
+      if (propriete?.proprietaireId) {
+        await notify({
+          type: "VISITE_DEMANDEE",
+          recepteurId: propriete.proprietaireId,
+          emetteurId: userId,
+          data: {
+            type: "VISITE_DEMANDEE",
+            propriete: propriete.nom,
+          },
+          lien: `/dashboard/vendeur/visites`,
+        });
+      }
+
       const safeVisite = serializeBigInt(visite)
 
       return res.status(201).json({ data: safeVisite });
@@ -109,7 +132,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const updated = await prisma.visite.update({
         where: { id: visiteId },
         data: { statut: newStatut },
+        include: {
+          propriete: { select: { nom: true } },
+          user: true,
+        },
       });
+
+      if (newStatut === VisiteStatut.CONFIRMEE) {   
+        await notify({
+          type: "VISITE_CONFIRMEE",
+          recepteurId: updated.userId!,
+          emetteurId: Number(session.user.id),
+          data: {
+            type: "VISITE_CONFIRMEE",
+            propriete: updated.propriete?.nom ?? "la propriété",
+            date: updated.date.toISOString(),
+          },
+          lien: `/dashboard/vendeur/visites`,
+        });
+      }
 
       const safeUpdated = serializeBigInt(updated);
 

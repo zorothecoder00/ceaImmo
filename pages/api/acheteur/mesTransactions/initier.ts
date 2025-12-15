@@ -2,12 +2,13 @@ import { NextApiRequest, NextApiResponse } from "next";
 import prisma from "@/lib/prisma";  
 import { Mode, StatutTransaction, OffreStatut } from "@prisma/client";
 import crypto from "crypto";
+import { notify } from "@/services/notification.service";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
     res.setHeader("Allow", ["POST"]);
     return res.status(405).json({ error: "Méthode non autorisée" });
-  }
+  }  
 
   try {
     const { offreId, acheteurId, mode } = req.body;
@@ -53,11 +54,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         mode: mode,
         statut: StatutTransaction.EN_ATTENTE,
         reference,
-
         userId: acheteurId,               // acheteur
         agentId: offre.propriete.proprietaireId, // vendeur
       },
     });
+
+    const vendeurId = offre.propriete.proprietaireId;
+
+    // 🔔 Notification au vendeur/propriétaire
+    if (vendeurId) {
+      await notify({
+        type: "PAIEMENT_INITIE",
+        recepteurId: vendeurId, // ✅ garanti number
+        emetteurId: acheteurId,
+        data: {
+          type: "PAIEMENT_INITIE",
+          montant: offre.montant,
+        },
+        lien: `/dashboard/vendeur/offres`,
+      });
+    }
 
     return res.status(201).json({
       message: "Transaction initiée. En attente de paiement.",

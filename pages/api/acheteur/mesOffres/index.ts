@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/lib/prisma";
 import { getAuthSession } from "@/lib/auth"; // 👈 ta fonction auth  
 import { OffreStatut, Prisma } from "@prisma/client";     
+import { notify } from "@/services/notification.service";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const session = await getAuthSession(req, res);
@@ -94,9 +95,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           userId,
           statut: OffreStatut.EN_ATTENTE, // par défaut
         },
-        include: { propriete: { include: { geolocalisation: true } }, agent: true }, 
-      });
-     
+        include: {
+          propriete: { 
+            include: { 
+              geolocalisation: true,
+              proprietaire: { select: { id: true, nom: true } },
+            }, 
+          },
+          agent: true, 
+        }, 
+      });    
+
+      // 🔔 Notification au propriétaire
+      if (offre.propriete?.proprietaire?.id) {
+        await notify({
+          type: "OFFRE_PROPOSEE",
+          recepteurId: offre.propriete.proprietaire.id,
+          emetteurId: userId,
+          data: {
+            type: "OFFRE_PROPOSEE", // 🔹 Obligatoire
+            montant: offre.montant,
+            propriete: offre.propriete.nom,
+          },
+          lien: `/dashboard/vendeur/offres`, // ou /proprietaire/offres
+        });
+      }
+
       const safeOffre = serializeBigInt(offre)
 
       return res.status(201).json({ data: safeOffre });
