@@ -227,7 +227,7 @@ const MesOffres = () => {
               {filter.label}
             </button>
           ))}
-        </div>
+        </div>  
 
         {/* Offers Grid */}
         <div className="space-y-6">

@@ -104,7 +104,7 @@ interface Hotel {
 
 type Step = 'search' | 'results' | 'hotel' | 'payment';
 
-interface PaymentData {
+interface PaymentData { 
   nom: string;
   email: string;
   telephone: string;
@@ -337,18 +337,33 @@ export default function ReservationHotelPage() {
         lat = parseFloat(mapMatch[1]);
         lng = parseFloat(mapMatch[2]);
       } else {
-        // Sinon, c'est une adresse -> on utilise Nominatim
-        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(input)}&format=json&limit=1`);
+        // 2️⃣ OpenRouteService Geocoding
+        const res = await fetch(
+          `https://api.openrouteservice.org/geocode/search?text=${encodeURIComponent(input)}`,
+          {
+            headers: {
+              Authorization: process.env.NEXT_PUBLIC_ORS_API_KEY as string,
+            },
+          }
+        );
+
+        if (!res.ok) {
+          throw new Error('Erreur OpenRouteService');
+        }
+
         const data = await res.json();
-        if (data && data.length > 0) {
-          lat = parseFloat(data[0].lat);
-          lng = parseFloat(data[0].lon);
-        } else {
+
+        if (!data.features || data.features.length === 0) {
           toast.error('Impossible de géolocaliser cette adresse.');
           return;
         }
-      }
 
+        // ⚠️ ORS retourne [longitude, latitude]
+        const [lon, latitude] = data.features[0].geometry.coordinates;
+
+        lat = latitude;
+        lng = lon;
+      }
       setSearchParams(prev => ({
         ...prev,
         destination: {

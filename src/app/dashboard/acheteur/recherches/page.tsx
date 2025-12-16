@@ -125,7 +125,7 @@ export default function RecherchesPage() {
     minSurface: '',
     maxSurface: '',
     minChambres: '',
-    maxChambres: '',
+    maxChambres: '',   
     latitude: null,
     longitude: null,
     radius: 5000, // rayon par défaut,
@@ -148,27 +148,41 @@ export default function RecherchesPage() {
       let lat: number | null = null;
       let lng: number | null = null;
 
-      // Si l'utilisateur a fourni un lien Google Maps
+      // 1️⃣ Cas : lien Google Maps avec @lat,lng
       const match = address.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
       if (match) {
         lat = parseFloat(match[1]);
         lng = parseFloat(match[2]);
       } else {
-        // Sinon, on utilise Nominatim OpenStreetMap pour convertir le texte en coords
+        // 2️⃣ OpenRouteService Geocoding
         const res = await fetch(
-          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}`
+          `https://api.openrouteservice.org/geocode/search?text=${encodeURIComponent(address)}`,
+          {
+            headers: {
+              Authorization: process.env.NEXT_PUBLIC_ORS_API_KEY as string,
+            },
+          }
         );
+
+        if (!res.ok) {
+          throw new Error('Erreur OpenRouteService');
+        }
+
         const data = await res.json();
-        if (data && data.length > 0) {
-          lat = parseFloat(data[0].lat);
-          lng = parseFloat(data[0].lon);
-        } else {
+
+        if (!data.features || data.features.length === 0) {
           toast.error('Impossible de géolocaliser cette adresse.');
           return;
         }
+
+        // ⚠️ ORS retourne [longitude, latitude]
+        const [lon, latitude] = data.features[0].geometry.coordinates;
+
+        lat = latitude;
+        lng = lon;
       }
 
-      // On met à jour le filtre
+      // Mise à jour des filtres (inchangé)
       setFilters(prev => ({
         ...prev,
         latitude: lat,
@@ -176,9 +190,9 @@ export default function RecherchesPage() {
         radius
       }));
 
-      toast.success('Localisation mise à jour !');
+      toast.success('Localisation mise à jour avec OpenRouteService ✅');
     } catch (err) {
-      console.error('Erreur géocodage :', err);
+      console.error('Erreur géocodage ORS :', err);
       toast.error('Erreur lors de la conversion de l’adresse.');
     }
   };

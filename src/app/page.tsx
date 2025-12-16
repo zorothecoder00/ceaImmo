@@ -11,7 +11,7 @@ import toast from 'react-hot-toast';
 
 interface Geoloc {
   latitude: number;
-  longitude: number;
+  longitude: number;   
 }
 
 interface PropertyImage {
@@ -127,7 +127,7 @@ export default function HomePage()
     } else if (session.user?.role === Role.ACHETEUR) {
       router.push(`/dashboard/acheteur/recherches/${id}`);
     } else {
-      router.push('/dashboard');
+      router.push('/dashboard');   
     }
   };
 
@@ -143,13 +143,13 @@ export default function HomePage()
     }
   };
 
-  // 🔗 Gérer la géolocalisation avec Leaflet + Nominatim
+  // 🔗 Gérer la géolocalisation avec Leaflet
   const handleGeocode = async () => {
     if (!address) {
       toast.error("Veuillez entrer une adresse ou un lien Google Maps !");
       return;
     }
-
+     
     try {
       setGeocoding(true);
 
@@ -163,25 +163,42 @@ export default function HomePage()
         return;
       }
 
-      // Sinon on utilise Nominatim pour géocoder l'adresse texte
-      const encodedAddress = encodeURIComponent(address);
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodedAddress}&format=json&limit=1`);
+      // 2️⃣ OpenRouteService Geocoding
+      const res = await fetch(
+        `https://api.openrouteservice.org/geocode/search?text=${encodeURIComponent(address)}`,
+        {
+          headers: {
+            Authorization: process.env.NEXT_PUBLIC_ORS_API_KEY as string,
+          },
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error("Erreur ORS");
+      }
+
       const data = await res.json();
 
-      if (data.length > 0) {
-        const lat = parseFloat(data[0].lat);
-        const lon = parseFloat(data[0].lon);
-        setLocation({ latitude: lat, longitude: lon });
-        toast.success("Géolocalisation prête !")
-      } else {
-        console.warn("Adresse introuvable");
+      if (!data.features || data.features.length === 0) {
+        toast.error("Adresse introuvable");
         setLocation({ latitude: null, longitude: null });
-        toast.error("Adresse introuvable !");
+        return;
       }
+
+      // ⚠️ ORS retourne [lon, lat]
+      const [lon, lat] = data.features[0].geometry.coordinates;
+
+      setLocation({
+        latitude: lat,
+        longitude: lon,
+      });
+
+      toast.success("Adresse géocodée avec OpenRouteService ✅");
+
     } catch (error) {
-      console.error("Erreur lors du géocodage :", error);
+      console.error("Erreur géocodage ORS:", error);
+      toast.error("Erreur lors du géocodage");
       setLocation({ latitude: null, longitude: null });
-      toast.error("Erreur lors du géocodage !");
     } finally {
       setGeocoding(false);
     }

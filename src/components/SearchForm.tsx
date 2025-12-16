@@ -137,31 +137,38 @@ export default function SearchForm() {
       return;
     }
 
+    // 3️⃣ - Sinon → géocodage via ORS
     try {
-      // 3️⃣ - Sinon → géocodage via Nominatim
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`
+      const res = await fetch(
+        `https://api.openrouteservice.org/geocode/search?text=${encodeURIComponent(address)}&size=1`,
+        {
+          headers: {
+            Authorization: process.env.NEXT_PUBLIC_ORS_API_KEY as string,
+            "Content-Type": "application/json",
+          },
+        }
       );
 
-      const data = await response.json();
+      if (!res.ok) throw new Error("Erreur OpenRouteService");
 
-      if (data && data.length > 0) {
-        const { lat, lon } = data[0];
+      const data = await res.json();
 
-        setGeolocalisation({
-          latitude: parseFloat(lat),
-          longitude: parseFloat(lon),
-        });
-
-        toast.success("📍 Adresse géocodée avec succès !");
-      } else {
+      if (!data.features || data.features.length === 0) {
         toast.error("❌ Aucune localisation trouvée.");
+        setIsGeocoding(false);
+        return;
       }
+
+      // ORS retourne [longitude, latitude]
+      const [lon, lat] = data.features[0].geometry.coordinates;
+      setGeolocalisation({ latitude: lat, longitude: lon });
+      toast.success("📍 Adresse géocodée avec succès !");
     } catch (error) {
-      console.error("Erreur géocodage:", error);
+      console.error("Erreur ORS:", error);
       toast.error("❌ Erreur lors du géocodage.");
+    } finally {
+      setIsGeocoding(false);
     }
-    setIsGeocoding(false);
   };
 
 

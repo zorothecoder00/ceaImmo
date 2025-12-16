@@ -391,7 +391,7 @@ export default function VendeurDashboardClient({
   // 1️⃣ Modifiez handleGeocode pour mettre à jour hotelData
   const handleGeocode = async () => {
     if (!address || address.trim() === "") {
-      toast.error("Veuillez entrer une adresse avant de géocoder."); // ❌ Toast si adresse vide
+      toast.error("Veuillez entrer une adresse avant de géocoder.");
       return;
     }
 
@@ -404,46 +404,55 @@ export default function VendeurDashboardClient({
         lat = parseFloat(googleMapsMatch[1]);
         lon = parseFloat(googleMapsMatch[2]);
       } else {
-        const encodedAddress = encodeURIComponent(address);
-        try {
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/search?q=${encodedAddress}&format=json&limit=1`
-          );
-          const data = await res.json();
-
-          if (data.length > 0) {
-            lat = parseFloat(data[0].lat);
-            lon = parseFloat(data[0].lon);
+        const res = await fetch(
+          `https://api.openrouteservice.org/geocode/search?text=${encodeURIComponent(address)}&size=1`,
+          {
+            headers: {
+              Authorization: process.env.NEXT_PUBLIC_ORS_API_KEY as string,
+              "Content-Type": "application/json",
+            },
           }
-        } catch (error) {
-          console.error("Erreur géocodage :", error);
-          toast.error("Erreur lors du géocodage."); // ❌ Toast si fetch échoue
+        );
+
+        if (!res.ok) {
+          toast.error("Erreur lors de l'appel à OpenRouteService.");
+          return;
         }
+
+        const data = await res.json();
+
+        if (!data.features || data.features.length === 0) {
+          toast.error("Adresse introuvable.");
+          return;
+        }
+
+        // ORS retourne [longitude, latitude]
+        [lon, lat] = data.features[0].geometry.coordinates;
       }
-    }
 
-    if (lat === null || lon === null) {
-      toast.error("Impossible de géocoder l'adresse. Veuillez vérifier l'adresse saisie."); // ❌ toast si pas de coordonnées
-      return;
-    }
+      if (lat == null || lon == null) {
+        toast.error("Impossible de géocoder l'adresse.");
+        return;
+      }
 
-    // ✅ Mettre à jour hotelData ou formData selon le modal ouvert
-    if (showHotelModal) {
-      setHotelData(prev => ({
-        ...prev,
-        propriete: {
-          ...prev.propriete,
+      // Mettre à jour hotelData ou formData selon le modal ouvert
+      if (showHotelModal) {
+        setHotelData(prev => ({
+          ...prev,
+          propriete: {
+            ...prev.propriete,
+            geolocalisation: { latitude: lat, longitude: lon }
+          }
+        }));
+      } else {
+        setFormData(prev => ({
+          ...prev,
           geolocalisation: { latitude: lat, longitude: lon }
-        }
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        geolocalisation: { latitude: lat, longitude: lon }
-      }));
-    }
+        }));
+      }
 
-    toast.success("Adresse géocodée avec succès !"); // ✅ Optional : confirmation
+      toast.success("Adresse géocodée avec succès !");
+    }
   };
 
   const categories = Object.values(Categorie)
@@ -1188,7 +1197,7 @@ export default function VendeurDashboardClient({
                     <Button
                       type="button"
                       variant="secondary"
-                      onBlur={handleGeocode}
+                      onClick={handleGeocode}
                       className="w-full mb-3"
                     >
                       Convertir en coordonnées

@@ -318,7 +318,7 @@ export default function ReservationHotelPage() {
     } finally {
       setLoading(false);
       setIsSearching(false)
-    }
+    } 
   };
 
   const handleGeoCode = async (input: string) => {
@@ -337,18 +337,34 @@ export default function ReservationHotelPage() {
         lat = parseFloat(mapMatch[1]);
         lng = parseFloat(mapMatch[2]);
       } else {
-        // Sinon, c'est une adresse -> on utilise Nominatim
-        const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(input)}&format=json&limit=1`);
-        const data = await res.json();
-        if (data && data.length > 0) {
-          lat = parseFloat(data[0].lat);
-          lng = parseFloat(data[0].lon);
-        } else {
-          toast.error('Impossible de géolocaliser cette adresse.');
+        const res = await fetch(
+          `https://api.openrouteservice.org/geocode/search?text=${encodeURIComponent(input)}&size=1`,
+          {
+            headers: {
+              Authorization: process.env.NEXT_PUBLIC_ORS_API_KEY as string,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+
+        if (!res.ok) {
+          toast.error("Erreur lors de l'appel à OpenRouteService.");
           return;
         }
-      }
 
+        const data = await res.json();
+
+        if (!data.features || data.features.length === 0) {
+          toast.error("Adresse introuvable.");
+          return;
+        }
+
+        // ORS retourne [longitude, latitude]
+        const [longitude, latitude] = data.features[0].geometry.coordinates;
+
+        lat = latitude;
+        lng = longitude;
+      }
       setSearchParams(prev => ({
         ...prev,
         destination: {
