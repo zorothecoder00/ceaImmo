@@ -362,45 +362,50 @@ export default function HomePage()
               </div>
      
               {/* Localisation - Plus compact */}
-              <div className="lg:col-span-3">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  <MapPin className="h-4 w-4 inline mr-1" />
-                  Localisation
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="text"   
-                    className="flex-1 border-2 border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                    placeholder="Adresse ou lien Google Maps"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                  />
+              {/* Localisation - Plus compact et responsive */}
+<div className="lg:col-span-3 w-full">
+  <label className="block text-sm font-semibold text-gray-700 mb-2">
+    <MapPin className="h-4 w-4 inline mr-1" />
+    Localisation
+  </label>
+  <div className="flex flex-col sm:flex-row sm:items-end gap-2 w-full">
+    
+    {/* Adresse */}
+    <input
+      type="text"   
+      className="flex-1 border-2 border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all w-full"
+      placeholder="Adresse ou lien Google Maps"
+      value={address}
+      onChange={(e) => setAddress(e.target.value)}
+    />
 
-                  {/* Champ Rayon avec label et placeholder */}
-                  <div className="flex flex-col w-32">
-                    <label className="text-xs text-gray-500 mb-1">Rayon de recherche (m)</label>
-                    <input
-                      type="number"
-                      className="border-2 border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
-                      placeholder="Ex: 5000"
-                      value={radius}
-                      onChange={(e) => setRadius(Number(e.target.value) || 0)}
-                    />
-                  </div>
+    {/* Rayon */}
+    <div className="flex flex-col w-full sm:w-32">
+      <label className="text-xs text-gray-500 mb-1">Rayon (m)</label>
+      <input
+        type="number"
+        className="border-2 border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all w-full"
+        placeholder="Ex: 5000"
+        value={radius}
+        onChange={(e) => setRadius(Number(e.target.value) || 0)}
+      />
+    </div>
 
-                  <button
-                    onClick={handleGeocode}
-                    disabled={geocoding}
-                    className={`px-4 py-2.5 rounded-xl font-medium text-white transition-all whitespace-nowrap 
-                        ${geocoding 
-                          ? 'bg-green-400 cursor-not-allowed hover:bg-green-400' // état géocodage
-                          : 'bg-green-600 hover:bg-green-700' // état normal
-                        }`}
-                    >
-                    {geocoding ? "Géocodage..." : "Géocoder"}
-                  </button>
-                </div>
-              </div>
+    {/* Bouton Géocoder */}
+    <button
+      onClick={handleGeocode}
+      disabled={geocoding}
+      className={`px-4 py-2.5 rounded-xl font-medium text-white transition-all whitespace-nowrap 
+          ${geocoding 
+            ? 'bg-green-400 cursor-not-allowed hover:bg-green-400' 
+            : 'bg-green-600 hover:bg-green-700'
+          } w-full sm:w-auto`}
+    >
+      {geocoding ? "Géocodage..." : "Géocoder"}
+    </button>
+  </div>
+</div>
+
 
               {/* Bouton de recherche global */}
               <div className="lg:col-span-1 flex items-end">
