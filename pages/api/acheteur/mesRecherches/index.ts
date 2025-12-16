@@ -138,13 +138,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (latitude && longitude && radius) {
       spatialSelect = `
         ST_Distance(
-          g."geoPoint",
+          g."geopoint",
           ST_SetSRID(ST_MakePoint($${paramIndex}, $${paramIndex + 1}), 4326)::geography
         ) AS distance
       `;
       whereClauses.push(`
         ST_Distance(
-          g."geoPoint",
+          g."geopoint",
           ST_SetSRID(ST_MakePoint($${paramIndex}, $${paramIndex + 1}), 4326)::geography
         ) <= $${paramIndex + 2}
       `);

@@ -231,10 +231,10 @@ export default function HomePage()
               <Link href="#" className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all">
                 Accueil
               </Link>
-        
+            
               <button 
                 onClick={handleReservationHotel}
-                className="px-4 py-2 rounded-lg text-gray-700 font-medium hover:bg-white/80 hover:text-blue-600 transition-all"
+                className="px-4 py-2 rounded-lg text-gray-700 font-medium hover:bg-white/80 hover:text-blue-600 transition-all cursor-pointer"
               >
                 Réservation hôtel
               </button>

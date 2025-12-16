@@ -4,17 +4,43 @@ import { useState, useEffect, useRef } from 'react';
 import { X, Search, Filter, MapPin, Home, DollarSign, Maximize2, Bed, Star } from 'lucide-react';
 import { Categorie, Statut } from '@prisma/client'
 import Image from 'next/image'
-   
+import toast from "react-hot-toast";
+
+interface Geolocalisation {
+  latitude: number
+  longitude: number
+}
+
 interface ResultatPropriete {
-  id: string;
+  id: string;  
   nom: string;
   categorie: Categorie;
   statut: Statut;
   prix: number;
   surface?: number | null;
   nombreChambres?: number | null;
-  geolocalisation?: string | null;
+  geolocalisation?: Geolocalisation | null;
   images?: { url: string }[];
+}
+
+interface Filters {
+  search: string;
+  categorie: string;
+  statut: string;
+  minPrix: string;
+  maxPrix: string;
+  minSurface: string;
+  maxSurface: string;
+  latitude: number | null;    // <-- ici
+  longitude: number | null;   // <-- ici
+  radius: string;
+  minChambres: string;
+  maxChambres: string;
+  minNote: string;
+  sortField: string;
+  sortOrder: string;
+  page: number;
+  limit: number;
 }
 
 interface Meta {
@@ -31,28 +57,34 @@ const STATUTS = Object.values(Statut);
 export default function SearchModal() {
   const [isOpen, setIsOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
+  const [isGeocoding, setIsGeocoding] = useState(false);
+
+  const [address, setAddress] = useState('')
+
   const [results, setResults] = useState<ResultatPropriete[]>([]);
   const [meta, setMeta] = useState<Meta | null>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
   
   // Filtres de recherche
-  const [filters, setFilters] = useState({
-    search: '',
-    categorie: '',
-    statut: '',
-    minPrix: '',
-    maxPrix: '',
-    minSurface: '',
-    maxSurface: '',
-    geolocalisation: '',
-    minChambres: '',
-    maxChambres: '',
-    minNote: '',
-    sortField: 'createdAt',
-    sortOrder: 'desc',
-    page: 1,
-    limit: 10,
-  });
+  const [filters, setFilters] = useState<Filters>({
+  search: '',
+  categorie: '',
+  statut: '',
+  minPrix: '',
+  maxPrix: '',
+  minSurface: '',
+  maxSurface: '',
+  latitude: null,
+  longitude: null,
+  radius: '5000',
+  minChambres: '',
+  maxChambres: '',
+  minNote: '',
+  sortField: 'createdAt',
+  sortOrder: 'desc',
+  page: 1,
+  limit: 10,
+});
 
   useEffect(() => {
     if (!isOpen) {
@@ -71,7 +103,7 @@ export default function SearchModal() {
           params.append(key, value.toString());
         }
       });
-
+   
       const res = await fetch(`/api/acheteur/mesRecherches?${params.toString()}`);
       if (!res.ok) throw new Error('Erreur de recherche');
 
@@ -101,7 +133,9 @@ export default function SearchModal() {
       maxPrix: '',
       minSurface: '',
       maxSurface: '',
-      geolocalisation: '',
+      latitude: null,
+      longitude: null,
+      radius: '5000',
       minChambres: '',
       maxChambres: '',
       minNote: '',
@@ -110,8 +144,65 @@ export default function SearchModal() {
       page: 1,
       limit: 10,
     });
+    setAddress('');
     setResults([]);
     setMeta(null);
+  };
+
+  const handleGeocode = async () => {
+    if (!address.trim()) {
+      toast.error("Veuillez entrer une adresse.");
+      return;
+    }
+    setIsGeocoding(true);
+
+    // 1️⃣ - Vérifier si l’input est déjà un format "lat, lon"
+    const coordRegex = /^(-?\d+(\.\d+)?),\s*(-?\d+(\.\d+)?)$/;
+    const directMatch = address.trim().match(coordRegex);
+
+    if (directMatch) {
+      const lat = parseFloat(directMatch[1]);
+      const lon = parseFloat(directMatch[3]);
+
+      setFilters({ ...filters, latitude: lat, longitude: lon });
+      toast.success("📍 Coordonnées détectées et appliquées !");
+      setIsGeocoding(false);
+      return;
+    }
+
+    // 2️⃣ - Vérifier si c’est un lien Google Maps avec coordonnées
+    const googleRegex = /@(-?\d+\.\d+),(-?\d+\.\d+),/;
+    const urlMatch = address.match(googleRegex);
+
+    if (urlMatch) {
+      const lat = parseFloat(urlMatch[1]);
+      const lon = parseFloat(urlMatch[2]);
+
+      setFilters({ ...filters, latitude: lat, longitude: lon });
+      toast.success("📍 Coordonnées extraites du lien Google Maps !");
+      setIsGeocoding(false);
+      return;
+    }
+
+    try {
+      // 3️⃣ - Sinon → géocodage via Nominatim
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`
+      );
+      const data = await response.json();
+
+      if (data && data.length > 0) {
+        const { lat, lon } = data[0];
+        setFilters({ ...filters, latitude: lat, longitude: lon });
+        toast.success("📍 Adresse géocodée avec succès !");
+      } else {
+        toast.error("❌ Aucune localisation trouvée.");
+      }
+    } catch (error) {
+      console.error("Erreur géocodage:", error);
+      toast.error("❌ Erreur lors du géocodage.");
+    }
+    setIsGeocoding(false);
   };
 
   const formatPrice = (price: number) => {
@@ -156,6 +247,43 @@ export default function SearchModal() {
         <div className="flex-1 overflow-y-auto p-6">
           {/* Filtres */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+            {/* Adresse / Géolocalisation */}
+            <div className="col-span-full">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <MapPin className="w-4 h-4 inline mr-1" /> Localisation
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="Ex: Lomé, Agoè"
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <button
+                  onClick={handleGeocode}
+                  disabled={isGeocoding}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                >
+                  {isGeocoding ? '📍...' : '📍 Localiser'}
+                </button>
+              </div>
+            </div>
+
+            {/* Radius */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Rayon (m)
+              </label>
+              <input
+                type="number"
+                value={filters.radius}
+                onChange={(e) => setFilters({ ...filters, radius: e.target.value })}
+                placeholder="5000"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+              />
+            </div>
+
             {/* Recherche texte */}
             <div className="col-span-full">
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -203,20 +331,6 @@ export default function SearchModal() {
                   <option key={s} value={s}>{s.replace('_', ' ')}</option>
                 ))}
               </select>
-            </div>
-
-            {/* Géolocalisation */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <MapPin className="w-4 h-4 inline mr-1" /> Localisation
-              </label>
-              <input
-                type="text"
-                value={filters.geolocalisation}
-                onChange={(e) => setFilters({ ...filters, geolocalisation: e.target.value })}
-                placeholder="Ex: Lomé, Agoè"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-              />
             </div>
 
             {/* Prix min/max */}
@@ -377,9 +491,17 @@ export default function SearchModal() {
                         {p.geolocalisation && (
                           <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
                             <MapPin className="w-3 h-3" />
-                            {p.geolocalisation}
+                            <a
+                              href={`https://www.google.com/maps?q=${p.geolocalisation.latitude},${p.geolocalisation.longitude}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="underline hover:text-blue-600"
+                            >
+                              {p.geolocalisation.latitude.toFixed(6)}, {p.geolocalisation.longitude.toFixed(6)}
+                            </a>
                           </p>
                         )}
+
                       </div>
                     </div>
                   </div>

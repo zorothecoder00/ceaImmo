@@ -232,7 +232,7 @@ const MesOffres = () => {
         {/* Offers Grid */}
         <div className="space-y-6">
           {filteredOffers.map(offer => {
-            const statusBadge = getStatusBadge(offer.statut);
+            const statusBadge = getStatusBadge(offer.statut) || { label: 'Inconnu', className: 'bg-gray-100 text-gray-800' };
             return (  
               <div key={offer.id} className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1">
                 <div className="flex justify-between items-start mb-4">
