@@ -831,7 +831,7 @@ export default function VendeurDashboardClient({
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Statut
-                        </label>
+                        </label>  
                         <select
                           value={formData.statut}
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
@@ -843,7 +843,7 @@ export default function VendeurDashboardClient({
                         </select>
                       </div>
 
-                      <div>
+                      <div>  
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Nombre de chambres *
                         </label>
