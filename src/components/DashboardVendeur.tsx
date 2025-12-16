@@ -869,7 +869,7 @@ export default function VendeurDashboardClient({
                           onChange={(e) => setAddress(e.target.value)}
                           className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
                           placeholder="Lomé, Bè"
-                        />
+                        />   
                       </div>  
                       <button
                         type="button"

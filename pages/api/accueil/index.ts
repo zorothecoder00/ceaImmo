@@ -93,7 +93,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (latitude && longitude) {
       distanceSelect = `
         ST_Distance(
-          geo."geoPoint",
+          geo."geopoint",
           ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography
         ) AS distance
       `

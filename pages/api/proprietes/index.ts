@@ -115,7 +115,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const lat = Number(geolocalisationLat);
       const lng = Number(geolocalisationLng);
       const dist = radius ? Number(radius) : 10000;
-      geoFilter = `ST_DWithin("geolocalisation"."geoPoint", ST_MakePoint(${lng}, ${lat})::geography, ${dist})`;
+      geoFilter = `ST_DWithin("geolocalisation"."geopoint", ST_MakePoint(${lng}, ${lat})::geography, ${dist})`;
     }
 
     const whereClause = [...filters];
