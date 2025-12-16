@@ -103,10 +103,6 @@ export default function RecherchesPage() {
   const [showFilters, setShowFilters] = useState(false);
 
   const [radius, setRadius] = useState(5000); // 5km par défaut
-  const [location, setLocation] = useState({
-    latitude: null as number | null,
-    longitude: null as number | null,
-  });
   const [address, setAddress] = useState('');
 
   const [favoris, setFavoris] = useState<Set<number>>(new Set());

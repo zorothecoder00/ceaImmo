@@ -1,7 +1,7 @@
 'use client'
    
 import React, { useState, useEffect } from 'react';
-import { Home, Search, Heart, Calendar, Briefcase, Settings } from 'lucide-react';
+import { Home, Calendar, Briefcase, Settings } from 'lucide-react';
 import { OffreStatut } from '@prisma/client'
 import Link from 'next/link'
   
@@ -10,7 +10,7 @@ import Link from 'next/link'
   proprieteId: number
   latitude: number   
   longitude: number
-  createdAt: Date
+  createdAt: Date  
   updatedAt: Date
 }
  

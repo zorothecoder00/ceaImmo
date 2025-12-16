@@ -3,17 +3,10 @@
 import { useState, useEffect } from 'react';
 import { Home, MapPin, Building, User, Sparkles, Search, ChevronRight } from 'lucide-react';
 import Image from 'next/image'    
-// 👉 Swiper
-import { Swiper, SwiperSlide } from "swiper/react";
-import { Pagination, Autoplay } from "swiper/modules";
-import 'swiper/css';
-import 'swiper/css/pagination';  
-import 'swiper/css/autoplay';
 import Link from "next/link"
 import { Role, Categorie } from '@prisma/client'
 import { useSession } from 'next-auth/react'; // 👈 Pour détecter la session utilisateur
 import { useRouter } from 'next/navigation';  // 👈 Pour les redirections dynamiques
-import Map from '@/components/MapWrapper';
 import toast from 'react-hot-toast';
 
 interface Geoloc {
@@ -457,9 +450,10 @@ export default function HomePage()
                 {properties.map((property) => (
                   <div key={property.id} className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100">
                     <div className="relative h-56 w-full overflow-hidden bg-gray-200">
-                      <img
+                      <Image
                         src={property.images?.[0]?.url || "/api/placeholder/400/300"}
                         alt={property.nom}
+                        fill
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity"></div>

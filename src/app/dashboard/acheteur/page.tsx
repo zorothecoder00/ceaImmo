@@ -46,7 +46,7 @@ interface Geolocalisation {
 interface Image {
   id: number
   url: string
-  ordre: number
+  ordre: number   
 }  
 
 interface Property {
@@ -87,19 +87,6 @@ interface Visit {
   statut: VisiteStatut
 }
 
-interface Recherche {
-  id: number
-  titre?: string
-  categorie?: Categorie
-  statut?: Statut
-  minPrix?: number
-  maxPrix?: number
-  minSurface?: number
-  maxSurface?: number
-  geolocalisation?: Geolocalisation
-  nombreChambres?: number
-  userId: number
-}
 
 // Components
 function StatsCard({ 

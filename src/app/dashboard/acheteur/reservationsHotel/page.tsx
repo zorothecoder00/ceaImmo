@@ -7,7 +7,6 @@ import {
   Users,                            
   Search,   
   Star,      
-  User,
   Heart,     
   Share2,
   ChevronLeft,
@@ -600,9 +599,10 @@ export default function ReservationHotelPage() {
               <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
                 <div className="relative h-96">
                   {selectedHotel.propriete?.images?.length > 0 ? (
-                    <img
+                    <Image
                       src={selectedHotel.propriete?.images[currentImageIndex]?.url}
                       alt={`Photo ${currentImageIndex + 1}`}
+                      fill
                       className="w-full h-full object-cover"
                     />
                   ) : (

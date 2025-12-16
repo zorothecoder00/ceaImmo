@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { Bell, Trash2, Eye, Loader2, CheckCheck, Mail, MessageSquare, X, AlertCircle } from 'lucide-react'
+import { Bell, Trash2, Loader2, CheckCheck, Mail, MessageSquare, X, AlertCircle } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'   
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'

@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { getAuthSession } from "@/lib/auth";
-import { sauvegarderRecherche, getRecherchesSauvegardees, filtrageProprietes } from "@/lib/getDashboardAcheteur";
+import { sauvegarderRecherche, getRecherchesSauvegardees } from "@/lib/getDashboardAcheteur";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   // 🔒 Vérification de session utilisateur

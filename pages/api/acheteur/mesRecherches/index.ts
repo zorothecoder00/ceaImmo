@@ -123,6 +123,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       paramIndex++;
     }
 
+    // 🔵 Note minimale
+    if (minNote) {
+      whereClauses.push(`p.note >= $${paramIndex}`);
+      sqlParams.push(Number(minNote));
+      paramIndex++;
+    }
+
     // ============================================
     // 🟧 FILTRE SPATIAL (distance en mètres)
     // ============================================

@@ -1,13 +1,13 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import { Home, Search, Heart, Calendar, Briefcase, Settings, MapPin, Clock } from 'lucide-react';
+import { Home, Calendar, Briefcase, Settings, MapPin, Clock } from 'lucide-react';
 import { VisiteStatut } from '@prisma/client'  
 import { toast } from 'react-hot-toast';
 import Link from "next/link";   
 
 interface Geolocalisation {
-  latitude: number | null;    
+  latitude: number | null;      
   longitude: number | null;    
 }   
 
@@ -85,19 +85,30 @@ const MesVisites = () => {
       setVisits(prev =>
         prev.map(v => (v.id === id ? { ...v, statut: statut } : v))
       );
-
+      toast.success('✅ Statut mis à jour avec succès !');
     }catch(error){
       console.error('Erreur lors de la mise à jour du statut :', error);
-      alert('❌ Impossible de mettre à jour le statut.');
+      toast.error('❌ Impossible de mettre à jour le statut.');
     } finally {
       setLoadingId(null);
     }
   }
 
   // Handlers spécifiques
-  const handleConfirmer = (id: number) => updateVisitStatut(id, 'CONFIRMEE');
-  const handleAnnuler = (id: number) => updateVisitStatut(id, 'ANNULEE');
-  const handleReporter = (id: number) => updateVisitStatut(id, 'REPORTEE');
+  const handleConfirmer = (id: number) => {
+    updateVisitStatut(id, 'CONFIRMEE');
+    toast.success('✅ Visite confirmée')
+  }
+
+  const handleAnnuler = (id: number) => {
+    updateVisitStatut(id, 'ANNULEE');
+    toast('❌ Visite annulée');
+  };
+
+  const handleReporter = (id: number) => {
+    updateVisitStatut(id, 'REPORTEE');
+    toast('🕒 Visite reportée', { icon: '⏰' });
+  }
 
   const getTimeRemaining = (dateString: string): { text: string; className: string } => {
     const visitDateTime = new Date(dateString);

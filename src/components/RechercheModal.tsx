@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, Search, Filter, MapPin, Home, DollarSign, Maximize2, Bed, Star } from 'lucide-react';
 import { Categorie, Statut } from '@prisma/client'
-
+import Image from 'next/image'
+   
 interface ResultatPropriete {
   id: string;
   nom: string;
@@ -341,13 +342,16 @@ export default function SearchModal() {
                     className="border border-gray-200 rounded-lg p-4 hover:shadow-lg transition cursor-pointer bg-white"
                     onClick={() => (window.location.href = `/proprietes/${p.id}`)}
                   >
-                    <div className="flex gap-4">
+                    <div className=" flex gap-4">
                       {p.images?.[0] && (
-                        <img
-                          src={p.images[0].url}
-                          alt={p.nom}
-                          className="w-24 h-24 object-cover rounded-lg"
-                        />
+                        <div className="relative w-24 h-24 flex-shrink-0">
+                          <Image
+                            src={p.images[0].url}
+                            alt={p.nom}
+                            fill
+                            className="object-cover rounded-lg"
+                          />
+                        </div>
                       )}
                       <div className="flex-1 min-w-0">
                         <h4 className="font-semibold text-gray-900 truncate mb-1">{p.nom}</h4>

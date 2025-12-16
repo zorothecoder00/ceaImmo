@@ -88,17 +88,16 @@ export default function FavorisPage() {
     mode: Mode.CASH     
   })
   // ✅ Gestion des visites et offres existantes
-  const [mesVisites, _setMesVisites] = useState<Visite[]>([])
-  const [mesOffres, _setMesOffres] = useState<Offre[]>([])
+  const [mesVisites] = useState<Visite[]>([])
+  const [mesOffres] = useState<Offre[]>([])
 
   // 🆕 Pour la modale de demande de visite
   const [showVisiteModal, setShowVisiteModal] = useState(false);
   const [visiteDate, setVisiteDate] = useState(''); // pour la date saisie par l’utilisateur
 
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-  const [advancedFiltersOpen, _setAdvancedFiltersOpen] = useState(false);
 
-  const [filters, _setFilters] = useState({
+  const [filters] = useState({
     search: '',
     page: 1,
     limit: 10,

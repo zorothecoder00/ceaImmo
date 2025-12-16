@@ -120,13 +120,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const whereClause = [...filters];
     if (geoFilter) whereClause.push(geoFilter);
-    const whereSQL = whereClause.length > 0 ? `WHERE ${whereClause.join(" AND ")}` : "";
+    //const whereSQL = whereClause.length > 0 ? `WHERE ${whereClause.join(" AND ")}` : "";
 
     // ✅ Typé correctement au lieu de any
     const proprietes = await prisma.$queryRaw<ProprieteSQL[]>(
       Prisma.sql`
         SELECT * FROM "Propriete"
-        ${whereClause.length > 0 ? Prisma.sql`WHERE ${Prisma.join(whereClause.map((f, i) => Prisma.raw(f)))}` : Prisma.sql``}
+        ${whereClause.length > 0 ? Prisma.sql`WHERE ${Prisma.join(whereClause.map((f) => Prisma.raw(f)))}` : Prisma.sql``}
         ORDER BY ${Prisma.raw(safeOrderBy)} ${Prisma.raw(safeOrder)}
         LIMIT ${takeNumber}
         OFFSET ${skipNumber}
@@ -136,7 +136,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const totalResult = await prisma.$queryRaw<{ count: string }[]>(
       Prisma.sql`
         SELECT COUNT(*) AS count FROM "Propriete"
-        ${whereClause.length > 0 ? Prisma.sql`WHERE ${Prisma.join(whereClause.map((f, i) => Prisma.raw(f)))}` : Prisma.sql``}
+        ${whereClause.length > 0 ? Prisma.sql`WHERE ${Prisma.join(whereClause.map((f) => Prisma.raw(f)))}` : Prisma.sql``}
       `
     );
 

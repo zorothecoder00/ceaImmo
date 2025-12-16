@@ -1,31 +1,6 @@
 // src/app/dashboard/vendeur/page.tsx
 
-import { getAuthSession } from "@/lib/auth";   
-import {  
-  Building,             
-  Calendar, 
-  User,        
-  Eye,       
-  Edit,       
-  MapPin,   
-  Bed,
-  Bath,
-  Square,     
-  TrendingUp,     
-  Euro,
-  Camera,
-  Phone,
-  MessageSquare,
-  Clock,
-  CheckCircle,
-  X,
-  Upload,   
-  Trash2,
-  AlertCircle  
-} from 'lucide-react'  
-import { Button } from '@/components/ui/button' 
-import { Card } from '@/components/ui/card'
-import Image from 'next/image'
+import { getAuthSession } from "@/lib/auth";     
 import { Categorie, VisiteStatut, Statut, OffreStatut } from '@prisma/client'
 import { getMesProprietes, getMesOffresRecus, getMesProchainesVisites, getNotificationsNonVues } from '@/lib/getDashboardVendeur'
 import VendeurDashboardClient from '@/components/DashboardVendeur'

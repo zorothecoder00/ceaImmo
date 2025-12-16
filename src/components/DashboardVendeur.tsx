@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {    
   Home, Building, Calendar, Settings, Bell, User, Eye, 
   TrendingUp, Euro, X, Plus, Trash2, Loader2,    
-  AlertCircle, MapPin, Bed, CheckCircle, Hotel as HotelIcon, Star      
+  AlertCircle, MapPin, Bed, CheckCircle, Hotel as HotelIcon     
 } from 'lucide-react'  
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'  
@@ -778,7 +778,7 @@ export default function VendeurDashboardClient({
                         <input
                           type="text"
                           value={formData.nom}
-                          onChange={(e) => setFormData({...formData, nom: e.target.value})}
+                          onChange={(e) => handleChange('nom', e.target.value)}
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
                           placeholder="Villa Moderne Lomé"
                         />
@@ -791,7 +791,7 @@ export default function VendeurDashboardClient({
                         <select
                           value={formData.categorie}
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
-                          onChange={(e) => setFormData({ ...formData, categorie: e.target.value as Categorie })}
+                          onChange={(e) => handleChange('categorie', e.target.value as Categorie )}
                         >
                           {categories
                             .filter(cat => cat !== Categorie.HOTEL)
@@ -809,7 +809,7 @@ export default function VendeurDashboardClient({
                         <input
                           type="number"
                           value={formData.prix}
-                          onChange={(e) => setFormData({...formData, prix: e.target.value})}
+                          onChange={(e) => handleChange('prix', e.target.value)}
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
                           placeholder="150000000"
                         />
@@ -822,7 +822,7 @@ export default function VendeurDashboardClient({
                         <input
                           type="number"
                           value={formData.surface}
-                          onChange={(e) => setFormData({...formData, surface: e.target.value})}
+                          onChange={(e) => handleChange('surface', e.target.value)}
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
                           placeholder="350"
                         />
@@ -835,7 +835,7 @@ export default function VendeurDashboardClient({
                         <select
                           value={formData.statut}
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
-                          onChange={(e) => setFormData({ ...formData, statut: e.target.value as Statut })}
+                          onChange={(e) => handleChange('statut', e.target.value as Statut )}
                         >
                           {statuts.map(st => (
                             <option key={st} value={st}>{st}</option>
@@ -850,7 +850,7 @@ export default function VendeurDashboardClient({
                         <input
                           type="number"
                           value={formData.nombreChambres}
-                          onChange={(e) => setFormData({...formData, nombreChambres: e.target.value})}
+                          onChange={(e) => handleChange('nombreChambres', e.target.value)}
                           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
                           min="1"
                         />
@@ -886,7 +886,7 @@ export default function VendeurDashboardClient({
                       </label>
                       <textarea
                         value={formData.description}
-                        onChange={(e) => setFormData({...formData, description: e.target.value})}
+                        onChange={(e) => handleChange('description',  e.target.value)}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 h-24 resize-none"
                         placeholder="Décrivez votre propriété..."
                       />
@@ -899,7 +899,7 @@ export default function VendeurDashboardClient({
                       <input
                         type="url"
                         value={formData.visiteVirtuelle}
-                        onChange={(e) => setFormData({...formData, visiteVirtuelle: e.target.value})}
+                        onChange={(e) => handleChange('visiteVirtuelle', e.target.value)}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500"
                         placeholder="https://youtube.com/..."
                       />

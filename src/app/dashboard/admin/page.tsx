@@ -1,12 +1,12 @@
 import Link from 'next/link';
-import { getDashboardStats, setMaintenanceMode, getDashboardAdmin } from '@/lib/getDashboardAdmin';
+import { getDashboardStats } from '@/lib/getDashboardAdmin';
 
 export default async function AdminDashboard() {
   // Récupère les stats côté serveur
   const stats = await getDashboardStats();    
     
-  const dashboardCards = [
-    {  
+  const dashboardCards = [    
+    {     
       id: 'users',   
       title: 'Gestion des Utilisateurs',
       description: 'Administrer les comptes utilisateurs, gérer les permissions et surveiller l\'activité des membres.',
@@ -139,7 +139,7 @@ export default async function AdminDashboard() {
             <div className="flex flex-wrap gap-4 justify-center lg:justify-start">
               <Link href="/dashboard/admin/utilisateurs/nouveau" className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-medium transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                 👥 + Nouvel Agent
-              </Link>
+              </Link>  
               
               <Link href="/dashboard/admin/maintenance?enable=true" className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-medium transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                 🔧 Mode Maintenance

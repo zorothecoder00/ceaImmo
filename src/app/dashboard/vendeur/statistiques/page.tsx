@@ -3,8 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link'
 import { 
-  Home, 
-  Plus,  
+  Home,  
   MoreVertical, 
   Eye, 
   Edit, 

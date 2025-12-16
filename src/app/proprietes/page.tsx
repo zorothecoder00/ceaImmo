@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react';
-import { Search, Filter, MapPin, Home, Bed, Bath, Square, Eye, Grid, List, ArrowUpDown } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import { Search, Filter, MapPin, Home, Bed, Eye, Grid, List, ArrowUpDown } from 'lucide-react';
 import Link from "next/link"; // 👈 ajoute cet import
 import { Categorie } from '@prisma/client'
 
@@ -41,7 +41,7 @@ const ProprietesPage = () => {
   const itemsPerPage = 6;
   
   // ✅ Définition de la fonction en dehors du useEffect
-  const fetchProprietes = async () => {
+  const fetchProprietes = useCallback(async () => {
     try {
       const queryParams = new URLSearchParams({
         take: itemsPerPage.toString(),
@@ -67,12 +67,23 @@ const ProprietesPage = () => {
       setProprietes([]);
       setTotalPages(1);
     }
-  };
+  }, [
+    currentPage,
+    sortBy,
+    categorie,
+    localisation,
+    prixMin,
+    prixMax,
+    surfaceMin,
+    surfaceMax,
+    chambresMin,
+    chambresMax,
+  ]);
 
   // ✅ Appel automatique au montage ou quand les dépendances changent
   useEffect(() => {
     fetchProprietes();
-  }, [currentPage, sortBy, categorie, localisation]);
+  }, [fetchProprietes]);
 
   // ✅ Fonction pour réinitialiser les filtres
   const resetProprietes = () => {

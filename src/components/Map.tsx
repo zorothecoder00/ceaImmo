@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 
 interface Geoloc {
   latitude: number;
-  longitude: number;
+  longitude: number;  
 }
 
 interface Property {

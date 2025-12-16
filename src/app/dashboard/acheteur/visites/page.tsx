@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import { Calendar, MapPin, Clock } from 'lucide-react';
+import { MapPin, Clock } from 'lucide-react';
 import { VisiteStatut } from '@prisma/client'
 import Link from "next/link" 
 
@@ -9,7 +9,7 @@ interface Geolocalisation {
   latitude: number | null;    
   longitude: number | null;    
 }   
-
+  
 interface Proprietaire {
   id: number  
   prenom: string
