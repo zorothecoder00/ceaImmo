@@ -1,13 +1,13 @@
 // prisma/schema.prisma       
     
-datasource db {      
+datasource db {                  
   provider = "postgresql" // ou "mysql", selon ta base
   url      = env("DATABASE_URL") 
   shadowDatabaseUrl = env("SHADOW_DATABASE_URL")                      
-}                 
+}                         
             
-generator client {      
-  provider = "prisma-client-js"      
+generator client {           
+  provider = "prisma-client-js"          
 }                                         
        
 enum Role {                 
@@ -173,9 +173,9 @@ model Propriete {
   avis              Avis[]
   vus               Vu[]
   hotel             Hotel?          @relation("ProprieteHotel")
-  signalements      Signalement[]        
-}              
-        
+  signalements      Signalement[]                    
+}                
+             
 model Geolocalisation {
   id          Int       @id @default(autoincrement())
   propriete   Propriete @relation(fields: [proprieteId], references: [id], onDelete: Cascade)

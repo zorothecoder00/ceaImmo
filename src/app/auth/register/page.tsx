@@ -5,7 +5,7 @@ import { User, Mail, Lock, Eye, EyeOff, ArrowRight, Building2 } from 'lucide-rea
 import Link from "next/link"
 import { useRouter } from 'next/navigation'
 import { signIn } from 'next-auth/react'
-import { Role } from "@prisma/client"
+import { Role } from "@prisma/client"   
      
 // Définition du type pour nos erreurs
 type Errors = {  
@@ -69,17 +69,32 @@ const RegisterPage = () => {
     const newErrors: Errors = {}; // ✅ On précise le type
 
     if (!formData.nom.trim()) newErrors.nom = 'Le nom est requis';
+
     if (!formData.prenom.trim()) newErrors.prenom = 'Le prénom est requis';
+
     if (!formData.email.trim()) {
       newErrors.email = 'L\'email est requis';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Email invalide';
     }
+
     if (!formData.password) {
       newErrors.password = 'Le mot de passe est requis';
-    } else if (formData.password.length < 8) {
-      newErrors.password = 'Le mot de passe doit contenir au moins 8 caractères';
+    } else {
+
+      const pwd = formData.password;
+
+      if (pwd.length < 8) {
+        newErrors.password = 'Minimum 8 caractères';
+      } else if (!/[A-Z]/.test(pwd)) {
+        newErrors.password = 'Doit contenir au moins une majuscule';
+      } else if (!/[0-9]/.test(pwd)) {
+        newErrors.password = 'Doit contenir au moins un chiffre';
+      } else if (!/[!@#$%^&*(),.?":{}|<>]/.test(pwd)) {
+        newErrors.password = 'Doit contenir au moins un caractère spécial';
+      }
     }
+
     if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Les mots de passe ne correspondent pas';
     }
@@ -306,6 +321,10 @@ const RegisterPage = () => {
                 </button>
               </div>
               {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
+              <p className="mt-2 text-xs text-gray-600 bg-blue-50 border border-blue-200 p-2 rounded-lg">
+                <span className="font-medium">Exigences :</span> minimum 8 caractères, 1 majuscule, 
+                1 chiffre, 1 caractère spécial.
+              </p>
             </div>
 
             <div>
@@ -334,6 +353,10 @@ const RegisterPage = () => {
               </div>
               {errors.confirmPassword && <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>}
             </div>
+
+            {errors.general && (
+              <p className="mt-2 text-center text-red-600">{errors.general}</p>
+            )}
 
             {/* Submit Button */}
             <button
