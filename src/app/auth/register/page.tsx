@@ -129,8 +129,26 @@ const RegisterPage = () => {
 
       const data = await res.json()
 
-      if(!res.ok){
-        return setErrors({ general: data.message ||"Erreur lors de l'inscription" })
+      if (!res.ok) {
+        const msg = data.message?.toLowerCase() || ""
+
+        if(msg.includes("email")) {
+          setErrors({ email: data.message })
+        } 
+        else if(msg.includes("mot de passe")) {
+          setErrors({ password: data.message })
+        } 
+        else if(msg.includes("nom")) {
+          setErrors({ nom: data.message })
+        }
+        else if(msg.includes("prénom")) {
+          setErrors({ prenom: data.message })
+        }
+        else {
+          setErrors({ general: data.message })
+        }
+
+        return
       }
 
       router.push('/auth/login')
