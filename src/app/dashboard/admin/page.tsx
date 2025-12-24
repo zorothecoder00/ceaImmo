@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import Link from 'next/link';
 import { getDashboardStats } from '@/lib/getDashboardAdmin';
 
@@ -7,7 +9,7 @@ export default async function AdminDashboard() {
     
   const dashboardCards = [    
     {     
-      id: 'users',   
+      id: 'users',     
       title: 'Gestion des Utilisateurs',
       description: 'Administrer les comptes utilisateurs, gérer les permissions et surveiller l\'activité des membres.',
       icon: '👥',
