@@ -106,20 +106,20 @@ Bcrypt / BcryptJS
 
 Cloner le projet
 
-git clone https://github.com/ton-compte/cea-immo.git
+git clone https://github.com/zorothecoder00/ceaImmo.git
 cd cea-immo
 
-
+   
 Installer les dépendances
 
 npm install
 
-
+   
 Configurer l’environnement
 Créer un fichier .env :
 
-DATABASE_URL=postgresql://user:password@localhost:5432/cea-immo
-NEXTAUTH_SECRET=super_secret_key
+DATABASE_URL="postgresql://postgres:admin@localhost:5432/cea-immo"
+NEXTAUTH_SECRET=60ac65941647c5eefe599ef09f580ad0bb5f4aa579788a8e2de0db0e5477c76e
 NEXTAUTH_URL=http://localhost:3000
 
 
